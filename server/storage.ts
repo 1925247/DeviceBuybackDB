@@ -103,6 +103,47 @@ export interface IStorage {
     schema: string;
     recentActivity: string[];
   }>;
+  
+  // Settings operations
+  getSettings(): Promise<any>;
+  updateSettings(settings: any): Promise<any>;
+  
+  // E-commerce operations
+  
+  // Product operations
+  getProducts(options?: { page?: number; limit?: number; status?: string; featured?: boolean; categoryId?: number }): Promise<Product[]>;
+  getProduct(id: number): Promise<Product | undefined>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<boolean>;
+  
+  // Product variant operations
+  getProductVariants(productId: number): Promise<ProductVariant[]>;
+  getProductVariant(id: number): Promise<ProductVariant | undefined>;
+  createProductVariant(variant: InsertProductVariant): Promise<ProductVariant>;
+  updateProductVariant(id: number, variant: Partial<InsertProductVariant>): Promise<ProductVariant | undefined>;
+  deleteProductVariant(id: number): Promise<boolean>;
+  
+  // Product image operations
+  getProductImages(productId: number): Promise<ProductImage[]>;
+  createProductImage(image: InsertProductImage): Promise<ProductImage>;
+  setProductPrimaryImage(productId: number, imageId: number): Promise<boolean>;
+  deleteProductImage(id: number): Promise<boolean>;
+  
+  // Category operations
+  getCategories(): Promise<Category[]>;
+  getCategory(id: number): Promise<Category | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
+  
+  // Discount operations
+  getDiscounts(status?: string): Promise<Discount[]>;
+  getDiscount(id: number): Promise<Discount | undefined>;
+  createDiscount(discount: InsertDiscount): Promise<Discount>;
+  updateDiscount(id: number, discount: Partial<InsertDiscount>): Promise<Discount | undefined>;
+  deleteDiscount(id: number): Promise<boolean>;
+  verifyDiscount(code: string, total?: number): Promise<Discount | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
