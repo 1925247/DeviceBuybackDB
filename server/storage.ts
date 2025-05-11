@@ -143,14 +143,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDevice(device: InsertDevice): Promise<Device> {
-    const [newDevice] = await db.insert(devices).values(device).returning();
+    // Convert numeric price to string format as expected by the database
+    const deviceToInsert = {
+      ...device,
+      price: typeof device.price === 'number' ? 
+        device.price.toString() : device.price
+    };
+    
+    const [newDevice] = await db.insert(devices).values([deviceToInsert]).returning();
     return newDevice;
   }
 
   async updateDevice(id: number, deviceData: Partial<InsertDevice>): Promise<Device | undefined> {
+    // Convert numeric price to string format as expected by the database
+    const dataToUpdate: any = {
+      ...deviceData,
+      updated_at: new Date()
+    };
+    
+    if (deviceData.price !== undefined && typeof deviceData.price === 'number') {
+      dataToUpdate.price = deviceData.price.toString();
+    }
+    
     const [updatedDevice] = await db
       .update(devices)
-      .set({ ...deviceData, updated_at: new Date() })
+      .set(dataToUpdate)
       .where(eq(devices.id, id))
       .returning();
     return updatedDevice;
@@ -201,13 +218,13 @@ export class DatabaseStorage implements IStorage {
 
   async getBuybackRequests(page: number = 1, limit: number = 10, status?: string): Promise<BuybackRequest[]> {
     const offset = (page - 1) * limit;
-    let query = db.select().from(buybackRequests).limit(limit).offset(offset).orderBy(desc(buybackRequests.created_at));
+    const baseQuery = db.select().from(buybackRequests).limit(limit).offset(offset).orderBy(desc(buybackRequests.created_at));
     
     if (status) {
-      query = query.where(eq(buybackRequests.status, status));
+      return baseQuery.where(eq(buybackRequests.status, status));
     }
     
-    return query;
+    return baseQuery;
   }
   
   async getBuybackRequestsCount(status?: string): Promise<number> {
@@ -252,13 +269,13 @@ export class DatabaseStorage implements IStorage {
 
   async getMarketplaceListings(page: number = 1, limit: number = 10, status?: string): Promise<MarketplaceListing[]> {
     const offset = (page - 1) * limit;
-    let query = db.select().from(marketplaceListings).limit(limit).offset(offset).orderBy(desc(marketplaceListings.created_at));
+    const baseQuery = db.select().from(marketplaceListings).limit(limit).offset(offset).orderBy(desc(marketplaceListings.created_at));
     
     if (status) {
-      query = query.where(eq(marketplaceListings.status, status));
+      return baseQuery.where(eq(marketplaceListings.status, status));
     }
     
-    return query;
+    return baseQuery;
   }
 
   async createMarketplaceListing(listing: InsertMarketplaceListing): Promise<MarketplaceListing> {
