@@ -1,7 +1,10 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDeviceSchema, insertUserSchema, insertBuybackRequestSchema, insertMarketplaceListingSchema, insertOrderSchema } from "@shared/schema";
+import { 
+  insertDeviceSchema, insertUserSchema, insertBuybackRequestSchema, insertMarketplaceListingSchema, insertOrderSchema,
+  type InsertUser, type InsertDevice, type InsertBuybackRequest, type InsertMarketplaceListing, type InsertOrder
+} from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -10,9 +13,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = (path: string) => `/api${path}`;
 
   // Helper for handling validation errors
-  const validateRequest = <T>(schema: any, data: any): T => {
+  const validateRequest = <T>(schema: any, data: unknown): T => {
     try {
-      return schema.parse(data);
+      return schema.parse(data) as T;
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
@@ -92,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User endpoints
   app.post(apiRouter("/users"), async (req: Request, res: Response) => {
     try {
-      const userData = validateRequest(insertUserSchema, req.body);
+      const userData = validateRequest<InsertUser>(insertUserSchema, req.body);
       const user = await storage.createUser(userData);
       res.status(201).json(user);
     } catch (error: any) {
