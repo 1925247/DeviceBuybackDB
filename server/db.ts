@@ -2,8 +2,16 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
+import * as dotenv from 'dotenv';
 
+// Load environment variables
+dotenv.config();
+
+// Configure neon with websocket
 neonConfig.webSocketConstructor = ws;
+
+// Log for debugging purposes
+console.log("Database URL defined:", !!process.env.DATABASE_URL);
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -11,5 +19,12 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Create connection pool
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Create Drizzle ORM instance
+export const db = drizzle(pool, { schema });
+
+console.log("Database connection initialized successfully");
