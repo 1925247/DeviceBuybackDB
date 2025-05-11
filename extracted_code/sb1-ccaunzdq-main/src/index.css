@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Global Styles === */
+html {
+  @apply antialiased scroll-smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply m-0 text-base text-gray-900 bg-gray-50;
+}
+
+/* === Layout & Containers === */
+@layer components {
+  .container-fluid {
+    @apply w-full max-w-[1440px] px-4 sm:px-6 lg:px-8 mx-auto;
+  }
+
+  .page-container {
+    @apply min-h-screen flex flex-col overflow-x-hidden;
+  }
+
+  .main-content {
+    @apply flex-grow;
+  }
+
+  /* === Buttons === */
+  .btn {
+    @apply px-5 py-3 rounded-lg font-medium text-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-400;
+  }
+
+  /* === Forms & Inputs === */
+  .form-input {
+    @apply w-full px-4 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all;
+  }
+
+  .form-select {
+    @apply w-full px-4 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all;
+  }
+
+  .form-textarea {
+    @apply w-full px-4 py-2 text-sm border border-gray-300 rounded-md shadow-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all;
+  }
+
+  .form-checkbox {
+    @apply w-5 h-5 text-blue-600 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500;
+  }
+
+  /* === Cards === */
+  .card {
+    @apply bg-white rounded-lg shadow-lg overflow-hidden transition-all hover:shadow-xl;
+  }
+
+  .card-body {
+    @apply p-5 sm:p-6;
+  }
+
+  /* === Grid Layouts === */
+  .grid-responsive {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6;
+  }
+
+  /* === Typography === */
+  .h1 {
+    @apply text-xl sm:text-2xl md:text-3xl font-bold leading-tight;
+  }
+
+  .h2 {
+    @apply text-lg sm:text-xl md:text-2xl font-bold leading-tight;
+  }
+
+  .h3 {
+    @apply text-base sm:text-lg md:text-xl font-bold leading-tight;
+  }
+
+  .text-muted {
+    @apply text-gray-500;
+  }
+
+  /* === Navigation === */
+  .nav-link {
+    @apply px-4 py-2 text-sm font-medium rounded-md transition-all hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300;
+  }
+
+  /* === Responsive Images === */
+  .responsive-img {
+    @apply w-full h-auto object-cover max-w-[100px] sm:max-w-[150px] mx-auto;
+  }
+
+  /* === Utilities === */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* === Media Queries for Touch Devices === */
+@media (hover: none) {
+  .hover\:bg-gray-100:hover {
+    @apply bg-transparent;
+  }
+}
+
+/* === Print Styles === */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
