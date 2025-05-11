@@ -289,7 +289,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const status = req.query.status as string | undefined;
       const requests = await storage.getBuybackRequests(page, limit, status);
-      res.json(requests);
+      
+      // Get total count for pagination
+      const count = await storage.getBuybackRequestsCount(status);
+      const totalPages = Math.ceil(count / limit);
+      
+      // Return in the format expected by the frontend
+      res.json({
+        requests,
+        totalPages,
+        currentPage: page
+      });
     } catch (error: any) {
       res.status(500).json({ message: "Failed to get buyback requests" });
     }

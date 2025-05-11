@@ -41,6 +41,7 @@ export interface IStorage {
   // Buyback operations
   getBuybackRequest(id: number): Promise<BuybackRequest | undefined>;
   getBuybackRequests(page?: number, limit?: number, status?: string): Promise<BuybackRequest[]>;
+  getBuybackRequestsCount(status?: string): Promise<number>;
   getBuybackRequestsByUser(userId: number): Promise<BuybackRequest[]>;
   createBuybackRequest(request: InsertBuybackRequest): Promise<BuybackRequest>;
   updateBuybackRequest(id: number, request: Partial<InsertBuybackRequest>): Promise<BuybackRequest | undefined>;
@@ -207,6 +208,17 @@ export class DatabaseStorage implements IStorage {
     }
     
     return query;
+  }
+  
+  async getBuybackRequestsCount(status?: string): Promise<number> {
+    let query = db.select({ count: count() }).from(buybackRequests);
+    
+    if (status) {
+      query = query.where(eq(buybackRequests.status, status));
+    }
+    
+    const result = await query;
+    return Number(result[0]?.count || 0);
   }
 
   async getBuybackRequestsByUser(userId: number): Promise<BuybackRequest[]> {

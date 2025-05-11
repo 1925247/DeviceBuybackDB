@@ -30,13 +30,29 @@ export default function BuybackPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/buyback-requests", currentPage, pageSize],
-    keepPreviousData: true,
+  interface BuybackResponse {
+    requests: Array<{
+      id: number;
+      user_id: number;
+      device_type: string;
+      manufacturer: string;
+      model: string;
+      condition: string;
+      offered_price: string | number;
+      status: string;
+      created_at?: string;
+      updated_at?: string;
+    }>;
+    totalPages: number;
+    currentPage: number;
+  }
+
+  const { data, isLoading } = useQuery<BuybackResponse>({
+    queryKey: ["/api/buyback-requests", currentPage, pageSize]
   });
 
-  // For simplicity, we're assuming a total of 2 pages
-  const totalPages = 2;
+  // Get actual totalPages from the data or default to 1
+  const totalPages = data?.totalPages || 1;
 
   const handleTabChange = (tab: string) => {
     if (tab !== "buyback-tracking") {
@@ -149,45 +165,14 @@ export default function BuybackPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : data?.length === 0 ? (
+                  ) : !data?.requests || data.requests.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         No buyback requests found.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    (data || [
-                      {
-                        id: 201,
-                        user_id: 1,
-                        device_type: "Smartphone",
-                        manufacturer: "Apple",
-                        model: "iPhone 12",
-                        condition: "Good",
-                        offered_price: "450.00",
-                        status: "Pending"
-                      },
-                      {
-                        id: 202,
-                        user_id: 2,
-                        device_type: "Laptop",
-                        manufacturer: "Dell",
-                        model: "XPS 13",
-                        condition: "Excellent",
-                        offered_price: "800.00",
-                        status: "Approved"
-                      },
-                      {
-                        id: 203,
-                        user_id: 3,
-                        device_type: "Tablet",
-                        manufacturer: "Samsung",
-                        model: "Galaxy Tab S7",
-                        condition: "Fair",
-                        offered_price: "220.00",
-                        status: "Rejected"
-                      }
-                    ]).map((request) => (
+                    data.requests.map((request) => (
                       <TableRow key={request.id}>
                         <TableCell className="font-medium">{request.id}</TableCell>
                         <TableCell>User #{request.user_id}</TableCell>
