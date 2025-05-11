@@ -24,7 +24,7 @@ export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Create Drizzle ORM instance
+// Create Drizzle ORM instance with proper type options
 export const db = drizzle(pool, { schema });
 
 console.log("Database connection initialized successfully");

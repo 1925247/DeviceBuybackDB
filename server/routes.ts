@@ -397,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(apiRouter("/marketplace-listings/:id"), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const listingData = validateRequest(insertMarketplaceListingSchema.partial(), req.body);
+      const listingData = validateRequest<Partial<InsertMarketplaceListing>>(insertMarketplaceListingSchema.partial(), req.body);
       const updatedListing = await storage.updateMarketplaceListing(id, listingData);
       if (!updatedListing) {
         return res.status(404).json({ message: "Marketplace listing not found" });
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order endpoints
   app.post(apiRouter("/orders"), async (req: Request, res: Response) => {
     try {
-      const orderData = validateRequest(insertOrderSchema, req.body);
+      const orderData = validateRequest<InsertOrder>(insertOrderSchema, req.body);
       const order = await storage.createOrder(orderData);
       res.status(201).json(order);
     } catch (error: any) {
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(apiRouter("/orders/:id"), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const orderData = validateRequest(insertOrderSchema.partial(), req.body);
+      const orderData = validateRequest<Partial<InsertOrder>>(insertOrderSchema.partial(), req.body);
       const updatedOrder = await storage.updateOrder(id, orderData);
       if (!updatedOrder) {
         return res.status(404).json({ message: "Order not found" });
