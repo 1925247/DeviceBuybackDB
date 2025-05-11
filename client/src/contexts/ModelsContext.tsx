@@ -75,110 +75,65 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Temporary hardcoded data until API is ready
-        const mockDeviceTypes: DeviceType[] = [
-          {
-            id: 1,
-            name: "Smartphone",
-            slug: "smartphone",
-            description: "Mobile phones with advanced features",
-            icon: "smartphone"
-          },
-          {
-            id: 2,
-            name: "Laptop",
-            slug: "laptop",
-            description: "Portable computers",
-            icon: "laptop"
-          },
-          {
-            id: 3,
-            name: "Tablet",
-            slug: "tablet",
-            description: "Mobile devices larger than smartphones",
-            icon: "tablet"
-          },
-          {
-            id: 4,
-            name: "Smart Watch",
-            slug: "smartwatch",
-            description: "Wearable computing devices",
-            icon: "watch"
-          }
-        ];
+        setIsLoading(true);
 
-        const mockBrands: Brand[] = [
-          {
-            id: 1,
-            name: "Apple",
-            logo: "https://cdn-icons-png.flaticon.com/128/0/747.png",
-            slug: "apple"
-          },
-          {
-            id: 2,
-            name: "Samsung",
-            logo: "https://cdn-icons-png.flaticon.com/128/882/882747.png",
-            slug: "samsung"
-          },
-          {
-            id: 3,
-            name: "Google",
-            logo: "https://cdn-icons-png.flaticon.com/128/300/300221.png",
-            slug: "google"
-          },
-          {
-            id: 4,
-            name: "OnePlus",
-            logo: "https://cdn.worldvectorlogo.com/logos/oneplus-2.svg",
-            slug: "oneplus"
-          }
-        ];
+        // Fetch device types
+        const deviceTypesResponse = await fetch('/api/device-types');
+        if (!deviceTypesResponse.ok) {
+          throw new Error('Failed to fetch device types');
+        }
+        const deviceTypesData = await deviceTypesResponse.json();
+        
+        // Map the API data structure to our interface
+        const mappedDeviceTypes: DeviceType[] = deviceTypesData.map((type: any) => ({
+          id: type.id,
+          name: type.name,
+          slug: type.slug,
+          description: type.description || `${type.name} devices`,
+          icon: type.icon
+        }));
+        
+        // Fetch brands
+        const brandsResponse = await fetch('/api/brands');
+        if (!brandsResponse.ok) {
+          throw new Error('Failed to fetch brands');
+        }
+        const brandsData = await brandsResponse.json();
+        
+        // Map the API data structure to our interface
+        const mappedBrands: Brand[] = brandsData.map((brand: any) => ({
+          id: brand.id,
+          name: brand.name,
+          logo: brand.logo,
+          slug: brand.slug
+        }));
+        
+        // Fetch device models
+        const deviceModelsResponse = await fetch('/api/device-models');
+        if (!deviceModelsResponse.ok) {
+          throw new Error('Failed to fetch device models');
+        }
+        const deviceModelsData = await deviceModelsResponse.json();
+        
+        // Map the API data structure to our interface
+        const mappedDeviceModels: DeviceModel[] = deviceModelsData.map((model: any) => ({
+          id: model.id,
+          name: model.name,
+          brand_id: model.brand_id,
+          device_type_id: model.device_type_id,
+          release_year: model.release_year || new Date().getFullYear(),
+          image_url: model.image || `/assets/models/${model.slug}.png`,
+          description: model.description,
+          slug: model.slug
+        }));
 
-        const mockDeviceModels: DeviceModel[] = [
-          {
-            id: 1,
-            name: "iPhone 13",
-            brand_id: 1,
-            device_type_id: 1,
-            release_year: 2021,
-            image_url: "https://example.com/iphone13.jpg",
-            slug: "iphone-13"
-          },
-          {
-            id: 2,
-            name: "iPhone 14",
-            brand_id: 1,
-            device_type_id: 1,
-            release_year: 2022,
-            image_url: "https://example.com/iphone14.jpg",
-            slug: "iphone-14"
-          },
-          {
-            id: 3,
-            name: "Galaxy S22",
-            brand_id: 2,
-            device_type_id: 1,
-            release_year: 2022,
-            image_url: "https://example.com/galaxys22.jpg",
-            slug: "galaxy-s22"
-          },
-          {
-            id: 4,
-            name: "MacBook Pro",
-            brand_id: 1,
-            device_type_id: 2,
-            release_year: 2021,
-            image_url: "https://example.com/macbookpro.jpg",
-            slug: "macbook-pro"
-          }
-        ];
-
-        setDeviceTypes(mockDeviceTypes);
-        setBrands(mockBrands);
-        setDeviceModels(mockDeviceModels);
+        setDeviceTypes(mappedDeviceTypes);
+        setBrands(mappedBrands);
+        setDeviceModels(mappedDeviceModels);
         setIsLoading(false);
       } catch (err) {
-        setError("Failed to fetch device models data");
+        console.error('Error fetching models data:', err);
+        setError(err instanceof Error ? err.message : "Failed to fetch device models data");
         setIsLoading(false);
       }
     };
