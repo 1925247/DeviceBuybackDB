@@ -1,10 +1,632 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
+import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+interface DeviceModel {
+  id: number;
+  name: string;
+  slug: string;
+  brand_id: number;
+  device_type_id: number;
+  image_url: string;
+  description: string | null;
+  specs: any;
+  released_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DeviceType {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 const AdminModels: React.FC = () => {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<DeviceModel | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    brand_id: '',
+    device_type_id: '',
+    image_url: '',
+    description: '',
+    specs: {},
+    released_at: '',
+  });
+  const { toast } = useToast();
+
+  // Query hooks for fetching data
+  const { data: deviceModels, isLoading: isLoadingModels } = useQuery<DeviceModel[]>({
+    queryKey: ['/api/device-models'],
+  });
+
+  const { data: brands, isLoading: isLoadingBrands } = useQuery<Brand[]>({
+    queryKey: ['/api/brands'],
+  });
+
+  const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
+    queryKey: ['/api/device-types'],
+  });
+
+  // Mutation hooks for creating, updating, and deleting device models
+  const createModelMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const response = await fetch('/api/device-models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create device model');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
+      setIsAddModalOpen(false);
+      resetForm();
+      toast({
+        title: 'Success',
+        description: 'Device model created successfully',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateModelMutation = useMutation({
+    mutationFn: async (data: typeof formData & { id: number }) => {
+      const response = await fetch(`/api/device-models/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update device model');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
+      setIsEditModalOpen(false);
+      resetForm();
+      toast({
+        title: 'Success',
+        description: 'Device model updated successfully',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteModelMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/device-models/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete device model');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
+      setIsDeleteModalOpen(false);
+      setSelectedModel(null);
+      toast({
+        title: 'Success',
+        description: 'Device model deleted successfully',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Helper functions
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      slug: '',
+      brand_id: '',
+      device_type_id: '',
+      image_url: '',
+      description: '',
+      specs: {},
+      released_at: '',
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddModel = (e: React.FormEvent) => {
+    e.preventDefault();
+    createModelMutation.mutate(formData);
+  };
+
+  const handleEditModel = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedModel) {
+      updateModelMutation.mutate({ ...formData, id: selectedModel.id });
+    }
+  };
+
+  const handleDeleteModel = () => {
+    if (selectedModel) {
+      deleteModelMutation.mutate(selectedModel.id);
+    }
+  };
+
+  const openEditModal = (model: DeviceModel) => {
+    setSelectedModel(model);
+    setFormData({
+      name: model.name,
+      slug: model.slug,
+      brand_id: model.brand_id.toString(),
+      device_type_id: model.device_type_id.toString(),
+      image_url: model.image_url || '',
+      description: model.description || '',
+      specs: model.specs || {},
+      released_at: model.released_at || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openDeleteModal = (model: DeviceModel) => {
+    setSelectedModel(model);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Render functions
+  const renderAddModal = () => (
+    <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <DialogTrigger asChild>
+        <Button className="mb-4 flex items-center gap-2">
+          <PlusCircle size={16} />
+          Add New Model
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Device Model</DialogTitle>
+          <DialogDescription>
+            Create a new device model for your catalog.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleAddModel} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="slug">Slug</Label>
+              <Input
+                id="slug"
+                name="slug"
+                value={formData.slug}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="brand_id">Brand</Label>
+              <Select
+                value={formData.brand_id}
+                onValueChange={(value) => handleSelectChange('brand_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id.toString()}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="device_type_id">Device Type</Label>
+              <Select
+                value={formData.device_type_id}
+                onValueChange={(value) => handleSelectChange('device_type_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Device Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {deviceTypes?.map((type) => (
+                    <SelectItem key={type.id} value={type.id.toString()}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="image_url">Image URL</Label>
+            <Input
+              id="image_url"
+              name="image_url"
+              value={formData.image_url}
+              onChange={handleInputChange}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="released_at">Release Date</Label>
+            <Input
+              id="released_at"
+              name="released_at"
+              type="date"
+              value={formData.released_at}
+              onChange={handleInputChange}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createModelMutation.isPending}>
+              {createModelMutation.isPending ? 'Creating...' : 'Create Model'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderEditModal = () => (
+    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Device Model</DialogTitle>
+          <DialogDescription>
+            Update the details of your device model.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleEditModel} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-slug">Slug</Label>
+              <Input
+                id="edit-slug"
+                name="slug"
+                value={formData.slug}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-brand_id">Brand</Label>
+              <Select
+                value={formData.brand_id}
+                onValueChange={(value) => handleSelectChange('brand_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id.toString()}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-device_type_id">Device Type</Label>
+              <Select
+                value={formData.device_type_id}
+                onValueChange={(value) => handleSelectChange('device_type_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Device Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {deviceTypes?.map((type) => (
+                    <SelectItem key={type.id} value={type.id.toString()}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-image_url">Image URL</Label>
+            <Input
+              id="edit-image_url"
+              name="image_url"
+              value={formData.image_url}
+              onChange={handleInputChange}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-description">Description</Label>
+            <Input
+              id="edit-description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-released_at">Release Date</Label>
+            <Input
+              id="edit-released_at"
+              name="released_at"
+              type="date"
+              value={formData.released_at}
+              onChange={handleInputChange}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateModelMutation.isPending}>
+              {updateModelMutation.isPending ? 'Updating...' : 'Update Model'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDeleteModal = () => (
+    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Device Model</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this device model? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="font-medium">
+            {selectedModel?.name}
+          </p>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            onClick={handleDeleteModel}
+            disabled={deleteModelMutation.isPending}
+          >
+            {deleteModelMutation.isPending ? 'Deleting...' : 'Delete Model'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Loading state
+  if (isLoadingModels || isLoadingBrands || isLoadingDeviceTypes) {
+    return (
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Device Model Management</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error handling for missing data
+  if (!deviceModels || !brands || !deviceTypes) {
+    return (
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Device Model Management</h1>
+        <div className="bg-red-50 p-4 rounded border border-red-200 text-red-700">
+          Error loading data. Please try refreshing the page.
+        </div>
+      </div>
+    );
+  }
+
+  // Get brand and device type names for each model
+  const getBrandName = (brandId: number) => {
+    const brand = brands.find((b) => b.id === brandId);
+    return brand ? brand.name : 'Unknown';
+  };
+
+  const getDeviceTypeName = (typeId: number) => {
+    const type = deviceTypes.find((t) => t.id === typeId);
+    return type ? type.name : 'Unknown';
+  };
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Model Management</h1>
-      <p>Device model management interface will be implemented here.</p>
+    <div className="py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Device Model Management</h1>
+        {renderAddModal()}
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <Table>
+          <TableCaption>List of device models in your catalog</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Brand</TableHead>
+              <TableHead>Device Type</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {deviceModels.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  No device models found. Add your first device model using the button above.
+                </TableCell>
+              </TableRow>
+            ) : (
+              deviceModels.map((model) => (
+                <TableRow key={model.id}>
+                  <TableCell className="font-medium">{model.id}</TableCell>
+                  <TableCell>{model.name}</TableCell>
+                  <TableCell>{model.slug}</TableCell>
+                  <TableCell>{getBrandName(model.brand_id)}</TableCell>
+                  <TableCell>{getDeviceTypeName(model.device_type_id)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => openEditModal(model)}
+                        title="Edit"
+                      >
+                        <Pencil size={16} />
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        onClick={() => openDeleteModal(model)}
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {renderEditModal()}
+      {renderDeleteModal()}
     </div>
   );
 };
