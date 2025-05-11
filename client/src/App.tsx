@@ -353,6 +353,7 @@ function App() {
                   <Route path="device-types" element={<AdminCQS />} />
                   <Route path="brands" element={<AdminBrands />} />
                   <Route path="models" element={<AdminModels />} />
+                  <Route path="device-models" element={<AdminModels />} />
                   <Route path="devices" element={<AdminDevices />} />
                   
                   {/* Buyback Program */}

@@ -567,7 +567,7 @@ const AdminModels: React.FC = () => {
 
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Device Models</h1>
         <div className="flex space-x-2">
           <Button onClick={() => refetchModels()} variant="outline">
@@ -575,7 +575,7 @@ const AdminModels: React.FC = () => {
           </Button>
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
                 <Plus size={16} />
                 Add New Model
               </Button>
@@ -795,6 +795,29 @@ const AdminModels: React.FC = () => {
               </form>
             </DialogContent>
           </Dialog>
+        </div>
+      </div>
+      
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 mt-0.5">
+            <svg className="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">Device Models Management</h3>
+            <div className="mt-1 text-sm text-blue-700">
+              <p>Here you can manage all device models available for buyback and sales. Use this page to:</p>
+              <ul className="list-disc ml-5 mt-1 space-y-1">
+                <li>Add new device models with their storage variants</li>
+                <li>Set pricing for different storage options and conditions</li>
+                <li>Edit existing devices or update their images</li>
+                <li>Manage which models are active in the buyback/sales system</li>
+              </ul>
+              <p className="mt-1 font-medium">Click the "Add New Model" button to create a new device.</p>
+            </div>
+          </div>
         </div>
       </div>
 
