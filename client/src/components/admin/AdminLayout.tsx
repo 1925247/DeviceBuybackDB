@@ -261,20 +261,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ logout }) => {
             {isSidebarOpen ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-700">A</span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <span className="text-sm font-medium text-white">A</span>
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-700">Admin User</p>
-                    <p className="text-xs text-gray-500">admin@example.com</p>
+                    <p className="text-xs text-gray-500">admin@gadgetswap.com</p>
                   </div>
                 </div>
                 {logout && <div>{logout}</div>}
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">A</span>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center mb-2">
+                  <span className="text-sm font-medium text-white">A</span>
                 </div>
                 {logout && <div>{logout}</div>}
               </div>
@@ -516,12 +516,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ logout }) => {
             <div className="p-4 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-700">A</span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <span className="text-sm font-medium text-white">A</span>
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-700">Admin User</p>
-                    <p className="text-xs text-gray-500">admin@example.com</p>
+                    <p className="text-xs text-gray-500">admin@gadgetswap.com</p>
                   </div>
                 </div>
                 {logout && <div>{logout}</div>}
