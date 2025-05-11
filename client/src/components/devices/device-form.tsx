@@ -214,12 +214,12 @@ export function DeviceForm({ open, onClose, editingDevice }: DeviceFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="apple">Apple</SelectItem>
-                        <SelectItem value="samsung">Samsung</SelectItem>
-                        <SelectItem value="google">Google</SelectItem>
-                        <SelectItem value="sony">Sony</SelectItem>
-                        <SelectItem value="microsoft">Microsoft</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {brands?.map(brand => (
+                          <SelectItem key={brand.id} value={brand.slug}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                        {!brands?.length && <SelectItem value="loading">Loading brands...</SelectItem>}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -235,9 +235,21 @@ export function DeviceForm({ open, onClose, editingDevice }: DeviceFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Model</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Pro Max" />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {deviceModels?.map(model => (
+                          <SelectItem key={model.id} value={model.slug}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                        {!deviceModels?.length && <SelectItem value="loading">Loading models...</SelectItem>}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -314,7 +326,7 @@ export function DeviceForm({ open, onClose, editingDevice }: DeviceFormProps) {
                 <FormItem>
                   <FormLabel>Specifications</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="128GB, Sierra Blue" />
+                    <Input {...field} placeholder="128GB, Sierra Blue" value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -332,6 +344,7 @@ export function DeviceForm({ open, onClose, editingDevice }: DeviceFormProps) {
                       {...field}
                       placeholder="Device description"
                       rows={3}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
