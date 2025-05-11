@@ -82,7 +82,13 @@ export interface IStorage {
   createConditionAnswer(answerData: any): Promise<any>;
   getConditionAnswers(): Promise<any[]>;
   deleteConditionAnswersByQuestionId(questionId: number): Promise<boolean>;
+  
+  // Valuation operations
   getValuations(deviceModelId?: number): Promise<any[]>;
+  createValuation(valuationData: any): Promise<any>;
+  updateValuation(id: number, valuationData: any): Promise<any | undefined>;
+  deleteValuation(id: number): Promise<boolean>;
+  deleteValuationsByModel(modelId: number): Promise<boolean>;
   
   // Database status
   getDatabaseStatus(): Promise<{
@@ -668,6 +674,83 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await baseQuery;
+  }
+  
+  // Create a new valuation entry
+  async createValuation(valuationData: any): Promise<any> {
+    try {
+      // Make sure required fields exist
+      if (!valuationData.device_model_id) {
+        throw new Error("device_model_id is required");
+      }
+      
+      // Insert the valuation
+      const [newValuation] = await db.insert(valuations)
+        .values({
+          device_model_id: valuationData.device_model_id,
+          variant: valuationData.variant || null,
+          condition: valuationData.condition || "Excellent",
+          base_price: valuationData.base_price || 0,
+          condition_multiplier: valuationData.condition_multiplier || 1.0,
+          active: valuationData.active !== undefined ? valuationData.active : true,
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+        .returning();
+      
+      return newValuation;
+    } catch (error) {
+      console.error("Error creating valuation:", error);
+      throw error;
+    }
+  }
+  
+  // Update an existing valuation entry
+  async updateValuation(id: number, valuationData: any): Promise<any | undefined> {
+    try {
+      const [updatedValuation] = await db.update(valuations)
+        .set({
+          variant: valuationData.variant !== undefined ? valuationData.variant : undefined,
+          condition: valuationData.condition !== undefined ? valuationData.condition : undefined,
+          base_price: valuationData.base_price !== undefined ? valuationData.base_price : undefined,
+          condition_multiplier: valuationData.condition_multiplier !== undefined ? valuationData.condition_multiplier : undefined,
+          active: valuationData.active !== undefined ? valuationData.active : undefined,
+          updated_at: new Date()
+        })
+        .where(eq(valuations.id, id))
+        .returning();
+      
+      return updatedValuation;
+    } catch (error) {
+      console.error(`Error updating valuation with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  // Delete a valuation entry
+  async deleteValuation(id: number): Promise<boolean> {
+    try {
+      await db.delete(valuations)
+        .where(eq(valuations.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting valuation with ID ${id}:`, error);
+      return false;
+    }
+  }
+  
+  // Delete all valuations for a specific device model
+  async deleteValuationsByModel(modelId: number): Promise<boolean> {
+    try {
+      await db.delete(valuations)
+        .where(eq(valuations.device_model_id, modelId));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting valuations for model ID ${modelId}:`, error);
+      return false;
+    }
   }
 
   // Database status

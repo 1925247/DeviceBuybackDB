@@ -881,6 +881,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete order" });
     }
   });
+  
+  // Settings API endpoints
+  app.get(apiRouter("/settings"), async (req: Request, res: Response) => {
+    try {
+      const settings = {
+        general: {
+          site_name: "GadgetSwap",
+          site_tagline: "Trade in your devices for cash or certified refurbished gadgets",
+          admin_email: "admin@gadgetswap.com",
+          contact_phone: "+1 (555) 123-4567",
+          contact_address: "123 Main St, City, State, ZIP",
+          logo_url: "/assets/logo.png",
+          favicon_url: "/assets/favicon.ico",
+          footer_text: "© 2023 GadgetSwap. All rights reserved.",
+          currency: "USD",
+          currency_symbol: "$",
+          date_format: "MM/DD/YYYY",
+          time_format: "h:mm a"
+        },
+        seo: {
+          meta_title: "GadgetSwap - Trade, Buy, and Sell Devices",
+          meta_description: "GadgetSwap offers competitive rates for device trade-ins and certified refurbished gadgets with free shipping and warranty.",
+          meta_keywords: "buyback, trade-in, refurbished, electronics, gadgets",
+          og_title: "GadgetSwap - Smart Device Trading",
+          og_description: "Get the best value for your used devices or shop our certified pre-owned collection.",
+          og_image: "/assets/social-share.png",
+          google_analytics_id: "",
+          google_tag_manager_id: "",
+          robots_txt: "User-agent: *\nAllow: /\nDisallow: /admin/",
+          sitemap_enabled: true,
+          canonical_domain: "https://www.gadgetswap.com"
+        },
+        buyback: {
+          buyback_enabled: true,
+          instant_quote_enabled: true,
+          min_device_age: "0",
+          max_device_age: "60",
+          inspection_period_days: "3",
+          payment_methods: "Bank Transfer, PayPal, Store Credit",
+          buyback_terms: "Terms and conditions for the buyback program.",
+          shipping_label_generation: false,
+          quality_control_required: true,
+          pricing_adjustment_percentage: "0"
+        },
+        marketplace: {
+          marketplace_enabled: true,
+          allow_user_listings: false,
+          commission_percentage: "10",
+          featured_listing_fee: "5",
+          min_listing_price: "10",
+          max_listing_price: "10000",
+          allowed_payment_methods: "Credit Card, PayPal, Apple Pay, Google Pay",
+          shipping_options: "Standard (3-5 days), Express (1-2 days)",
+          marketplace_terms: "Terms and conditions for the marketplace.",
+          return_policy_days: "30"
+        },
+        email: {
+          smtp_host: "",
+          smtp_port: "",
+          smtp_username: "",
+          smtp_password: "",
+          smtp_encryption: "",
+          from_email: "noreply@gadgetswap.com",
+          from_name: "GadgetSwap Support",
+          notification_emails_enabled: true,
+          customer_email_templates: "order_confirmation, buyback_request, shipping_notification",
+          admin_email_templates: "new_order, new_buyback_request, inventory_alert"
+        }
+      };
+      
+      // In the future, this would fetch from a database table
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get settings" });
+    }
+  });
+  
+  app.put(apiRouter("/settings"), async (req: Request, res: Response) => {
+    try {
+      const { category, settings } = req.body;
+      
+      // In a real implementation, this would update the settings in the database
+      console.log(`Updating ${category} settings:`, settings);
+      
+      // Return success response with the updated settings
+      res.json({ 
+        success: true, 
+        message: `${category} settings updated successfully`,
+        data: settings
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to update settings" });
+    }
+  });
+  
+  // API endpoint for valuations
+  app.post(apiRouter("/valuations"), async (req: Request, res: Response) => {
+    try {
+      const valuationData = req.body;
+      
+      // Create the valuation in the database
+      const newValuation = await storage.createValuation(valuationData);
+      
+      res.status(201).json(newValuation);
+    } catch (error: any) {
+      console.error("Error creating valuation:", error);
+      res.status(500).json({ message: error.message || "Failed to create valuation" });
+    }
+  });
+  
+  app.delete(apiRouter("/valuations/model/:modelId"), async (req: Request, res: Response) => {
+    try {
+      const modelId = parseInt(req.params.modelId);
+      
+      // Delete all valuations for this model from the database
+      const success = await storage.deleteValuationsByModel(modelId);
+      
+      res.json({ success });
+    } catch (error: any) {
+      console.error("Error deleting valuations:", error);
+      res.status(500).json({ message: error.message || "Failed to delete valuations" });
+    }
+  });
 
   const httpServer = createServer(app);
 

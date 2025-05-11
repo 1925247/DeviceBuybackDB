@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
-import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -31,31 +29,38 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
+import { Smartphone, Trash2, Edit, Plus, X, Loader, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 
-interface DeviceModel {
+// Define types
+interface DeviceType {
   id: number;
   name: string;
   slug: string;
-  brand_id: number;
-  device_type_id: number;
-  image: string;
-  active: boolean;
-  featured: boolean;
-  variants: string[];
-  brand?: {
-    id: number;
-    name: string;
-    slug: string;
-    logo: string;
-  };
-  deviceType?: {
-    id: number;
-    name: string;
-    slug: string;
-    icon: string;
-  };
-  created_at: string;
-  updated_at: string;
+  icon: string;
 }
 
 interface Brand {
@@ -63,70 +68,128 @@ interface Brand {
   name: string;
   slug: string;
   logo: string;
-  created_at: string;
-  updated_at: string;
 }
 
-interface DeviceType {
+interface DeviceModel {
   id: number;
   name: string;
   slug: string;
-  icon: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
+  image: string;
+  brand_id: number;
+  device_type_id: number;
+  active: boolean;
+  featured: boolean;
+  variants: string[] | null;
+  description?: string;
+  specs?: any;
+  brand?: Brand;
+  deviceType?: DeviceType;
+  created_at?: string;
+  updated_at?: string;
 }
+
+interface ValuationPrice {
+  condition: string;
+  price: number | string;
+  multiplier: number;
+}
+
+interface ModelFormData {
+  name: string;
+  brand_id: string;
+  device_type_id: string;
+  image: string;
+  active: boolean;
+  featured: boolean;
+  variants: string[];
+  description: string;
+  base_price: string;
+  valuations: ValuationPrice[];
+}
+
+const DEFAULT_VALUATIONS = [
+  { condition: 'Excellent', price: '', multiplier: 1.0 },
+  { condition: 'Good', price: '', multiplier: 0.8 },
+  { condition: 'Fair', price: '', multiplier: 0.6 },
+  { condition: 'Poor', price: '', multiplier: 0.4 }
+];
 
 const AdminModels: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<DeviceModel | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ModelFormData>({
     name: '',
-    slug: '',
     brand_id: '',
     device_type_id: '',
     image: '',
     active: true,
     featured: false,
-    variants: [] as string[],
+    variants: [''],
+    description: '',
+    base_price: '',
+    valuations: [...DEFAULT_VALUATIONS]
   });
+
   const { toast } = useToast();
 
   // Query hooks for fetching data
-  const { data: deviceModels, isLoading: isLoadingModels } = useQuery<DeviceModel[]>({
-    queryKey: ['/api/device-models'],
+  const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
+    queryKey: ['/api/device-types'],
   });
 
   const { data: brands, isLoading: isLoadingBrands } = useQuery<Brand[]>({
     queryKey: ['/api/brands'],
   });
 
-  const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
-    queryKey: ['/api/device-types'],
+  const { data: models, isLoading: isLoadingModels, refetch: refetchModels } = useQuery<DeviceModel[]>({
+    queryKey: ['/api/device-models'],
   });
 
-  // Mutation hooks for creating, updating, and deleting device models
+  // Mutation hooks for creating, updating, and deleting models
   const createModelMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: any) => {
+      // First create the model
       const response = await fetch('/api/device-models', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data.model),
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to create device model');
+        throw new Error(error.message || 'Failed to create model');
       }
       
-      return response.json();
+      const newModel = await response.json();
+      
+      // Then create the valuations for the model
+      if (data.valuations && data.valuations.length > 0) {
+        for (const valuation of data.valuations) {
+          await fetch('/api/valuations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              device_model_id: newModel.id,
+              condition: valuation.condition,
+              base_price: parseFloat(valuation.price.toString()),
+              condition_multiplier: valuation.multiplier,
+              active: true
+            }),
+          });
+        }
+      }
+      
+      return newModel;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/valuations'] });
       setIsAddModalOpen(false);
       resetForm();
       toast({
@@ -144,24 +207,54 @@ const AdminModels: React.FC = () => {
   });
 
   const updateModelMutation = useMutation({
-    mutationFn: async (data: typeof formData & { id: number }) => {
-      const response = await fetch(`/api/device-models/${data.id}`, {
+    mutationFn: async (data: any) => {
+      // First update the model
+      const response = await fetch(`/api/device-models/${data.model.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data.model),
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to update device model');
+        throw new Error(error.message || 'Failed to update model');
       }
       
-      return response.json();
+      const updatedModel = await response.json();
+      
+      // Then update the valuations for the model
+      // First, delete existing valuations
+      await fetch(`/api/valuations/model/${updatedModel.id}`, {
+        method: 'DELETE',
+      });
+      
+      // Then create new valuations
+      if (data.valuations && data.valuations.length > 0) {
+        for (const valuation of data.valuations) {
+          await fetch('/api/valuations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              device_model_id: updatedModel.id,
+              condition: valuation.condition,
+              base_price: parseFloat(valuation.price.toString()),
+              condition_multiplier: valuation.multiplier,
+              active: true,
+              variant: data.model.variant || null
+            }),
+          });
+        }
+      }
+      
+      return updatedModel;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/valuations'] });
       setIsEditModalOpen(false);
       resetForm();
       toast({
@@ -180,19 +273,26 @@ const AdminModels: React.FC = () => {
 
   const deleteModelMutation = useMutation({
     mutationFn: async (id: number) => {
+      // First delete all valuations for this model
+      await fetch(`/api/valuations/model/${id}`, {
+        method: 'DELETE',
+      });
+      
+      // Then delete the model
       const response = await fetch(`/api/device-models/${id}`, {
         method: 'DELETE',
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to delete device model');
+        throw new Error(error.message || 'Failed to delete model');
       }
       
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/valuations'] });
       setIsDeleteModalOpen(false);
       setSelectedModel(null);
       toast({
@@ -213,17 +313,19 @@ const AdminModels: React.FC = () => {
   const resetForm = () => {
     setFormData({
       name: '',
-      slug: '',
       brand_id: '',
       device_type_id: '',
       image: '',
       active: true,
       featured: false,
-      variants: [],
+      variants: [''],
+      description: '',
+      base_price: '',
+      valuations: [...DEFAULT_VALUATIONS]
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -232,15 +334,107 @@ const AdminModels: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setFormData((prev) => ({ ...prev, [name]: checked }));
+  };
+
+  const handleVariantChange = (index: number, value: string) => {
+    const updatedVariants = [...formData.variants];
+    updatedVariants[index] = value;
+    setFormData((prev) => ({ ...prev, variants: updatedVariants }));
+  };
+
+  const handleValuationChange = (index: number, field: 'price', value: string) => {
+    const updatedValuations = [...formData.valuations];
+    updatedValuations[index] = { ...updatedValuations[index], [field]: value };
+    
+    // Update base price if changing the Excellent condition price
+    if (index === 0 && field === 'price' && value) {
+      setFormData((prev) => ({ 
+        ...prev, 
+        base_price: value,
+        valuations: updatedValuations 
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, valuations: updatedValuations }));
+    }
+  };
+
+  const addVariant = () => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: [...prev.variants, '']
+    }));
+  };
+
+  const removeVariant = (index: number) => {
+    if (formData.variants.length > 1) {
+      const updatedVariants = formData.variants.filter((_, i) => i !== index);
+      setFormData((prev) => ({ ...prev, variants: updatedVariants }));
+    }
+  };
+
   const handleAddModel = (e: React.FormEvent) => {
     e.preventDefault();
-    createModelMutation.mutate(formData);
+    
+    // Filter out empty variants
+    const filteredVariants = formData.variants.filter(v => v.trim() !== '');
+    
+    // Calculate pricing for different conditions
+    const valuations = formData.valuations.map(v => ({
+      ...v,
+      price: v.price || (parseFloat(formData.base_price) * v.multiplier).toString()
+    }));
+    
+    // Prepare model data
+    const modelData = {
+      model: {
+        name: formData.name,
+        brand_id: parseInt(formData.brand_id),
+        device_type_id: parseInt(formData.device_type_id),
+        image: formData.image,
+        active: formData.active,
+        featured: formData.featured,
+        variants: filteredVariants.length > 0 ? filteredVariants : null,
+        description: formData.description || null,
+        slug: formData.name.toLowerCase().replace(/\s+/g, '-')
+      },
+      valuations: valuations
+    };
+    
+    createModelMutation.mutate(modelData);
   };
 
   const handleEditModel = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedModel) {
-      updateModelMutation.mutate({ ...formData, id: selectedModel.id });
+      // Filter out empty variants
+      const filteredVariants = formData.variants.filter(v => v.trim() !== '');
+      
+      // Calculate pricing for different conditions
+      const valuations = formData.valuations.map(v => ({
+        ...v,
+        price: v.price || (parseFloat(formData.base_price) * v.multiplier).toString()
+      }));
+      
+      // Prepare model data
+      const modelData = {
+        model: {
+          id: selectedModel.id,
+          name: formData.name,
+          brand_id: parseInt(formData.brand_id),
+          device_type_id: parseInt(formData.device_type_id),
+          image: formData.image,
+          active: formData.active,
+          featured: formData.featured,
+          variants: filteredVariants.length > 0 ? filteredVariants : null,
+          description: formData.description || null,
+          slug: formData.name.toLowerCase().replace(/\s+/g, '-')
+        },
+        valuations: valuations
+      };
+      
+      updateModelMutation.mutate(modelData);
     }
   };
 
@@ -252,17 +446,74 @@ const AdminModels: React.FC = () => {
 
   const openEditModal = (model: DeviceModel) => {
     setSelectedModel(model);
-    setFormData({
-      name: model.name,
-      slug: model.slug,
-      brand_id: model.brand_id.toString(),
-      device_type_id: model.device_type_id.toString(),
-      image: model.image || '',
-      active: model.active,
-      featured: model.featured,
-      variants: model.variants || [],
-    });
-    setIsEditModalOpen(true);
+    
+    // Fetch valuations for this model
+    const fetchValuations = async () => {
+      try {
+        const response = await fetch(`/api/valuations?deviceModelId=${model.id}`);
+        const valuationData = await response.json();
+        
+        let modelValuations = [...DEFAULT_VALUATIONS];
+        
+        // If we have valuations in the database, use them
+        if (valuationData && valuationData.length > 0) {
+          // Map valuations to our format
+          modelValuations = modelValuations.map(defaultVal => {
+            const match = valuationData.find((v: any) => 
+              v.condition.toLowerCase() === defaultVal.condition.toLowerCase()
+            );
+            
+            if (match) {
+              return {
+                condition: defaultVal.condition,
+                price: match.base_price.toString(),
+                multiplier: match.condition_multiplier
+              };
+            }
+            
+            return defaultVal;
+          });
+        }
+        
+        // Get the base price (price for excellent condition)
+        const basePrice = modelValuations[0]?.price || '';
+        
+        setFormData({
+          name: model.name,
+          brand_id: model.brand_id.toString(),
+          device_type_id: model.device_type_id.toString(),
+          image: model.image || '',
+          active: model.active,
+          featured: model.featured,
+          variants: model.variants || [''],
+          description: model.description || '',
+          base_price: basePrice.toString(),
+          valuations: modelValuations
+        });
+        
+        setIsEditModalOpen(true);
+      } catch (error) {
+        console.error("Error fetching valuations:", error);
+        
+        // Still open the edit modal with default values
+        setFormData({
+          name: model.name,
+          brand_id: model.brand_id.toString(),
+          device_type_id: model.device_type_id.toString(),
+          image: model.image || '',
+          active: model.active,
+          featured: model.featured,
+          variants: model.variants || [''],
+          description: model.description || '',
+          base_price: '',
+          valuations: [...DEFAULT_VALUATIONS]
+        });
+        
+        setIsEditModalOpen(true);
+      }
+    };
+    
+    fetchValuations();
   };
 
   const openDeleteModal = (model: DeviceModel) => {
@@ -270,594 +521,691 @@ const AdminModels: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  // Render functions
-  // State for handling variants
-  const [variantInput, setVariantInput] = useState('');
-  
-  const addVariant = () => {
-    if (variantInput.trim() !== '') {
-      setFormData(prev => ({
-        ...prev,
-        variants: [...prev.variants, variantInput.trim()]
-      }));
-      setVariantInput('');
+  // When base price changes, update all condition prices
+  useEffect(() => {
+    if (formData.base_price) {
+      const basePrice = parseFloat(formData.base_price);
+      if (!isNaN(basePrice)) {
+        const updatedValuations = formData.valuations.map(v => ({
+          ...v,
+          price: (basePrice * v.multiplier).toFixed(2)
+        }));
+        
+        setFormData(prev => ({
+          ...prev,
+          valuations: updatedValuations
+        }));
+      }
     }
-  };
+  }, [formData.base_price]);
 
-  const removeVariant = (indexToRemove: number) => {
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.filter((_, index) => index !== indexToRemove)
-    }));
-  };
-
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: checked }));
-  };
-
-  const renderAddModal = () => (
-    <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-      <DialogTrigger asChild>
-        <Button className="mb-4 flex items-center gap-2">
-          <PlusCircle size={16} />
-          Add New Model
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Add New Device Model</DialogTitle>
-          <DialogDescription>
-            Create a new device model for your catalog.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleAddModel} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                name="slug"
-                value={formData.slug}
-                onChange={handleInputChange}
-                required
-              />
-              <p className="text-xs text-gray-500">
-                Used in URLs (e.g., "iphone-14-pro")
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="brand_id">Brand</Label>
-              <Select
-                value={formData.brand_id}
-                onValueChange={(value) => handleSelectChange('brand_id', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands?.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id.toString()}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="device_type_id">Device Type</Label>
-              <Select
-                value={formData.device_type_id}
-                onValueChange={(value) => handleSelectChange('device_type_id', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Device Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {deviceTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.id.toString()}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
-            <Input
-              id="image"
-              name="image"
-              value={formData.image}
-              onChange={handleInputChange}
-              placeholder="/assets/models/model-name.png or https://..."
-            />
-            <p className="text-xs text-gray-500">
-              Path to device image (local or external URL)
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="active"
-                name="active"
-                checked={formData.active}
-                onChange={handleCheckboxChange}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
-              />
-              <Label htmlFor="active" className="cursor-pointer">Active</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="featured"
-                name="featured"
-                checked={formData.featured}
-                onChange={handleCheckboxChange}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
-              />
-              <Label htmlFor="featured" className="cursor-pointer">Featured on Homepage</Label>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Variants</Label>
-            <div className="flex flex-col space-y-2">
-              <div className="flex space-x-2">
-                <Input 
-                  placeholder="Add a variant (e.g., 128GB, 256GB)"
-                  value={variantInput}
-                  onChange={(e) => setVariantInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addVariant();
-                    }
-                  }}
-                />
-                <Button 
-                  type="button" 
-                  onClick={addVariant}
-                  variant="outline"
-                >
-                  Add
-                </Button>
-              </div>
-              
-              {formData.variants.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.variants.map((variant, index) => (
-                    <div key={index} className="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-1">
-                      <span>{variant}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(index)}
-                        className="text-gray-500 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createModelMutation.isPending}>
-              {createModelMutation.isPending ? 'Creating...' : 'Create Model'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-
-  const renderEditModal = () => (
-    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Edit Device Model</DialogTitle>
-          <DialogDescription>
-            Update the details of your device model.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleEditModel} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input
-                id="edit-name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-slug">Slug</Label>
-              <Input
-                id="edit-slug"
-                name="slug"
-                value={formData.slug}
-                onChange={handleInputChange}
-                required
-              />
-              <p className="text-xs text-gray-500">
-                Used in URLs (e.g., "iphone-14-pro")
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-brand_id">Brand</Label>
-              <Select
-                value={formData.brand_id}
-                onValueChange={(value) => handleSelectChange('brand_id', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands?.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id.toString()}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-device_type_id">Device Type</Label>
-              <Select
-                value={formData.device_type_id}
-                onValueChange={(value) => handleSelectChange('device_type_id', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Device Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {deviceTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.id.toString()}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="edit-image">Image URL</Label>
-            <Input
-              id="edit-image"
-              name="image"
-              value={formData.image}
-              onChange={handleInputChange}
-              placeholder="/assets/models/model-name.png or https://..."
-            />
-            <p className="text-xs text-gray-500">
-              Path to device image (local or external URL)
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="edit-active"
-                name="active"
-                checked={formData.active}
-                onChange={handleCheckboxChange}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
-              />
-              <Label htmlFor="edit-active" className="cursor-pointer">Active</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="edit-featured"
-                name="featured"
-                checked={formData.featured}
-                onChange={handleCheckboxChange}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
-              />
-              <Label htmlFor="edit-featured" className="cursor-pointer">Featured on Homepage</Label>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Variants</Label>
-            <div className="flex flex-col space-y-2">
-              <div className="flex space-x-2">
-                <Input 
-                  placeholder="Add a variant (e.g., 128GB, 256GB)"
-                  value={variantInput}
-                  onChange={(e) => setVariantInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addVariant();
-                    }
-                  }}
-                />
-                <Button 
-                  type="button" 
-                  onClick={addVariant}
-                  variant="outline"
-                >
-                  Add
-                </Button>
-              </div>
-              
-              {formData.variants.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.variants.map((variant, index) => (
-                    <div key={index} className="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-1">
-                      <span>{variant}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(index)}
-                        className="text-gray-500 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateModelMutation.isPending}>
-              {updateModelMutation.isPending ? 'Updating...' : 'Update Model'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-
-  const renderDeleteModal = () => (
-    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Delete Device Model</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this device model? This action cannot be undone.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4">
-          <p className="font-medium">
-            {selectedModel?.name}
-          </p>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-            Cancel
-          </Button>
-          <Button 
-            type="button" 
-            variant="destructive" 
-            onClick={handleDeleteModel}
-            disabled={deleteModelMutation.isPending}
-          >
-            {deleteModelMutation.isPending ? 'Deleting...' : 'Delete Model'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Loading state
-  if (isLoadingModels || isLoadingBrands || isLoadingDeviceTypes) {
+  if (isLoadingDeviceTypes || isLoadingBrands || isLoadingModels) {
     return (
-      <div className="py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">Device Model Management</h1>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Device Models</h1>
+        </div>
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading device models...</p>
         </div>
       </div>
     );
   }
 
-  // Error handling for missing data
-  if (!deviceModels || !brands || !deviceTypes) {
-    return (
-      <div className="py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">Device Model Management</h1>
-        <div className="bg-red-50 p-4 rounded border border-red-200 text-red-700">
-          Error loading data. Please try refreshing the page.
-        </div>
-      </div>
-    );
-  }
+  // Group models by device type
+  const modelsByType: Record<string, DeviceModel[]> = {};
+  models?.forEach(model => {
+    const deviceType = model.deviceType?.name || 'Other';
+    if (!modelsByType[deviceType]) {
+      modelsByType[deviceType] = [];
+    }
+    modelsByType[deviceType].push(model);
+  });
 
-  // Get brand and device type names for each model
-  const getBrandName = (brandId: number) => {
-    const brand = brands.find((b) => b.id === brandId);
-    return brand ? brand.name : 'Unknown';
-  };
-
-  const getDeviceTypeName = (typeId: number) => {
-    const type = deviceTypes.find((t) => t.id === typeId);
-    return type ? type.name : 'Unknown';
-  };
+  const deviceTypeOptions = Object.keys(modelsByType);
 
   return (
-    <div className="py-8 px-4">
+    <div className="p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Device Model Management</h1>
-        {renderAddModal()}
+        <h1 className="text-2xl font-bold">Device Models</h1>
+        <div className="flex space-x-2">
+          <Button onClick={() => refetchModels()} variant="outline">
+            Refresh
+          </Button>
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus size={16} />
+                Add New Model
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Device Model</DialogTitle>
+                <DialogDescription>
+                  Create a new device model with variants and pricing.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddModel} className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Model Name</Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="e.g., iPhone 15 Pro"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="brand_id">Brand</Label>
+                      <Select
+                        value={formData.brand_id}
+                        onValueChange={(value) => handleSelectChange('brand_id', value)}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Brand" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {brands?.map((brand) => (
+                            <SelectItem key={brand.id} value={brand.id.toString()}>
+                              {brand.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="device_type_id">Device Type</Label>
+                      <Select
+                        value={formData.device_type_id}
+                        onValueChange={(value) => handleSelectChange('device_type_id', value)}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Device Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deviceTypes?.map((type) => (
+                            <SelectItem key={type.id} value={type.id.toString()}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="image">Image URL</Label>
+                      <Input
+                        id="image"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleInputChange}
+                        placeholder="/assets/models/iphone-15-pro.png"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter the path to the image. For local images, use the format "/assets/models/filename.png".
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        placeholder="Brief description of the model"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="active"
+                        checked={formData.active}
+                        onCheckedChange={(checked) => 
+                          handleCheckboxChange('active', checked as boolean)
+                        }
+                      />
+                      <Label htmlFor="active" className="cursor-pointer">Active</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="featured"
+                        checked={formData.featured}
+                        onCheckedChange={(checked) => 
+                          handleCheckboxChange('featured', checked as boolean)
+                        }
+                      />
+                      <Label htmlFor="featured" className="cursor-pointer">Featured</Label>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Variants</Label>
+                        <Button 
+                          type="button" 
+                          onClick={addVariant}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Variant
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {formData.variants.map((variant, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={variant}
+                              onChange={(e) => handleVariantChange(index, e.target.value)}
+                              placeholder="e.g., 128GB, 256GB, etc."
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeVariant(index)}
+                              disabled={formData.variants.length <= 1}
+                              className="h-9 w-9"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Add storage options or other variants.
+                      </p>
+                    </div>
+                    
+                    <div className="mt-6">
+                      <div className="mb-2">
+                        <Label htmlFor="base_price">Base Price (Excellent Condition)</Label>
+                        <Input
+                          id="base_price"
+                          name="base_price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.base_price}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="e.g., 999.99"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          The price for a device in excellent condition.
+                        </p>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <Label>Condition-based Pricing</Label>
+                        <div className="mt-2 space-y-3 border rounded-md p-3">
+                          {formData.valuations.map((valuation, index) => (
+                            <div key={index} className="grid grid-cols-2 gap-2">
+                              <div className="font-medium text-sm flex items-center">
+                                {valuation.condition} ({(valuation.multiplier * 100).toFixed(0)}%)
+                              </div>
+                              <div>
+                                <Input
+                                  value={valuation.price.toString()}
+                                  onChange={(e) => handleValuationChange(index, 'price', e.target.value)}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder={`${valuation.condition} price`}
+                                  disabled={index === 0} // Excellent is tied to base price
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Prices are calculated automatically based on condition multipliers.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <DialogFooter className="mt-6">
+                  <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createModelMutation.isPending}>
+                    {createModelMutation.isPending ? (
+                      <><Loader size={16} className="mr-2 animate-spin" /> Creating...</>
+                    ) : (
+                      'Create Model'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <Table>
-          <TableCaption>List of device models in your catalog</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">ID</TableHead>
-              <TableHead>Image</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Brand</TableHead>
-              <TableHead>Device Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Variants</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {deviceModels.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  No device models found. Add your first device model using the button above.
-                </TableCell>
-              </TableRow>
-            ) : (
-              deviceModels.map((model) => (
-                <TableRow key={model.id} className={!model.active ? "bg-gray-50" : ""}>
-                  <TableCell className="font-medium">{model.id}</TableCell>
-                  <TableCell>
-                    {model.image ? (
+      <Tabs defaultValue={deviceTypeOptions[0] || 'all'} className="mb-6">
+        <TabsList className="mb-2">
+          {deviceTypeOptions.map((type) => (
+            <TabsTrigger key={type} value={type}>
+              {type} ({modelsByType[type].length})
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {deviceTypeOptions.map((type) => (
+          <TabsContent key={type} value={type}>
+            <Card>
+              <CardHeader>
+                <CardTitle>{type} Models</CardTitle>
+                <CardDescription>
+                  Manage {type.toLowerCase()} models and their configurations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {modelsByType[type].length > 0 ? (
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Brand</TableHead>
+                          <TableHead>Variants</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {modelsByType[type].map((model) => (
+                          <TableRow key={model.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {model.image ? (
+                                  <div className="h-8 w-8 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
+                                    <img 
+                                      src={model.image} 
+                                      alt={model.name} 
+                                      className="h-full w-full object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = '/assets/placeholder.png';
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="h-8 w-8 rounded bg-gray-100 flex items-center justify-center">
+                                    <Smartphone size={16} className="text-gray-500" />
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-medium">{model.name}</p>
+                                  <p className="text-xs text-gray-500">ID: {model.id}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {model.brand?.name || 'Unknown Brand'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {model.variants ? (
+                                  model.variants.map((variant, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                      {variant}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <span className="text-gray-500 text-sm">No variants</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={model.active ? "success" : "secondary"} className="whitespace-nowrap">
+                                  {model.active ? 'Active' : 'Inactive'}
+                                </Badge>
+                                {model.featured && (
+                                  <Badge variant="default" className="bg-amber-500">
+                                    Featured
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditModal(model)}
+                                  title="Edit Model"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openDeleteModal(model)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Delete Model"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500">No {type.toLowerCase()} models found.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Device Model</DialogTitle>
+            <DialogDescription>
+              Update the device model details, variants, and pricing.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditModel} className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-name">Model Name</Label>
+                  <Input
+                    id="edit-name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-brand_id">Brand</Label>
+                  <Select
+                    value={formData.brand_id}
+                    onValueChange={(value) => handleSelectChange('brand_id', value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands?.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id.toString()}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-device_type_id">Device Type</Label>
+                  <Select
+                    value={formData.device_type_id}
+                    onValueChange={(value) => handleSelectChange('device_type_id', value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Device Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deviceTypes?.map((type) => (
+                        <SelectItem key={type.id} value={type.id.toString()}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-image">Image URL</Label>
+                  <Input
+                    id="edit-image"
+                    name="image"
+                    value={formData.image}
+                    onChange={handleInputChange}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter the path to the image. For local images, use the format "/assets/models/filename.png".
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Brief description of the model"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="edit-active"
+                    checked={formData.active}
+                    onCheckedChange={(checked) => 
+                      handleCheckboxChange('active', checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="edit-active" className="cursor-pointer">Active</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="edit-featured"
+                    checked={formData.featured}
+                    onCheckedChange={(checked) => 
+                      handleCheckboxChange('featured', checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="edit-featured" className="cursor-pointer">Featured</Label>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Variants</Label>
+                    <Button 
+                      type="button" 
+                      onClick={addVariant}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Variant
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {formData.variants.map((variant, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={variant}
+                          onChange={(e) => handleVariantChange(index, e.target.value)}
+                          placeholder="e.g., 128GB, 256GB, etc."
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeVariant(index)}
+                          disabled={formData.variants.length <= 1}
+                          className="h-9 w-9"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Add storage options or other variants.
+                  </p>
+                </div>
+                
+                <div className="mt-6">
+                  <div className="mb-2">
+                    <Label htmlFor="edit-base_price">Base Price (Excellent Condition)</Label>
+                    <Input
+                      id="edit-base_price"
+                      name="base_price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.base_price}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      The price for a device in excellent condition.
+                    </p>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <Label>Condition-based Pricing</Label>
+                    <div className="mt-2 space-y-3 border rounded-md p-3">
+                      {formData.valuations.map((valuation, index) => (
+                        <div key={index} className="grid grid-cols-2 gap-2">
+                          <div className="font-medium text-sm flex items-center">
+                            {valuation.condition} ({(valuation.multiplier * 100).toFixed(0)}%)
+                          </div>
+                          <div>
+                            <Input
+                              value={valuation.price.toString()}
+                              onChange={(e) => handleValuationChange(index, 'price', e.target.value)}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder={`${valuation.condition} price`}
+                              disabled={index === 0} // Excellent is tied to base price
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Prices are calculated automatically based on condition multipliers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateModelMutation.isPending}>
+                {updateModelMutation.isPending ? (
+                  <><Loader size={16} className="mr-2 animate-spin" /> Updating...</>
+                ) : (
+                  'Update Model'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Device Model</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this device model? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedModel && (
+            <div className="py-4">
+              <div className="bg-gray-50 p-4 rounded-md space-y-2">
+                <div className="flex items-center gap-2">
+                  {selectedModel.image && (
+                    <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
                       <img 
-                        src={model.image} 
-                        alt={model.name} 
-                        className="h-10 w-auto object-contain rounded"
+                        src={selectedModel.image} 
+                        alt={selectedModel.name} 
+                        className="h-full w-full object-contain"
                         onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://placehold.co/60x60?text=No+Image';
+                          (e.target as HTMLImageElement).src = '/assets/placeholder.png';
                         }}
                       />
-                    ) : (
-                      <div className="h-10 w-10 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">
-                        No image
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{model.name}</div>
-                    <div className="text-xs text-gray-500">{model.slug}</div>
-                    {model.featured && (
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 mt-1">
-                        Featured
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {model.brand ? (
-                      <div className="flex items-center space-x-2">
-                        {model.brand.logo && (
-                          <img 
-                            src={model.brand.logo} 
-                            alt={model.brand.name} 
-                            className="h-5 w-5 object-contain"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://placehold.co/20x20?text=B';
-                            }}
-                          />
-                        )}
-                        <span>{model.brand.name}</span>
-                      </div>
-                    ) : (
-                      getBrandName(model.brand_id)
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {model.deviceType ? (
-                      model.deviceType.name
-                    ) : (
-                      getDeviceTypeName(model.device_type_id)
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {model.active ? (
-                      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                        Inactive
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {model.variants && model.variants.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {model.variants.slice(0, 3).map((variant, idx) => (
-                          <span key={idx} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-                            {variant}
-                          </span>
-                        ))}
-                        {model.variants.length > 3 && (
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-                            +{model.variants.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-500">No variants</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => openEditModal(model)}
-                        title="Edit"
-                      >
-                        <Pencil size={16} />
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
-                        onClick={() => openDeleteModal(model)}
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {renderEditModal()}
-      {renderDeleteModal()}
+                  )}
+                  <div>
+                    <p className="font-medium">{selectedModel.name}</p>
+                    <p className="text-sm text-gray-500">{selectedModel.brand?.name}</p>
+                  </div>
+                </div>
+                
+                {selectedModel.variants && selectedModel.variants.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium">Variants:</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedModel.variants.map((variant, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {variant}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <p className="text-sm text-red-600">
+                  <strong>Warning:</strong> This will also delete all associated valuations and pricing data.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteModel}
+              disabled={deleteModelMutation.isPending}
+            >
+              {deleteModelMutation.isPending ? (
+                <><Loader size={16} className="mr-2 animate-spin" /> Deleting...</>
+              ) : (
+                'Delete Model'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
