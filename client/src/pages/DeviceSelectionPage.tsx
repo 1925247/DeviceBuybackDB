@@ -1,15 +1,47 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { deviceTypes } from '../db/devicetype';
-import { brands } from '../db/brands';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useModels } from '../contexts/ModelsContext';
 
 const DeviceSelectionPage: React.FC = () => {
   // Retrieve the deviceType parameter from the URL.
   const { deviceType: deviceTypeParam } = useParams<{ deviceType: string }>();
+  
+  // Get data from context
+  const { deviceTypes, brands, isLoading, isError } = useModels();
 
   // Find the matching device type object using the slug.
   const deviceTypeObj = deviceTypes.find(dt => dt.slug === deviceTypeParam);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-medium">Loading device information...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (isError) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-4">Error Loading Data</h2>
+          <p className="mb-8">There was a problem loading the device information. Please try again later.</p>
+          <Link 
+            to="/" 
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition duration-300"
+          >
+            Go Back Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // If deviceType is missing or invalid, show an error message.
   if (!deviceTypeParam || !deviceTypeObj) {
@@ -29,8 +61,8 @@ const DeviceSelectionPage: React.FC = () => {
     );
   }
 
-  // For now, we'll display all brands as we don't have the device-type association yet
-  // Later, this will be replaced with data from the database that has proper device type associations
+  // For now, we'll display all brands as we don't have the device-type association yet in the database
+  // Later, this can be filtered by device type when that relationship is established
   const filteredBrands = brands;
 
   return (

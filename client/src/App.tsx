@@ -93,7 +93,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <HomePage />
+                      <ModelsProvider>
+                        <HomePage />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -150,12 +152,28 @@ function App() {
 
               {/* Sell Flow Routes */}
               <Route
+                path="/sell/device-selection"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <DeviceSelectionPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
                 path="/sell/:deviceType"
                 element={
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <DeviceSelectionPage />
+                      <ModelsProvider>
+                        <DeviceSelectionPage />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -167,7 +185,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <ModelSelectionPage />
+                      <ModelsProvider>
+                        <ModelSelectionPage />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -179,7 +199,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <ConditionAssessmentPage />
+                      <ModelsProvider>
+                        <ConditionAssessmentPage />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -191,7 +213,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <ValuationPage />
+                      <ModelsProvider>
+                        <ValuationPage />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -229,7 +253,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <BuyHome />
+                      <ModelsProvider>
+                        <BuyHome />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -241,7 +267,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <BuyProduct />
+                      <ModelsProvider>
+                        <BuyProduct />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -253,7 +281,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <ProductDetails />
+                      <ModelsProvider>
+                        <ProductDetails />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -265,7 +295,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <BuyCheckout />
+                      <ModelsProvider>
+                        <BuyCheckout />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -277,7 +309,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <BuyPayment />
+                      <ModelsProvider>
+                        <BuyPayment />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
@@ -289,7 +323,9 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <BuyInvoice />
+                      <ModelsProvider>
+                        <BuyInvoice />
+                      </ModelsProvider>
                     </main>
                     <Footer />
                   </>
