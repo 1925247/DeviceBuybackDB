@@ -17,16 +17,49 @@ const AdminLogin: React.FC = () => {
     }
 
     try {
-      // Simulating admin login - in production, this would be a real API call
-      if (username === 'admin' && password === 'admin123') {
-        // Store the token in session storage
+      // Check for hard-coded admin credentials (for development)
+      if ((username === 'admin@gadgetswap.com' && password === 'admin123') ||
+          (username === 'test@example.com' && password === 'hashed_password')) {
+        // Store the token and user info
+        const adminData = {
+          id: username === 'admin@gadgetswap.com' ? 2 : 1,
+          email: username,
+          firstName: 'Admin',
+          lastName: 'User',
+          role: 'admin'
+        };
+        
+        // Store in both session and local storage for persistence
         sessionStorage.setItem('adminToken', 'admin-token-123');
+        sessionStorage.setItem('adminData', JSON.stringify(adminData));
+        
+        // For persistence across browser restarts
+        localStorage.setItem('adminToken', 'admin-token-123');
+        localStorage.setItem('adminData', JSON.stringify(adminData));
+        
         navigate('/admin');
       } else {
-        setError('Invalid username or password');
+        // In production, this would call an API
+        // const response = await fetch('/api/admin/login', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ email: username, password })
+        // });
+        
+        // if (response.ok) {
+        //   const data = await response.json();
+        //   sessionStorage.setItem('adminToken', data.token);
+        //   sessionStorage.setItem('adminData', JSON.stringify(data.user));
+        //   navigate('/admin');
+        // } else {
+        //   setError('Invalid username or password');
+        // }
+        
+        setError('Invalid username or password. Please use admin@gadgetswap.com with password admin123');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
+      console.error('Login error:', err);
     }
   };
 
@@ -42,16 +75,16 @@ const AdminLogin: React.FC = () => {
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="username" className="sr-only">
-                Username
+                Email Address
               </label>
               <input
                 id="username"
                 name="username"
-                type="text"
-                autoComplete="username"
+                type="email"
+                autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
+                placeholder="Email Address (admin@gadgetswap.com)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -67,7 +100,7 @@ const AdminLogin: React.FC = () => {
                 autoComplete="current-password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                placeholder="Password (admin123)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
