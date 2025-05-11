@@ -5,7 +5,7 @@ import {
   insertDeviceSchema, insertUserSchema, insertBuybackRequestSchema, insertMarketplaceListingSchema, insertOrderSchema,
   type InsertUser, type InsertDevice, type InsertBuybackRequest, type InsertMarketplaceListing, type InsertOrder
 } from "@shared/schema";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -15,7 +15,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper for handling validation errors
   const validateRequest = <T>(schema: any, data: unknown): T => {
     try {
-      return schema.parse(data) as T;
+      const result = schema.parse(data);
+      return result as T;
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
