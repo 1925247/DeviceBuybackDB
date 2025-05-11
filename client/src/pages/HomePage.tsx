@@ -17,7 +17,8 @@ import {
 
 // Import dynamic content from shared data file
 import { homeData } from '../db/homeData';
-import { deviceTypes } from '../db/devicetype';
+// Use ModelsContext instead of static data
+import { useModels } from '../contexts/ModelsContext';
 
 // Helper function to map category colors to Tailwind classes
 const getBgClass = (color: string): string => {
@@ -43,6 +44,9 @@ const IconComponent = (iconName: string): React.ReactNode => {
 };
 
 const HomePage: React.FC = () => {
+  // Get device types from ModelsContext
+  const { deviceTypes, isLoading, error } = useModels();
+  
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -58,7 +62,7 @@ const HomePage: React.FC = () => {
             </p>
             <div className="mt-10">
               <Link
-                to="/sell"
+                to="/sell/device-selection"
                 className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-gray-50 transition-colors duration-200"
               >
                 {homeData.hero.ctaText}
@@ -122,29 +126,40 @@ const HomePage: React.FC = () => {
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {deviceTypes.map(category => (
-              <Link
-                key={category.id}
-                to={`/devices/${category.slug}`}
-                className="group relative rounded-lg overflow-hidden bg-white shadow hover:shadow-md transition-shadow duration-300"
-              >
-                <div className="p-6">
-                  <div className="mb-4">
-                    {IconComponent(category.icon)}
+            {isLoading ? (
+              <div className="col-span-4 text-center py-8">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+                <p className="mt-2 text-gray-600">Loading device types...</p>
+              </div>
+            ) : error ? (
+              <div className="col-span-4 text-center py-8 text-red-600">
+                <p>Error loading device types. Please try again later.</p>
+              </div>
+            ) : (
+              deviceTypes.map(category => (
+                <Link
+                  key={category.id}
+                  to={`/sell/${category.slug}`}
+                  className="group relative rounded-lg overflow-hidden bg-white shadow hover:shadow-md transition-shadow duration-300"
+                >
+                  <div className="p-6">
+                    <div className="mb-4">
+                      {IconComponent(category.icon)}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200">
+                      {category.name}
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-500">
+                      {category.description || `${category.name} devices`}
+                    </p>
+                    <div className="mt-4 flex items-center text-indigo-600 text-sm font-medium">
+                      Sell Your {category.name}
+                      <ArrowRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200">
-                    {category.name}
-                  </h3>
-                  <p className="mt-2 text-sm text-gray-500">
-                    {category.description}
-                  </p>
-                  <div className="mt-4 flex items-center text-indigo-600 text-sm font-medium">
-                    Sell Your {category.name}
-                    <ArrowRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -329,7 +344,7 @@ const HomePage: React.FC = () => {
               </div>
               <div className="mt-8 md:mt-0">
                 <Link
-                  to="/sell"
+                  to="/sell/device-selection"
                   className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors duration-200"
                 >
                   {homeData.cta.buttonText}
