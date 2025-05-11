@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, MapPin, Check, Info } from 'lucide-react';
-import { getLocationFromPincode } from '/home/project/src/api/pincode';
+import { getLocationFromPincode } from '../api/pincode';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',

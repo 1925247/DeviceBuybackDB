@@ -1,4 +1,6 @@
-// /home/project/api/pincode.ts
+/**
+ * API client for fetching location details from postal PIN code.
+ */
 
 export interface LocationData {
   city: string;
@@ -19,22 +21,42 @@ export interface LocationData {
  * @returns A promise that resolves to an object with city, state, and country
  */
 export const getLocationFromPincode = async (pincode: string): Promise<LocationData> => {
-  const url = `https://api.postalpincode.in/pincode/${pincode}`;
-  const response = await fetch(url);
-  const data = await response.json();
+  try {
+    // Validate input
+    if (!pincode || pincode.length !== 6 || isNaN(Number(pincode))) {
+      throw new Error('Invalid PIN code format. Please provide a 6-digit PIN code.');
+    }
 
-  // data is an array; we use the first element
-  const result = data[0];
-
-  if (result.Status.toLowerCase() !== 'success' || !result.PostOffice || result.PostOffice.length === 0) {
-    throw new Error('No location data found for this PIN Code');
+    const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // The API responds with an array of results
+    if (data && Array.isArray(data) && data.length > 0) {
+      if (data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+        const postOffice = data[0].PostOffice[0];
+        return {
+          city: postOffice.District || 'Unknown',
+          state: postOffice.State || 'Unknown',
+          country: postOffice.Country || 'India',
+        };
+      } else {
+        throw new Error('No location found for the provided PIN code.');
+      }
+    } else {
+      throw new Error('Invalid response from PIN code API.');
+    }
+  } catch (error) {
+    console.error('Error fetching location from PIN code:', error);
+    // Return default or placeholder data in case of error
+    return {
+      city: 'Unknown',
+      state: 'Unknown',
+      country: 'India',
+    };
   }
-
-  // Use the first post office details
-  const postOffice = result.PostOffice[0];
-  return {
-    city: postOffice.District, // District is used as the city
-    state: postOffice.State,
-    country: postOffice.Country,
-  };
 };

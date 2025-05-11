@@ -1,213 +1,252 @@
-// /home/project//data.js
+// Mock data for buy section of the marketplace
+// This will be replaced with database data in production
 
-export const categories = ['Smartphone', 'Laptop', 'Tablet', 'Smartwatch'];
+export const categories = [
+  { id: 1, name: 'Smartphones', slug: 'smartphones', iconName: 'smartphone' },
+  { id: 2, name: 'Tablets', slug: 'tablets', iconName: 'tablet' },
+  { id: 3, name: 'Laptops', slug: 'laptops', iconName: 'laptop' },
+  { id: 4, name: 'Smartwatches', slug: 'smartwatches', iconName: 'watch' },
+  { id: 5, name: 'Headphones', slug: 'headphones', iconName: 'headphones' },
+  { id: 6, name: 'Gaming', slug: 'gaming', iconName: 'gamepad' }
+];
 
-export const brands = {
-  Smartphone: ['Apple', 'Samsung', 'Google', 'OnePlus', 'Generic'],
-  Laptop: ['Apple', 'Dell', 'HP', 'Lenovo', 'Microsoft', 'Acer'],
-  Tablet: ['Apple', 'Samsung'],
-  Smartwatch: ['Apple', 'Samsung', 'Fitbit']
-};
+export const brands = [
+  { id: 1, name: 'Apple', slug: 'apple', logoUrl: '/assets/brands/apple.png' },
+  { id: 2, name: 'Samsung', slug: 'samsung', logoUrl: '/assets/brands/samsung.png' },
+  { id: 3, name: 'Google', slug: 'google', logoUrl: '/assets/brands/google.png' },
+  { id: 4, name: 'OnePlus', slug: 'oneplus', logoUrl: '/assets/brands/oneplus.png' },
+  { id: 5, name: 'Dell', slug: 'dell', logoUrl: '/assets/brands/dell.png' },
+  { id: 6, name: 'HP', slug: 'hp', logoUrl: '/assets/brands/hp.png' },
+  { id: 7, name: 'Sony', slug: 'sony', logoUrl: '/assets/brands/sony.png' }
+];
 
 export const products = [
   {
-    id: 'iphone-15-pro-max',
-    name: 'iPhone 15 Pro Max',
-    brand: 'Apple',
-    category: 'Smartphone',
-    price: 999,
-    discount: '10%',
-    rating: 4.8,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/a/r/5/-original-imagtc3kcmph6ax5.jpeg?q=70&crop=false'
-  },
-  {
-    id: 'galaxy-s23-ultra',
-    name: 'Galaxy S23 Ultra',    
-    brand: 'Samsung',
-    category: 'Smartphone',
+    id: 1,
+    name: 'iPhone 14 Pro Max',
+    slug: 'iphone-14-pro-max',
+    condition: 'Excellent',
+    categoryId: 1,
+    brandId: 1,
     price: 899,
-    discount: '15%',
+    originalPrice: 1199,
+    discountPercentage: 25,
+    storage: '256GB',
+    color: 'Space Black',
+    rating: 4.8,
+    reviewCount: 127,
+    imageUrl: '/assets/products/iphone-14-pro-max.jpg',
+    images: [
+      '/assets/products/iphone-14-pro-max-1.jpg',
+      '/assets/products/iphone-14-pro-max-2.jpg',
+      '/assets/products/iphone-14-pro-max-3.jpg'
+    ],
+    description: 'Refurbished iPhone 14 Pro Max in excellent condition. Includes 90-day warranty, original accessories, and free shipping.',
+    specifications: [
+      { name: 'Display', value: '6.7" Super Retina XDR' },
+      { name: 'Processor', value: 'A16 Bionic' },
+      { name: 'Camera', value: 'Triple 48MP system' },
+      { name: 'Battery', value: 'Up to 29 hours video playback' },
+      { name: 'Connectivity', value: '5G, Wi-Fi 6, Bluetooth 5.3' }
+    ],
+    features: [
+      'Dynamic Island',
+      'Always-On display',
+      'ProMotion technology',
+      'Ceramic Shield front',
+      'Face ID'
+    ],
+    inStock: true,
+    isFeatured: true
+  },
+  {
+    id: 2,
+    name: 'Samsung Galaxy S23 Ultra',
+    slug: 'samsung-galaxy-s23-ultra',
+    condition: 'Good',
+    categoryId: 1,
+    brandId: 2,
+    price: 799,
+    originalPrice: 1199,
+    discountPercentage: 33,
+    storage: '256GB',
+    color: 'Phantom Black',
     rating: 4.6,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/i/5/1/-original-imagzm8pvabtmeys.jpeg'
+    reviewCount: 89,
+    imageUrl: '/assets/products/galaxy-s23-ultra.jpg',
+    images: [
+      '/assets/products/galaxy-s23-ultra-1.jpg',
+      '/assets/products/galaxy-s23-ultra-2.jpg',
+      '/assets/products/galaxy-s23-ultra-3.jpg'
+    ],
+    description: 'Refurbished Samsung Galaxy S23 Ultra in good condition. Minor signs of use. Includes 90-day warranty and free shipping.',
+    specifications: [
+      { name: 'Display', value: '6.8" Dynamic AMOLED 2X' },
+      { name: 'Processor', value: 'Snapdragon 8 Gen 2' },
+      { name: 'Camera', value: 'Quad camera system with 200MP main' },
+      { name: 'Battery', value: '5,000mAh' },
+      { name: 'Connectivity', value: '5G, Wi-Fi 6E, Bluetooth 5.3' }
+    ],
+    features: [
+      'S Pen included',
+      'Corning Gorilla Glass Victus 2',
+      'IP68 water resistance',
+      'Ultra-wide camera',
+      'Space Zoom'
+    ],
+    inStock: true,
+    isFeatured: true
   },
   {
-    id: 'macbook-pro',
-    name: 'MacBook Pro 16" M3',
-    brand: 'Apple',
-    category: 'Laptop',
-    price: 1999,
-    discount: '5%',
-    rating: 4.9,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/computer/c/n/d/-original-imah697n9dharp9z.jpeg'
-  },
-  {
-    id: 'Google-Pixel-9',
-    name: 'Google Pixel 9',
-    brand: 'Googel',
-    category: 'Smartphone',
-    price: 499,
-    discount: '20%',
-    rating: 4.2,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/6/2/x/pixel-9-ga05844-in-google-original-imah3pfjs25yjvfy.jpeg'
-  },
-  {
-    id: 'Google-Pixel-8a',
-    name: 'DGoogle Pixel 8a',
-    brand: 'Googel',
-    category: 'Smartphone',
-    price: 499,
-    discount: '20%',
-    rating: 4.2,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/e/y/n/pixel-8a-ga04432-in-google-original-imahyn3mqzdbzywg.jpeg'
-  },
-  {
-    id: 'ipad-pro',
-    name: 'iPad Pro 12.9"',
-    brand: 'Apple',
-    category: 'Tablet',
-    price: 1099,
-    discount: '10%',
-    rating: 4.7,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/tablet/k/w/w/-original-imagj73ypffqjk6s.jpeg'
-  },
-  {
-    id: 'galaxy-tab-s10+',
-    name: 'Galaxy Tab S10+',
-    brand: 'Samsung',
-    category: 'Tablet',
-    price: 649,
-    discount: '15%',
-    rating: 4.5,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/tablet/f/n/g/sm-x820-samsung-original-imah5fwggq7x8acr.jpeg'
-  },
-  {
-    id: 'dell-xps-15',
-    name: 'Dell XPS 15',
-    brand: 'Dell',
-    category: 'Laptop',
-    price: 1499,
-    discount: '10%',
-    rating: 4.6,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/computer/g/r/x/-original-imah9kw9xxgga7qp.jpeg'
-  },
-  {
-    id: 'hp-spectre',
-    name: 'HP Spectre x360',
-    brand: 'HP',
-    category: 'Laptop',
+    id: 3,
+    name: 'MacBook Pro 14"',
+    slug: 'macbook-pro-14',
+    condition: 'Excellent',
+    categoryId: 3,
+    brandId: 1,
     price: 1399,
-    discount: '12%',
-    rating: 4.5,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/computer/f/a/b/ef2035tu-thin-and-light-laptop-hp-original-imagypz45uuzbccz.jpeg'
+    originalPrice: 1999,
+    discountPercentage: 30,
+    storage: '512GB',
+    color: 'Space Gray',
+    rating: 4.9,
+    reviewCount: 152,
+    imageUrl: '/assets/products/macbook-pro-14.jpg',
+    images: [
+      '/assets/products/macbook-pro-14-1.jpg',
+      '/assets/products/macbook-pro-14-2.jpg',
+      '/assets/products/macbook-pro-14-3.jpg'
+    ],
+    description: 'Refurbished MacBook Pro 14-inch with M2 Pro chip in excellent condition. Includes 1-year warranty, original charger, and free shipping.',
+    specifications: [
+      { name: 'Display', value: '14.2" Liquid Retina XDR' },
+      { name: 'Processor', value: 'M2 Pro' },
+      { name: 'Memory', value: '16GB unified memory' },
+      { name: 'Storage', value: '512GB SSD' },
+      { name: 'Battery', value: 'Up to 18 hours' }
+    ],
+    features: [
+      'ProMotion technology',
+      'MagSafe charging',
+      'HDMI port',
+      'SDXC card slot',
+      'Three Thunderbolt 4 ports'
+    ],
+    inStock: true,
+    isFeatured: true
   },
   {
-    id: 'lenovo-x1',
-    name: 'Lenovo ThinkPad X1',
-    brand: 'Lenovo',
-    category: 'Laptop',
-    price: 1599,
-    discount: '8%',
-    rating: 4.7,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/computer/g/s/6/thinkpad-e14-g5-business-laptop-lenovo-original-imah39reybrgff85.jpeg'
-  },
-  {
-    id: 'apple-watch-8',
-    name: 'Apple Watch Series 8',
-    brand: 'Apple',
-    category: 'Smartwatch',
-    price: 399,
-    discount: '5%',
-    rating: 4.8,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/smartwatch/q/m/q/-original-imaghxg9cwddrghx.jpeg'
-  },
-  {
-    id: 'samsung-watch-5',
-    name: 'Samsung Galaxy Watch 5',
-    brand: 'Samsung',
-    category: 'Smartwatch',
-    price: 349,
-    discount: '10%',
-    rating: 4.6,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/smartwatch/6/h/q/-original-imagh93ftfrw8dan.jpeg'
-  },
-  {
-    id: 'google-pixel-7',
-    name: 'Google Pixel 7',
-    brand: 'Google',
-    category: 'Smartphone',
-    price: 799,
-    discount: '5%',
-    rating: 4.7,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/g/x/9/-original-imaggsudg5fufyte.jpeg'
-  },
-  {
-    id: 'oneplus-11',
-    name: 'OnePlus 11',
-    brand: 'OnePlus',
-    category: 'Smartphone',
-    price: 699,
-    discount: '10%',
-    rating: 4.5,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/r/8/3/11-5g-b0bqjlcqd3-oneplus-original-imagmugsquuygsbg.jpeg'
-  },
-  {
-    id: 'surface-laptop-5',
-    name: 'Microsoft Surface Laptop 5',
-    brand: 'Microsoft',
-    category: 'Laptop',
-    price: 1299,
-    discount: '10%',
-    rating: 4.4,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/computer/p/1/b/-original-imah2pfgz59j955s.jpeg'
-  },
-  {
-    id: 'acer-swift-3',
-    name: 'Acer Swift 3',
-    brand: 'Acer',
-    category: 'Laptop',
+    id: 4,
+    name: 'iPad Pro 12.9"',
+    slug: 'ipad-pro-12-9',
+    condition: 'Good',
+    categoryId: 2,
+    brandId: 1,
     price: 899,
-    discount: '15%',
-    rating: 4.3,
-    image: 'https://rukminim2.flixcart.com/image/832/832/k6fd47k0pkrrdj/computer/t/4/h/acer-na-laptop-original-imafeggczxhxwsmt.jpeg'
+    originalPrice: 1299,
+    discountPercentage: 31,
+    storage: '256GB',
+    color: 'Silver',
+    rating: 4.7,
+    reviewCount: 76,
+    imageUrl: '/assets/products/ipad-pro-12-9.jpg',
+    images: [
+      '/assets/products/ipad-pro-12-9-1.jpg',
+      '/assets/products/ipad-pro-12-9-2.jpg',
+      '/assets/products/ipad-pro-12-9-3.jpg'
+    ],
+    description: 'Refurbished iPad Pro 12.9-inch in good condition. Minor signs of use. Includes 90-day warranty and free shipping.',
+    specifications: [
+      { name: 'Display', value: '12.9" Liquid Retina XDR' },
+      { name: 'Processor', value: 'M2 chip' },
+      { name: 'Memory', value: '8GB RAM' },
+      { name: 'Storage', value: '256GB' },
+      { name: 'Connectivity', value: 'Wi-Fi 6E, Bluetooth 5.3' }
+    ],
+    features: [
+      'ProMotion technology',
+      'TrueDepth camera system',
+      'Face ID',
+      'Thunderbolt port',
+      'Compatible with Apple Pencil and Magic Keyboard'
+    ],
+    inStock: true,
+    isFeatured: false
   },
   {
-    id: 'iphone-15-pro',
-    name: 'iPhone 15 Pro',
-    brand: 'Apple',
-    category: 'Smartphone',
-    price: 799,
-    discount: '10%',
+    id: 5,
+    name: 'Google Pixel 7 Pro',
+    slug: 'google-pixel-7-pro',
+    condition: 'Excellent',
+    categoryId: 1,
+    brandId: 3,
+    price: 649,
+    originalPrice: 899,
+    discountPercentage: 28,
+    storage: '128GB',
+    color: 'Hazel',
     rating: 4.5,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/j/z/3/-original-imagtc5fqyz8tu4c.jpeg'
+    reviewCount: 64,
+    imageUrl: '/assets/products/pixel-7-pro.jpg',
+    images: [
+      '/assets/products/pixel-7-pro-1.jpg',
+      '/assets/products/pixel-7-pro-2.jpg',
+      '/assets/products/pixel-7-pro-3.jpg'
+    ],
+    description: 'Refurbished Google Pixel 7 Pro in excellent condition. Includes 90-day warranty, original accessories, and free shipping.',
+    specifications: [
+      { name: 'Display', value: '6.7" QHD+ LTPO OLED' },
+      { name: 'Processor', value: 'Google Tensor G2' },
+      { name: 'Camera', value: 'Triple camera with 50MP main' },
+      { name: 'Battery', value: '5,000mAh' },
+      { name: 'Connectivity', value: '5G, Wi-Fi 6E, Bluetooth 5.2' }
+    ],
+    features: [
+      'Google AI features',
+      'IP68 water resistance',
+      'Corning Gorilla Glass Victus',
+      'Wireless charging',
+      'Face Unlock'
+    ],
+    inStock: true,
+    isFeatured: false
   },
   {
-    id: 'galaxy-a54',
-    name: 'Samsung Galaxy A54',
-    brand: 'Samsung',
-    category: 'Smartphone',
-    price: 599,
-    discount: '15%',
-    rating: 4.3,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/mobile/2/a/t/-original-imagnrhknw9pbg3t.jpeg'
-  },
-  {
-    id: 'lenovo-yoga-slim-7',
-    name: 'Lenovo Yoga Slim 7',
-    brand: 'Lenovo',
-    category: 'Laptop',
+    id: 6,
+    name: 'Dell XPS 15',
+    slug: 'dell-xps-15',
+    condition: 'Fair',
+    categoryId: 3,
+    brandId: 5,
     price: 999,
-    discount: '10%',
-    rating: 4.6,
-    image: 'https://rukminim2.flixcart.com/image/832/832/xif0q/computer/c/p/m/-original-imah3ytgpzvxyt7b.jpeg'
-  },
-  {
-    id: 'fitbit-versa-3',
-    name: 'Fitbit Versa 3',
-    brand: 'Fitbit',
-    category: 'Smartwatch',
-    price: 229,
-    discount: '20%',
-    rating: 4.4,
-    image: 'https://rukminim2.flixcart.com/image/832/832/ko0d6kw0/smartwatch/r/u/z/39-6-fb511glnv-android-ios-fitbit-original-imag2kfh9z5xg7bn.jpeg'
+    originalPrice: 1699,
+    discountPercentage: 41,
+    storage: '1TB',
+    color: 'Platinum Silver',
+    rating: 4.3,
+    reviewCount: 48,
+    imageUrl: '/assets/products/dell-xps-15.jpg',
+    images: [
+      '/assets/products/dell-xps-15-1.jpg',
+      '/assets/products/dell-xps-15-2.jpg',
+      '/assets/products/dell-xps-15-3.jpg'
+    ],
+    description: 'Refurbished Dell XPS 15 in fair condition. Visible signs of use. Includes 60-day warranty and free shipping.',
+    specifications: [
+      { name: 'Display', value: '15.6" 4K UHD+' },
+      { name: 'Processor', value: 'Intel Core i7-12700H' },
+      { name: 'Memory', value: '16GB DDR5' },
+      { name: 'Storage', value: '1TB SSD' },
+      { name: 'Graphics', value: 'NVIDIA GeForce RTX 3050 Ti' }
+    ],
+    features: [
+      'InfinityEdge display',
+      'Fingerprint reader',
+      'Backlit keyboard',
+      'Thunderbolt 4 ports',
+      'Windows 11 Pro'
+    ],
+    inStock: true,
+    isFeatured: false
   }
 ];

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, HelpCircle } from 'lucide-react';
 
-import { deviceTypes } from '/home/project/src/db/devicetype.ts';
-import { brands } from '/home/project/src/db/brands.ts';
-import { deviceModels } from '/home/project/src/db/models.ts';
-import conditionQuestions from '/home/project/src/db/conditionQuestionsAns.ts';
+import { deviceTypes } from '../db/devicetype';
+import { brands } from '../db/brands';
+import { deviceModels } from '../db/models';
+import conditionQuestions from '../db/conditionQuestionsAns';
 
 
 // Helper function to retrieve the device model data based on deviceType, brand, and model slug.

@@ -1,65 +1,37 @@
-export interface DeviceType {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Mock device types for UI development and testing
+// These will be replaced with database data in production
 
-export const deviceTypes: DeviceType[] = [
+export const deviceTypes = [
   {
-    id: '1',
+    id: 1,
     name: 'Smartphone',
-    slug: 'smartphone',
+    slug: 'smartphones',
     icon: 'smartphone',
-    active: true,
-    createdAt: '2023-01-15T10:30:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
+    description: 'Mobile phones with advanced features',
+    active: true
   },
   {
-    id: '2',
-    name: 'Laptop',
-    slug: 'laptop',
-    icon: 'laptop',
-    active: true,
-    createdAt: '2023-01-15T11:00:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
-  },
-  {
-    id: '3',
+    id: 2,
     name: 'Tablet',
-    slug: 'tablet',
+    slug: 'tablets',
     icon: 'tablet',
-    active: true,
-    createdAt: '2023-01-15T11:30:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
+    description: 'Portable computing devices with touchscreens',
+    active: true
   },
   {
-    id: '4',
+    id: 3,
+    name: 'Laptop',
+    slug: 'laptops',
+    icon: 'laptop',
+    description: 'Portable computers',
+    active: true
+  },
+  {
+    id: 4,
     name: 'Smartwatch',
-    slug: 'smartwatch',
+    slug: 'smartwatches',
     icon: 'watch',
-    active: true,
-    createdAt: '2023-01-15T12:00:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
-  },
-  {
-    id: '5',
-    name: 'Headphones',
-    slug: 'headphones',
-    icon: 'headphones',
-    active: false,
-    createdAt: '2023-03-10T09:15:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
-  },
-];
-
-export const deviceTypeOptions = [
-  { value: 'smartphone', label: 'Smartphone' },
-  { value: 'laptop', label: 'Laptop' },
-  { value: 'tablet', label: 'Tablet' },
-  { value: 'smartwatch', label: 'Smartwatch' },
-  { value: 'headphones', label: 'Headphones' },
+    description: 'Wearable computing devices',
+    active: true
+  }
 ];

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, Star } from 'lucide-react';
 
 // Import demo data from the separate file
-import { categories, brands, products } from '/home/project/src/db/Buydata';
+import { categories, brands, products } from '../../db/Buydata';
 
 const BuyProduct = () => {
   const [selectedCategory, setSelectedCategory] = useState('');

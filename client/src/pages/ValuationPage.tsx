@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, DollarSign, Truck, Calendar, Shield } from 'lucide-react';
-import { deviceTypes } from '/home/project/src/db/devicetype.ts';
-import { brands } from '/home/project/src/db/brands.ts';
-import { deviceModels } from '/home/project/src/db/models.ts';
-import { variantModelPrices } from '/home/project/src/db/valuation.ts';
+import { deviceTypes } from '../db/devicetype';
+import { brands } from '../db/brands';
+import { deviceModels } from '../db/models';
+import { variantModelPrices } from '../db/valuation';
 
 function getBasePrice(slug: string, variant: string): number | undefined {
   const model = variantModelPrices[slug];

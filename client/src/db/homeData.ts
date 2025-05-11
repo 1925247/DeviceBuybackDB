@@ -1,91 +1,113 @@
-import React from 'react';
-import { Smartphone, Laptop, Tablet, Watch } from 'lucide-react';
-
-// Header title and description as React elements using React.createElement
-export const headerTitle = React.createElement(
-  'h1',
-  { className: 'text-4xl md:text-5xl font-bold mb-4' },
-  'Sell Your Old Devices for the Best Price'
-);
-
-export const headerDescription = React.createElement(
-  'p',
-  { className: 'text-xl mb-8' },
-  'Get instant valuation, free doorstep pickup, and quick payment for your used smartphones, laptops, tablets, and smartwatches.'
-);
-
-// Icon mapping using React.createElement so we don't use JSX syntax
-export const iconMapping: Record<string, JSX.Element> = {
-  Smartphone: React.createElement(Smartphone, { className: 'h-8 w-8 text-blue-600' }),
-  Laptop: React.createElement(Laptop, { className: 'h-8 w-8 text-green-600' }),
-  Tablet: React.createElement(Tablet, { className: 'h-8 w-8 text-purple-600' }),
-  Watch: React.createElement(Watch, { className: 'h-8 w-8 text-orange-600' }),
-};
-
-export const deviceCategories = [
-  {
-    name: 'Smartphones',
-    description: 'Sell your used iPhone, Samsung, OnePlus, and other smartphones.',
-    route: '/sell/smartphone',
-    icon: 'Smartphone',
-    color: 'blue',
-    tagline: 'Best cash offer for your phone!',
-    backgroundImage: 'https://example.com/images/smartphones-bg.jpg',
+export const homeData = {
+  hero: {
+    title: "Sell Your Old Devices for the Best Price",
+    subtitle: "Get instant valuation, free doorstep pickup, and quick payment for your used smartphones, laptops, tablets, and smartwatches.",
+    image: "https://images.unsplash.com/photo-1587614382346-4ec70e388b28?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80",
+    ctaText: "Get Started"
   },
-  {
-    name: 'Laptops',
-    description: 'Get cash for your MacBook, Dell, HP, Lenovo, and more.',
-    route: '/sell/laptop',
-    icon: 'Laptop',
-    color: 'green',
-    tagline: 'Upgrade your tech with extra cash!',
-    backgroundImage: 'https://example.com/images/laptops-bg.jpg',
+  
+  howItWorks: {
+    title: "How It Works",
+    subtitle: "Our process is designed to be quick, transparent, and hassle-free so you can get the best value for your device.",
+    steps: [
+      {
+        title: "Select Your Device",
+        description: "Choose your device type, brand, and model from our extensive catalog."
+      },
+      {
+        title: "Get an Instant Quote",
+        description: "Answer a few questions about your device's condition to receive an accurate valuation."
+      },
+      {
+        title: "Schedule Pickup & Get Paid",
+        description: "Schedule a free doorstep pickup and receive payment as soon as your device is verified."
+      }
+    ]
   },
-  {
-    name: 'Tablets',
-    description: 'Sell your iPad, Samsung Tab, and other tablets easily.',
-    route: '/sell/tablet',
-    icon: 'Tablet',
-    color: 'purple',
-    tagline: 'Turn your tablet into cash!',
-    backgroundImage: 'https://example.com/images/tablets-bg.jpg',
+  
+  deviceTypes: {
+    title: "Sell Your Gadgets",
+    subtitle: "We buy a wide range of devices in any condition."
   },
-  {
-    name: 'Smartwatches',
-    description: 'Trade in your Apple Watch, Galaxy Watch, and more.',
-    route: '/sell/smartwatch',
-    icon: 'Watch',
-    color: 'orange',
-    tagline: 'Get the best offer for your wearable!',
-    backgroundImage: 'https://example.com/images/smartwatches-bg.jpg',
+  
+  featuredBrands: {
+    title: "Top Brands We Buy",
+    subtitle: "We offer competitive prices for devices from these premium brands and many more.",
+    brands: [
+      {
+        name: "Apple",
+        logo: "https://cdn-icons-png.flaticon.com/128/0/747.png"
+      },
+      {
+        name: "Samsung",
+        logo: "https://cdn-icons-png.flaticon.com/128/882/882747.png"
+      },
+      {
+        name: "Google",
+        logo: "https://cdn-icons-png.flaticon.com/128/300/300221.png"
+      },
+      {
+        name: "OnePlus",
+        logo: "https://cdn.worldvectorlogo.com/logos/oneplus-2.svg"
+      },
+      {
+        name: "Xiaomi",
+        logo: "https://cdn-icons-png.flaticon.com/128/882/882720.png"
+      }
+    ]
   },
-];
-
-export const testimonials = [
-  {
-    name: 'Sarah Johnson',
-    text: 'I was skeptical at first, but the process was incredibly smooth. I got a great price for my old iPhone, and the payment was instant!',
-    rating: 5,
-    image: 'https://example.com/images/testimonial-sarah.jpg',
+  
+  testimonials: {
+    title: "What Our Customers Say",
+    subtitle: "Don't just take our word for it, hear what our satisfied customers have to say.",
+    items: [
+      {
+        name: "Sarah Johnson",
+        location: "New York, NY",
+        quote: "I was skeptical at first, but the process was incredibly smooth. I got a great price for my old iPhone, and the payment was instant!",
+        rating: 5,
+        avatar: "https://randomuser.me/api/portraits/women/44.jpg"
+      },
+      {
+        name: "Michael Chen",
+        location: "Los Angeles, CA",
+        quote: "The doorstep pickup was super convenient. The executive was professional and the entire process took less than 10 minutes.",
+        rating: 4,
+        avatar: "https://randomuser.me/api/portraits/men/32.jpg"
+      },
+      {
+        name: "Priya Sharma",
+        location: "Chicago, IL",
+        quote: "I compared prices with other buyback services and GadgetSwap offered the best value. The process was transparent and hassle-free.",
+        rating: 5,
+        avatar: "https://randomuser.me/api/portraits/women/68.jpg"
+      }
+    ]
   },
-  {
-    name: 'Michael Chen',
-    text: 'The doorstep pickup was super convenient. The executive was professional and the entire process took less than 10 minutes.',
-    rating: 5,
-    image: 'https://example.com/images/testimonial-michael.jpg',
+  
+  environmentalImpact: {
+    title: "Environmental Impact",
+    subtitle: "By selling your device, you're contributing to a more sustainable future.",
+    stats: [
+      {
+        value: "100,000+",
+        label: "Devices Recycled"
+      },
+      {
+        value: "500+ tons",
+        label: "e-Waste Reduced"
+      },
+      {
+        value: "ISO 14001",
+        label: "Certified Recycling"
+      }
+    ],
+    description: "Our certified recycling process ensures maximum environmental benefit by reusing working devices and properly recycling non-functional components."
   },
-  {
-    name: 'Priya Sharma',
-    text: 'I compared prices with other buyback services and Cash Old Device offered the best value. The process was transparent and hassle-free.',
-    rating: 5,
-    image: 'https://example.com/images/testimonial-priya.jpg',
-  },
-];
-
-export const environmentalImpact = {
-  devicesRecycled: '100,000+',
-  eWasteReduced: '500+ tons',
-  certification: 'ISO 14001 certified recycling process',
-  impactDescription:
-    'By choosing to sell your device, you contribute to reducing e-waste and promoting a circular economy. Our certified recycling process ensures maximum environmental benefit.',
+  
+  cta: {
+    title: "Ready to Sell Your Device?",
+    description: "Get an instant quote and turn your unused devices into cash today.",
+    buttonText: "Sell Your Device Now"
+  }
 };

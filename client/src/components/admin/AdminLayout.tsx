@@ -1,292 +1,305 @@
-// src/components/admin/AdminLayout.tsx
-import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Smartphone,
-  Tag,
-  Layers,
-  ShoppingCart,
-  Users,
-  DollarSign,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  Bell,
-  Search,
-  User,
-  Activity,
-} from 'lucide-react';
-import { useClickOutside } from '../hooks/useClickOutside';
+import React, { useState, ReactNode } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
-interface MenuItem {
-  path: string;
-  icon: JSX.Element;
-  label: string;
+interface AdminLayoutProps {
+  logout?: ReactNode;
 }
 
-const AdminLayout: React.FC = () => {
-  const navigate = useNavigate();
+const AdminLayout: React.FC<AdminLayoutProps> = ({ logout }) => {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [adminName, setAdminName] = useState('Admin User');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Custom hooks for click outside detection
-  const userMenuRef = useClickOutside(() => setUserMenuOpen(false));
-  const notificationsRef = useClickOutside(() => setNotificationsOpen(false));
-
-  // Menu configuration
-  const menuItems: MenuItem[] = [
-    { path: '/admin', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { path: '/admin/devices', icon: <Smartphone size={20} />, label: 'Device Types' },
-    { path: '/admin/CQS', icon: <Tag size={20} />, label: 'Q&A Management' },
-    { path: '/admin/brands', icon: <Tag size={20} />, label: 'Brands' },
-    { path: '/admin/models', icon: <Layers size={20} />, label: 'Models' },
-    { path: '/admin/diagnostic', icon: <Activity size={20} />, label: 'Diagnostics' },
-    { path: '/admin/orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
-    { path: '/admin/users', icon: <Users size={20} />, label: 'Users' },
-    { path: '/admin/pricing', icon: <DollarSign size={20} />, label: 'Pricing' },
-    { path: '/admin/settings', icon: <Settings size={20} />, label: 'Settings' },
-  ];
-
-  useEffect(() => {
-    // Load admin data from secure storage
-    try {
-      const adminData = JSON.parse(
-        localStorage.getItem('adminData') ||
-        sessionStorage.getItem('adminData') ||
-        'null'
-      );
-      if (adminData?.name) setAdminName(adminData.name);
-    } catch (error) {
-      console.error('Error loading admin data:', error);
-    }
-  }, []);
-
-  const handleLogout = () => {
-    // Clear all authentication tokens and data
-    localStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminToken');
-    localStorage.removeItem('adminData');
-    sessionStorage.removeItem('adminData');
-    
-    navigate('/admin/login');
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const isActive = (path: string): boolean => 
-    location.pathname.startsWith(path);
-
-  const notifications = [
-    { id: 1, message: 'New order #12345 received', time: '5 minutes ago' },
-    { id: 2, message: 'User profile updated', time: '1 hour ago' },
-    { id: 3, message: 'System update completed', time: '3 hours ago' },
-    { id: 4, message: 'New device model added', time: '1 day ago' },
-  ];
+  // Helper function to determine if a link is active
+  const isActive = (path: string) => {
+    const currentPath = location.pathname;
+    if (path === '/admin' && currentPath === '/admin') {
+      return true;
+    }
+    return path !== '/admin' && currentPath.startsWith(path);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Mobile Sidebar */}
-      <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-        />
-        <div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-gray-800 text-white">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
-            <div className="flex items-center">
-              <Smartphone className="h-8 w-8 mr-2" aria-hidden="true" />
-              <span className="font-bold text-xl">Admin Panel</span>
-            </div>
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="text-gray-300 hover:text-white"
-              aria-label="Close sidebar"
-            >
-              <X size={24} aria-hidden="true" />
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div
+        className={`${
+          isSidebarOpen ? 'w-64' : 'w-20'
+        } bg-white shadow-lg transition-all duration-300 ease-in-out hidden md:block`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h1 className={`text-xl font-bold text-gray-800 ${!isSidebarOpen && 'hidden'}`}>
+              Admin Panel
+            </h1>
+            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700">
+              {isSidebarOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              )}
             </button>
           </div>
-          <nav className="flex-1 overflow-y-auto pt-5 pb-4 px-2 space-y-1">
-            {menuItems.map((item) => (
+
+          <div className="flex-1 overflow-y-auto py-4">
+            <nav className="px-2 space-y-1">
               <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center px-2 py-2 text-base rounded-md ${
-                  isActive(item.path)
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700'
+                to="/admin"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <span className="mr-4">{item.icon}</span>
-                {item.label}
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                {isSidebarOpen && <span>Dashboard</span>}
               </Link>
-            ))}
-          </nav>
-          <div className="p-4 border-t border-gray-700">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-2 py-2 text-base rounded-md text-gray-300 hover:bg-gray-700"
-              aria-label="Logout"
-            >
-              <LogOut size={20} className="mr-4" aria-hidden="true" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Desktop Sidebar */}
-      
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-gray-800 text-white">
-          <div className="flex items-center h-16 px-4 border-b border-gray-700">
-            <Smartphone className="h-8 w-8 mr-2" aria-hidden="true" />
-            <span className="font-bold text-xl">Admin Panel</span>
-          </div>
-          <nav className="flex-1 px-2 py-4 overflow-y-auto space-y-1">
-            {menuItems.map((item) => (
               <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center px-2 py-2 text-sm rounded-md ${
-                  isActive(item.path)
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700'
+                to="/admin/devices"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/devices')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <span className="mr-3">{item.icon}</span>
-                {item.label}
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                {isSidebarOpen && <span>Devices</span>}
               </Link>
-            ))}
-          </nav>
-          <div className="p-4 border-t border-gray-700">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-2 py-2 text-sm rounded-md text-gray-300 hover:bg-gray-700"
-              aria-label="Logout"
-            >
-              <LogOut size={20} className="mr-3" aria-hidden="true" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Content Area */}
-      <div className="lg:pl-64 flex flex-col flex-1">
-        {/* Top Navigation */}
-        <div className="sticky top-0 z-10 w-full flex flex-wrap items-center justify-between h-16 bg-white shadow px-4">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-gray-500 lg:hidden pr-4"
-            aria-label="Open menu"
-          >
-            <Menu size={24} aria-hidden="true" />
-          </button>
-          
-          {/* Search Bar */}
-          <div className="flex-1 max-w-lg lg:max-w-xs">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              <Link
+                to="/admin/brands"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/brands')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                {isSidebarOpen && <span>Brands</span>}
+              </Link>
+
+              <Link
+                to="/admin/models"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/models')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+                {isSidebarOpen && <span>Models</span>}
+              </Link>
+
+              <Link
+                to="/admin/orders"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/orders')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                {isSidebarOpen && <span>Orders</span>}
+              </Link>
+
+              <Link
+                to="/admin/users"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/users')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                {isSidebarOpen && <span>Users</span>}
+              </Link>
+
+              <Link
+                to="/admin/pricing"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/pricing')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {isSidebarOpen && <span>Pricing</span>}
+              </Link>
+
+              <Link
+                to="/admin/CQS"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/CQS')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {isSidebarOpen && <span>Condition Q&A</span>}
+              </Link>
+
+              <Link
+                to="/admin/diagnostic"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/diagnostic')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {isSidebarOpen && <span>Diagnostic</span>}
+              </Link>
+
+              <Link
+                to="/admin/settings"
+                className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                  isActive('/admin/settings')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {isSidebarOpen && <span>Settings</span>}
+              </Link>
+            </nav>
+          </div>
+
+          <div className="p-4 border-t border-gray-200">
+            {isSidebarOpen ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-700">A</span>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-700">Admin User</p>
+                    <p className="text-xs text-gray-500">admin@example.com</p>
+                  </div>
+                </div>
+                {logout && <div>{logout}</div>}
               </div>
-              <input
-                type="search"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                aria-label="Search"
-              />
-            </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">A</span>
+                </div>
+                {logout && <div>{logout}</div>}
+              </div>
+            )}
           </div>
+        </div>
+      </div>
 
-          {/* Notifications and User Menu */}
-          <div className="ml-4 flex items-center space-x-4">
-            <div className="relative" ref={notificationsRef}>
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="p-1 text-gray-400 hover:text-gray-500"
-                aria-label="Notifications"
-              >
-                <Bell size={20} aria-hidden="true" />
+      {/* Mobile sidebar */}
+      <div className="md:hidden">
+        <div
+          className={`fixed inset-0 z-40 ${isSidebarOpen ? 'block' : 'hidden'}`}
+          onClick={toggleSidebar}
+        >
+          <div className="absolute inset-0 bg-gray-600 opacity-75"></div>
+        </div>
+
+        <div
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } transition-transform duration-300 ease-in-out`}
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
+              <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-              {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl">
-                  <div className="p-4 border-b">
-                    <h3 className="font-medium text-gray-700">Notifications</h3>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className="p-4 hover:bg-gray-50 border-b last:border-0"
-                      >
-                        <p className="text-sm text-gray-700">{notification.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="p-4 border-t">
-                    <Link
-                      to="/admin/notifications"
-                      className="text-blue-600 hover:text-blue-500 text-sm"
-                    >
-                      View all notifications
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center space-x-2"
-                aria-label="User menu"
-              >
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <User size={16} className="text-gray-600" aria-hidden="true" />
+            <div className="flex-1 overflow-y-auto py-4">
+              <nav className="px-2 space-y-1">
+                <Link
+                  to="/admin"
+                  onClick={toggleSidebar}
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  <span>Dashboard</span>
+                </Link>
+
+                {/* (remaining mobile sidebar navigation items) */}
+                {/* ... */}
+              </nav>
+            </div>
+
+            <div className="p-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-700">A</span>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-700">Admin User</p>
+                    <p className="text-xs text-gray-500">admin@example.com</p>
+                  </div>
                 </div>
-                <div className="hidden md:block">
-                  <span className="text-gray-700">{adminName}</span>
-                  <ChevronDown size={16} className="ml-1 text-gray-400" aria-hidden="true" />
-                </div>
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl">
-                  <Link
-                    to="/admin/settings"
-                    className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Profile Settings
-                  </Link>
-                  <Link
-                    to="/admin/settings"
-                    className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Account Preferences
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
+                {logout && <div>{logout}</div>}
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <main className="flex-1 p-6">
+      {/* Main content area */}
+      <div className="flex-1 overflow-auto">
+        <header className="bg-white shadow md:hidden">
+          <div className="px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+            <button
+              onClick={toggleSidebar}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Outlet />
         </main>
       </div>

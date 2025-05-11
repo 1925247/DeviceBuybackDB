@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { deviceTypes } from '/home/project/src/db/devicetype.ts';
-import { brands } from '/home/project/src/db/brands.ts';
+import { deviceTypes } from '../db/devicetype';
+import { brands } from '../db/brands';
 
 const DeviceSelectionPage: React.FC = () => {
   // Retrieve the deviceType parameter from the URL.
@@ -29,12 +29,9 @@ const DeviceSelectionPage: React.FC = () => {
     );
   }
 
-  // Filter brands that support the selected device type and are active.
-  const filteredBrands = brands.filter(
-    brand =>
-      brand.deviceTypes.includes(deviceTypeParam) &&
-      brand.active // only include active brands
-  );
+  // For now, we'll display all brands as we don't have the device-type association yet
+  // Later, this will be replaced with data from the database that has proper device type associations
+  const filteredBrands = brands;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

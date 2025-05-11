@@ -1,178 +1,50 @@
-export interface Brand {
-  id: string;
-  name: string;
-  slug: string;
-  logo: string;
-  deviceTypes: string[];
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Mock brands for UI development and testing
+// These will be replaced with database data in production
 
-export const brands: Brand[] = [
+export const brands = [
   {
-    id: '1',
+    id: 1,
     name: 'Apple',
     slug: 'apple',
-    logo: 'https://cdn-icons-png.flaticon.com/128/0/747.png',
-    deviceTypes: ['smartphone', 'laptop', 'tablet', 'smartwatch'],
+    logo: 'apple-logo.png',
+    description: 'American technology company',
     active: true,
-    createdAt: '2023-01-15T10:30:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
+    deviceTypes: [1, 2, 3, 4] // References device type IDs
   },
   {
-    id: '2',
+    id: 2,
     name: 'Samsung',
     slug: 'samsung',
-    logo: 'https://cdn-icons-png.flaticon.com/128/882/882747.png',
-    deviceTypes: ['smartphone'],
+    logo: 'samsung-logo.png',
+    description: 'South Korean technology company',
     active: true,
-    createdAt: '2023-01-15T11:00:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
+    deviceTypes: [1, 2, 3, 4]
   },
   {
-    id: '3',
+    id: 3,
     name: 'Google',
     slug: 'google',
-    logo: 'https://cdn-icons-png.flaticon.com/128/300/300221.png',
-    deviceTypes: ['smartphone'],
+    logo: 'google-logo.png',
+    description: 'American technology company',
     active: true,
-    createdAt: '2023-01-15T11:30:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
+    deviceTypes: [1, 2]
   },
   {
-    id: '4',
+    id: 4,
     name: 'OnePlus',
     slug: 'oneplus',
-    logo: 'https://cdn.worldvectorlogo.com/logos/oneplus-2.svg',
-    deviceTypes: ['smartphone'],
+    logo: 'oneplus-logo.png',
+    description: 'Chinese technology company',
     active: true,
-    createdAt: '2023-01-15T12:00:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
+    deviceTypes: [1]
   },
   {
-    id: '5',
-    name: 'Xiaomi',
-    slug: 'xiaomi',
-    logo: 'https://cdn-icons-png.flaticon.com/128/882/882720.png',
-    deviceTypes: ['smartphone'],
-    active: true,
-    createdAt: '2023-03-10T09:15:00Z',
-    updatedAt: '2023-04-20T14:45:00Z',
-  },
-  {
-    id: '6',
+    id: 5,
     name: 'Dell',
     slug: 'dell',
-    logo: 'https://cdn-icons-png.flaticon.com/128/16183/16183568.png',
-    deviceTypes: ['laptop'],
-    active: false,
-    createdAt: '2023-01-16T09:00:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '7',
-    name: 'HP',
-    slug: 'hp',
-    logo: 'https://cdn-icons-png.flaticon.com/128/16183/16183582.png',
-    deviceTypes: ['laptop'],
-    active: false,
-    createdAt: '2023-01-16T09:30:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '8',
-    name: 'Lenovo',
-    slug: 'lenovo',
-    logo: 'https://cdn-icons-png.flaticon.com/128/16183/16183609.png',
-    deviceTypes: ['laptop', 'tablet'],
-    active: false,
-    createdAt: '2023-01-16T10:00:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '9',
-    name: 'Asus',
-    slug: 'asus',
-    logo: 'https://cdn-icons-png.flaticon.com/128/5969/5969050.png',
-    deviceTypes: ['laptop'],
-    active: false,
-    createdAt: '2023-01-16T10:30:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '10',
-    name: 'Acer',
-    slug: 'acer',
-    logo: 'https://cdn-icons-png.flaticon.com/128/882/882748.png',
-    deviceTypes: ['laptop'],
-    active: false,
-    createdAt: '2023-01-16T11:00:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '11',
-    name: 'Microsoft',
-    slug: 'microsoft',
-    logo: 'https://cdn-icons-png.flaticon.com/128/16183/16183626.png',
-    deviceTypes: ['laptop', 'tablet'],
-    active: false,
-    createdAt: '2023-01-16T11:30:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '12',
-    name: 'MSI',
-    slug: 'msi',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Micro-Star_International_logo.svg/500px-Micro-Star_International_logo.svg.png',
-    deviceTypes: ['laptop'],
-    active: false,
-    createdAt: '2023-01-16T12:00:00Z',
-    updatedAt: '2023-04-20T15:00:00Z',
-  },
-  {
-    id: '13',
-    name: 'Fitbit',
-    slug: 'fitbit',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Fitbit_logo.svg/360px-Fitbit_logo.svg.png',
-    deviceTypes: ['smartwatch'],
-    active: false,
-    createdAt: '2023-01-17T09:00:00Z',
-    updatedAt: '2023-04-20T15:30:00Z',
-  },
-  {
-    id: '14',
-    name: 'Garmin',
-    slug: 'garmin',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/1d/Garmin_2024_logo.svg/440px-Garmin_2024_logo.svg.png',
-    deviceTypes: ['smartwatch'],
-    active: false,
-    createdAt: '2023-01-17T09:30:00Z',
-    updatedAt: '2023-04-20T15:30:00Z',
-  },
-  {
-    id: '15',
-    name: 'Nothing',
-    slug: 'nothing',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Nothing.svg/500px-Nothing.svg.png',
-    deviceTypes: ['smartphone'],
+    logo: 'dell-logo.png',
+    description: 'American computer technology company',
     active: true,
-    createdAt: '2023-01-17T09:30:00Z',
-    updatedAt: '2023-04-20T15:30:00Z',
-  },
-  {
-    id: '16',
-    name: 'Realme',
-    slug: 'realme',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Realme_logo_SVG.svg/500px-Realme_logo_SVG.svg.png',
-    deviceTypes: ['smartphone'],
-    active: true,
-    createdAt: '2023-01-17T09:30:00Z',
-    updatedAt: '2023-04-20T15:30:00Z',
-  },
+    deviceTypes: [3]
+  }
 ];
-
-export const brandOptions = brands.map(brand => ({
-  value: brand.slug,
-  label: brand.name
-}));

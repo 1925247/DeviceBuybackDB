@@ -303,7 +303,7 @@ function App() {
                   path="/admin/*"
                   element={
                     <ModelsProvider>
-                      <AdminLayout logout={<AdminLogout />} />
+                      <AdminLayout />
                     </ModelsProvider>
                   }
                 >

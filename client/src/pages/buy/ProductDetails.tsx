@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft } from 'lucide-react';
-import { products } from '/home/project/src/db/Buydata'; // अपना path सही करें
+import { products } from '../../db/Buydata';
 
 const ProductDetails = () => {
   // यह hook केवल component के अंदर कॉल हो रहा है

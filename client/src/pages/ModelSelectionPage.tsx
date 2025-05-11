@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
-import { deviceTypes } from '/home/project/src/db/devicetype.ts';
-import { brands } from '/home/project/src/db/brands.ts';
-import { deviceModels } from '/home/project/src/db/models.ts';
+import { deviceTypes } from '../db/devicetype';
+import { brands } from '../db/brands';
+import { deviceModels } from '../db/models';
 
 const ModelSelectionPage: React.FC = () => {
   const { deviceType: deviceTypeParam, brand: brandParam } = useParams<{ deviceType: string; brand: string }>();
