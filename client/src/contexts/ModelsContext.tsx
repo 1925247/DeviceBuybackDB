@@ -122,7 +122,7 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
           brand_id: model.brand_id,
           device_type_id: model.device_type_id,
           release_year: model.release_year || new Date().getFullYear(),
-          image_url: model.image || `/assets/models/${model.slug}.png`,
+          image_url: model.image || `https://placehold.co/300x200?text=${encodeURIComponent(model.name)}`,
           description: model.description,
           slug: model.slug
         }));
