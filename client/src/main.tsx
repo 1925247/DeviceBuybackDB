@@ -1,6 +1,7 @@
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './index.css';
 
 // Document metadata
 document.title = "GadgetSwap - Device Buyback & Refurbished Marketplace";
@@ -13,18 +14,22 @@ document.head.appendChild(metaDescription);
 
 // Open Graph tags for better social media sharing
 const ogTitle = document.createElement('meta');
-ogTitle.property = 'og:title';
+ogTitle.setAttribute('property', 'og:title');
 ogTitle.content = 'GadgetSwap - Device Buyback & Refurbished Marketplace';
 document.head.appendChild(ogTitle);
 
 const ogDescription = document.createElement('meta');
-ogDescription.property = 'og:description';
+ogDescription.setAttribute('property', 'og:description');
 ogDescription.content = 'Buy and sell refurbished electronics. Our marketplace connects sellers with buyers looking for quality used devices at great prices.';
 document.head.appendChild(ogDescription);
 
 const ogType = document.createElement('meta');
-ogType.property = 'og:type';
+ogType.setAttribute('property', 'og:type');
 ogType.content = 'website';
 document.head.appendChild(ogType);
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
