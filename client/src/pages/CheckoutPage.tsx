@@ -148,13 +148,11 @@ const CheckoutPage: React.FC = () => {
           notes: formData.additionalNotes || null
         };
         
-        const response = await apiRequest('/api/buyback-requests', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(buybackData),
-        });
+        const response = await apiRequest(
+          'POST',
+          '/api/buyback-requests',
+          buybackData
+        );
         
         // Extract the order ID from the response
         const { id } = await response.json();
@@ -495,11 +493,29 @@ const CheckoutPage: React.FC = () => {
                 </Link>
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition duration-300"
+                  disabled={submitting}
+                  className={`px-8 py-3 rounded-lg font-medium transition duration-300 ${
+                    submitting 
+                      ? 'bg-blue-400 cursor-not-allowed text-white' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Place Order
+                  {submitting ? (
+                    <span className="flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'Place Order'
+                  )}
                 </button>
               </div>
+              
+              {orderError && (
+                <div className="mt-4 p-3 bg-red-50 text-red-600 border border-red-200 rounded-md">
+                  {orderError}
+                </div>
+              )}
             </form>
           </div>
         </div>

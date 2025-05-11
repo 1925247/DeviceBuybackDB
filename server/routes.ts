@@ -143,10 +143,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Condition questions API endpoint
+  // Define interfaces for condition questions and options
+  interface ConditionOption {
+    id: number;
+    text?: string;
+    answer?: string;
+    value: string | number;
+  }
+  
+  interface ConditionQuestion {
+    id: number;
+    question: string;
+    deviceTypeId: number;
+    order: number;
+    active: boolean;
+    options: ConditionOption[];
+  }
+  
   app.get(apiRouter("/condition-questions"), async (req: Request, res: Response) => {
     try {
       const deviceTypeId = req.query.deviceTypeId ? Number(req.query.deviceTypeId) : undefined;
-      const questionsData = await storage.getConditionQuestions(deviceTypeId);
+      const questionsData = await storage.getConditionQuestions(deviceTypeId) as ConditionQuestion[];
       
       // Format questions to match the frontend expected format
       const formattedQuestions = questionsData.map(question => ({
@@ -157,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order: question.order,
         active: question.active,
         multiSelect: false, // Default to false
-        options: question.options.map(option => ({
+        options: question.options.map((option: ConditionOption) => ({
           id: option.id.toString(),
           label: option.text || option.answer,
           value: option.value
