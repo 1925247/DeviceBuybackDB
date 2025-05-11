@@ -134,16 +134,21 @@ const CheckoutPage: React.FC = () => {
         // Create a buyback request in the database
         const buybackData = {
           user_id: 1, // Default user ID - in a real app this would be the logged-in user
-          device_model_id: deviceValuation.deviceModelId,
+          device_model_id: Number(deviceValuation.deviceModelId),
           device_type: deviceValuation.deviceType,
           manufacturer: deviceValuation.brandName,
           model: deviceValuation.modelName,
           condition: deviceValuation.conditionDescription,
-          condition_score: deviceValuation.conditionScore,
-          offered_price: deviceValuation.finalPrice,
+          offered_price: Number(deviceValuation.finalPrice),
           variant: deviceValuation.selectedVariant || null,
           status: 'pending',
-          notes: formData.additionalNotes || null
+          notes: formData.additionalNotes || "",
+          pickup_address: `${formData.address}, ${formData.city}, ${formData.state}, ${formData.pincode}`,
+          pickup_date: formData.pickupDate,
+          pickup_time: formData.pickupTime,
+          customer_name: formData.name,
+          customer_email: formData.email, 
+          customer_phone: formData.phone
         };
         
         const response = await apiRequest(

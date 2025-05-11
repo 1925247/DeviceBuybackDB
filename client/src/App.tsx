@@ -47,6 +47,7 @@ import AdminPricing from './pages/admin/AdminPricing';
 import AdminConfig from './pages/admin/AdminConfig';
 import AdminCQS from './pages/admin/AdminCQS';
 import AdminDiagnostic from './pages/admin/AdminDiagnostic';
+import AdminBuybacks from './pages/admin/AdminBuybacks';
 import AdminLayout from './components/admin/AdminLayout';
 
 // Not Found Page

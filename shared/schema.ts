@@ -323,6 +323,12 @@ export const buybackRequests = pgTable("buyback_requests", {
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
   variant: text("variant"),
+  customer_name: text("customer_name"),
+  customer_email: text("customer_email"),
+  customer_phone: text("customer_phone"),
+  pickup_address: text("pickup_address"),
+  pickup_date: text("pickup_date"),
+  pickup_time: text("pickup_time"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

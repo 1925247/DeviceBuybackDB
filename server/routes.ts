@@ -475,10 +475,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Buyback request endpoints
   app.post(apiRouter("/buyback-requests"), async (req: Request, res: Response) => {
     try {
+      console.log("Buyback request data:", req.body);
       const requestData = validateRequest<InsertBuybackRequest>(insertBuybackRequestSchema, req.body);
       const request = await storage.createBuybackRequest(requestData);
       res.status(201).json(request);
     } catch (error: any) {
+      console.error("Buyback request validation error:", error);
       res.status(error.status || 500).json({ message: error.message || "Failed to create buyback request" });
     }
   });
