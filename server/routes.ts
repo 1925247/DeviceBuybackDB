@@ -31,6 +31,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get database status" });
     }
   });
+  
+  // Device types API endpoint
+  app.get(apiRouter("/device-types"), async (_req: Request, res: Response) => {
+    try {
+      const deviceTypesData = await storage.getDeviceTypes();
+      res.json(deviceTypesData);
+    } catch (error: any) {
+      console.error("Error fetching device types:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch device types" });
+    }
+  });
+
+  // Brands API endpoint
+  app.get(apiRouter("/brands"), async (_req: Request, res: Response) => {
+    try {
+      const brandsData = await storage.getBrands();
+      res.json(brandsData);
+    } catch (error: any) {
+      console.error("Error fetching brands:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch brands" });
+    }
+  });
+
+  // Device models API endpoint
+  app.get(apiRouter("/device-models"), async (_req: Request, res: Response) => {
+    try {
+      const deviceModelsData = await storage.getDeviceModels();
+      res.json(deviceModelsData);
+    } catch (error: any) {
+      console.error("Error fetching device models:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch device models" });
+    }
+  });
+
+  // Condition questions API endpoint
+  app.get(apiRouter("/condition-questions"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = req.query.deviceTypeId ? Number(req.query.deviceTypeId) : undefined;
+      const questionsData = await storage.getConditionQuestions(deviceTypeId);
+      res.json(questionsData);
+    } catch (error: any) {
+      console.error("Error fetching condition questions:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch condition questions" });
+    }
+  });
+
+  // Valuations API endpoint
+  app.get(apiRouter("/valuations"), async (req: Request, res: Response) => {
+    try {
+      const deviceModelId = req.query.deviceModelId ? Number(req.query.deviceModelId) : undefined;
+      const valuationsData = await storage.getValuations(deviceModelId);
+      res.json(valuationsData);
+    } catch (error: any) {
+      console.error("Error fetching valuations:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch valuations" });
+    }
+  });
 
   // User endpoints
   app.post(apiRouter("/users"), async (req: Request, res: Response) => {

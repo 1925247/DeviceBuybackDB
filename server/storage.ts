@@ -58,6 +58,13 @@ export interface IStorage {
   updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
   deleteOrder(id: number): Promise<boolean>;
   
+  // Reference data operations
+  getDeviceTypes(): Promise<DeviceType[]>;
+  getBrands(): Promise<Brand[]>;
+  getDeviceModels(): Promise<DeviceModel[]>;
+  getConditionQuestions(deviceTypeId?: number): Promise<any[]>;
+  getValuations(deviceModelId?: number): Promise<any[]>;
+  
   // Database status
   getDatabaseStatus(): Promise<{
     connected: boolean;
