@@ -139,7 +139,7 @@ const CheckoutPage: React.FC = () => {
           manufacturer: deviceValuation.brandName,
           model: deviceValuation.modelName,
           condition: deviceValuation.conditionDescription,
-          offered_price: Number(deviceValuation.finalPrice),
+          offered_price: String(deviceValuation.finalPrice),
           variant: deviceValuation.selectedVariant || null,
           status: 'pending',
           notes: formData.additionalNotes || "",
