@@ -68,6 +68,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message || "Failed to fetch device models" });
     }
   });
+  
+  // Create a new device model
+  app.post(apiRouter("/device-models"), async (req: Request, res: Response) => {
+    try {
+      const modelData = req.body;
+      // Convert string IDs to numbers
+      if (modelData.brand_id) modelData.brand_id = Number(modelData.brand_id);
+      if (modelData.device_type_id) modelData.device_type_id = Number(modelData.device_type_id);
+      
+      const newModel = await storage.createDeviceModel(modelData);
+      res.status(201).json(newModel);
+    } catch (error: any) {
+      console.error("Error creating device model:", error);
+      res.status(500).json({ message: error.message || "Failed to create device model" });
+    }
+  });
+  
+  // Get device model by ID
+  app.get(apiRouter("/device-models/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const model = await storage.getDeviceModel(id);
+      
+      if (!model) {
+        return res.status(404).json({ message: "Device model not found" });
+      }
+      
+      res.json(model);
+    } catch (error: any) {
+      console.error("Error fetching device model:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch device model" });
+    }
+  });
+  
+  // Update device model
+  app.put(apiRouter("/device-models/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const modelData = req.body;
+      
+      // Convert string IDs to numbers
+      if (modelData.brand_id) modelData.brand_id = Number(modelData.brand_id);
+      if (modelData.device_type_id) modelData.device_type_id = Number(modelData.device_type_id);
+      
+      const updatedModel = await storage.updateDeviceModel(id, modelData);
+      
+      if (!updatedModel) {
+        return res.status(404).json({ message: "Device model not found" });
+      }
+      
+      res.json(updatedModel);
+    } catch (error: any) {
+      console.error("Error updating device model:", error);
+      res.status(500).json({ message: error.message || "Failed to update device model" });
+    }
+  });
+  
+  // Delete device model
+  app.delete(apiRouter("/device-models/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const deleted = await storage.deleteDeviceModel(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Device model not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting device model:", error);
+      res.status(500).json({ message: error.message || "Failed to delete device model" });
+    }
+  });
 
   // Condition questions API endpoint
   app.get(apiRouter("/condition-questions"), async (req: Request, res: Response) => {

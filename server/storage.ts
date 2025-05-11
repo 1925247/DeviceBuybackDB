@@ -66,7 +66,14 @@ export interface IStorage {
   // Reference data operations
   getDeviceTypes(): Promise<DeviceType[]>;
   getBrands(): Promise<Brand[]>;
+  
+  // Device models operations
   getDeviceModels(): Promise<DeviceModel[]>;
+  getDeviceModel(id: number): Promise<DeviceModel | undefined>;
+  createDeviceModel(model: any): Promise<DeviceModel>; 
+  updateDeviceModel(id: number, model: any): Promise<DeviceModel | undefined>;
+  deleteDeviceModel(id: number): Promise<boolean>;
+  
   getConditionQuestions(deviceTypeId?: number): Promise<any[]>;
   getValuations(deviceModelId?: number): Promise<any[]>;
   
