@@ -1,27 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Check, DollarSign, Truck, Calendar, Shield } from 'lucide-react';
-import { deviceTypes } from '../db/devicetype';
-import { brands } from '../db/brands';
-import { deviceModels } from '../db/models';
-import { variantModelPrices } from '../db/valuation';
+import { ArrowLeft, Check, DollarSign, Truck, Calendar, Shield, Loader2 } from 'lucide-react';
 
-function getBasePrice(slug: string, variant: string): number | undefined {
-  const model = variantModelPrices[slug];
-  if (!model) return undefined;
-  // Normalize variant key by removing spaces
-  const normalizedVariant = variant.replace(/\s/g, '');
-  return model[normalizedVariant];
+// Define interfaces for data types
+interface DeviceType {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-const getModelData = (modelId: string): Model | null =>
-  deviceModels.find((m) => m.id === modelId || m.slug === modelId) || null;
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-const getModelName = (modelId: string): string =>
-  modelId
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+interface DeviceModel {
+  id: number;
+  name: string;
+  slug: string;
+  brand_id: number;
+  device_type_id: number;
+  image: string;
+  active: boolean;
+  featured: boolean;
+  variants: string[];
+  brand?: Brand;
+  deviceType?: DeviceType;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Valuation {
+  id: number;
+  device_model_id: number;
+  condition_multiplier: number;
+  base_price: number;
+  variant?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Helper function to get a base price for a model/variant
+const getBasePrice = (modelId: number, variant: string | null, valuations: Valuation[]): number => {
+  // Find valuation for the specific variant if provided
+  if (variant) {
+    const variantValuation = valuations.find(v => 
+      v.device_model_id === modelId && 
+      v.variant?.toLowerCase() === variant.toLowerCase()
+    );
+    if (variantValuation) return variantValuation.base_price;
+  }
+  
+  // Otherwise find default valuation without variant
+  const defaultValuation = valuations.find(v => 
+    v.device_model_id === modelId && !v.variant
+  );
+  
+  return defaultValuation?.base_price || 0;
+};
 
 const getConditionDescription = (score: number): string => {
   if (score >= 0.9) return 'Excellent';
@@ -41,15 +87,10 @@ interface DeviceCondition {
   brand: string;
   model: string;
   modelName: string;
+  variant?: string;
+  deviceModelId: number;
   answers: Record<string, string | string[]>;
   conditionScore: number;
-}
-
-interface Model {
-  id: string;
-  name: string;
-  image: string;
-  variants?: string[];
 }
 
 const ValuationPage: React.FC = () => {
@@ -60,59 +101,132 @@ const ValuationPage: React.FC = () => {
   }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const variantFromUrl = queryParams.get('variant');
 
+  // State variables
   const [deviceCondition, setDeviceCondition] = useState<DeviceCondition | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('bank');
-  const [modelData, setModelData] = useState<Model | null>(null);
+  const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [deviceModels, setDeviceModels] = useState<DeviceModel[]>([]);
+  const [valuations, setValuations] = useState<Valuation[]>([]);
+  const [selectedModel, setSelectedModel] = useState<DeviceModel | null>(null);
   const [selectedVariant, setSelectedVariant] = useState('');
   const [basePrice, setBasePrice] = useState(0);
   const [finalPrice, setFinalPrice] = useState(0);
 
+  // Fetch reference data from APIs
+  useEffect(() => {
+    const fetchReferenceData = async () => {
+      try {
+        const [
+          deviceTypesResponse, 
+          brandsResponse, 
+          deviceModelsResponse
+        ] = await Promise.all([
+          fetch('/api/device-types'),
+          fetch('/api/brands'),
+          fetch('/api/device-models')
+        ]);
+        
+        if (!deviceTypesResponse.ok) throw new Error('Failed to fetch device types');
+        if (!brandsResponse.ok) throw new Error('Failed to fetch brands');
+        if (!deviceModelsResponse.ok) throw new Error('Failed to fetch device models');
+        
+        const deviceTypesData = await deviceTypesResponse.json();
+        const brandsData = await brandsResponse.json();
+        const deviceModelsData = await deviceModelsResponse.json();
+        
+        setDeviceTypes(deviceTypesData);
+        setBrands(brandsData);
+        setDeviceModels(deviceModelsData);
+      } catch (err) {
+        console.error('Error fetching reference data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load reference data');
+      }
+    };
+    
+    fetchReferenceData();
+  }, []);
+
+  // Load device condition from localStorage and fetch device model and valuation data
   useEffect(() => {
     const loadData = async () => {
       try {
+        setLoading(true);
+        
+        // Get condition data from localStorage
         const conditionData = localStorage.getItem('deviceCondition');
-        if (conditionData) {
-          const parsedCondition = JSON.parse(conditionData);
-          setDeviceCondition(parsedCondition);
-
-          const currentModel = getModelData(model || '');
-          setModelData(currentModel);
-
-          if (currentModel?.variants?.length > 0) {
-            const initialVariant = currentModel.variants[0];
-            setSelectedVariant(initialVariant);
-            const variantKey = initialVariant.replace(/\s/g, '');
-            const variantPrice = variantModelPrices[model || '']?.[variantKey] || 0;
-            setBasePrice(variantPrice);
-            setFinalPrice(Math.round(variantPrice * parsedCondition.conditionScore));
-          }
+        if (!conditionData) {
+          setError('No device condition data found');
+          setLoading(false);
+          return;
         }
+        
+        const parsedCondition = JSON.parse(conditionData) as DeviceCondition;
+        setDeviceCondition(parsedCondition);
+        
+        // Find the device model that matches
+        const foundModel = deviceModels.find(m => 
+          m.id === parsedCondition.deviceModelId || 
+          (m.slug === model && m.brand?.slug === brand)
+        );
+        
+        if (!foundModel) {
+          setError('Device model not found');
+          setLoading(false);
+          return;
+        }
+        
+        setSelectedModel(foundModel);
+        
+        // Set variant from localStorage or URL
+        const variant = parsedCondition.variant || variantFromUrl || 
+                       (foundModel.variants && foundModel.variants.length > 0 ? foundModel.variants[0] : '');
+        setSelectedVariant(variant);
+        
+        // Fetch valuations for this model
+        const valuationsResponse = await fetch(`/api/valuations?deviceModelId=${foundModel.id}`);
+        if (!valuationsResponse.ok) throw new Error('Failed to fetch valuations');
+        
+        const valuationsData = await valuationsResponse.json();
+        setValuations(valuationsData);
+        
+        // Calculate prices
+        const initialBasePrice = getBasePrice(foundModel.id, variant, valuationsData);
+        setBasePrice(initialBasePrice);
+        setFinalPrice(Math.round(initialBasePrice * parsedCondition.conditionScore));
+        
+        setLoading(false);
       } catch (error) {
-        console.error('Failed to load device condition:', error);
-      } finally {
+        console.error('Failed to load valuation data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load valuation data');
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [model]);
+    if (deviceModels.length > 0) {
+      loadData();
+    }
+  }, [deviceModels, model, brand, variantFromUrl]);
 
+  // Update prices when variant changes
   useEffect(() => {
-    if (deviceCondition && model && selectedVariant) {
-      const variantKey = selectedVariant.replace(/\s/g, '');
-      const newBasePrice = variantModelPrices[model]?.[variantKey] || 0;
+    if (deviceCondition && selectedModel && selectedVariant) {
+      const newBasePrice = getBasePrice(selectedModel.id, selectedVariant, valuations);
       setBasePrice(newBasePrice);
       setFinalPrice(Math.round(newBasePrice * deviceCondition.conditionScore));
     }
-  }, [selectedVariant, model, deviceCondition]);
+  }, [selectedVariant, selectedModel, deviceCondition, valuations]);
 
   const handleProceedToCheckout = () => {
-    if (!deviceCondition || !modelData) return;
+    if (!deviceCondition || !selectedModel) return;
 
     const deviceTypeObj = deviceTypes.find(dt => dt.slug === deviceType);
-    const brandObj = brands.find(b => b.slug.toLowerCase() === brand?.toLowerCase());
+    const brandObj = brands.find(b => b.slug === brand);
 
     localStorage.setItem(
       'deviceValuation',
@@ -120,9 +234,11 @@ const ValuationPage: React.FC = () => {
         deviceType,
         brand,
         model,
-        modelName: modelData.name,
-        brandName: brandObj?.name,
-        image: modelData.image,
+        deviceModelId: selectedModel.id,
+        modelName: selectedModel.name,
+        brandName: brandObj?.name || brand,
+        deviceTypeName: deviceTypeObj?.name || deviceType,
+        image: selectedModel.image,
         conditionScore: deviceCondition.conditionScore,
         conditionDescription: getConditionDescription(deviceCondition.conditionScore),
         basePrice,
@@ -134,17 +250,46 @@ const ValuationPage: React.FC = () => {
     navigate('/checkout');
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-gray-600">Loading valuation...</p>
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+          <h2 className="text-xl font-medium">Loading your device valuation...</h2>
         </div>
       </div>
     );
   }
 
-  if (!deviceType || !brand || !model || !deviceCondition || !modelData) {
+  // Error state
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-4 text-red-600">Valuation Error</h2>
+          <p className="mb-8 text-gray-700">{error}</p>
+          <div className="flex justify-center space-x-4">
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition duration-300"
+            >
+              Try Again
+            </button>
+            <Link
+              to="/"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition duration-300"
+            >
+              Go Back Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Validation check
+  if (!deviceType || !brand || !model || !deviceCondition || !selectedModel) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
@@ -162,7 +307,7 @@ const ValuationPage: React.FC = () => {
   }
 
   const deviceTypeObj = deviceTypes.find(dt => dt.slug === deviceType);
-  const brandObj = brands.find(b => b.slug.toLowerCase() === brand.toLowerCase());
+  const brandObj = brands.find(b => b.slug === brand);
   const conditionDescription = getConditionDescription(deviceCondition.conditionScore);
 
   return (
@@ -183,15 +328,24 @@ const ValuationPage: React.FC = () => {
             <h1 className="text-3xl font-bold mb-6">Your Device Valuation</h1>
             <div className="flex items-center mb-8">
               <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center mr-6">
-                {modelData.image ? (
-                  <img src={modelData.image} alt={modelData.name} className="w-20 h-20 object-contain" />
+                {selectedModel.image ? (
+                  <img 
+                    src={selectedModel.image} 
+                    alt={selectedModel.name} 
+                    className="w-20 h-20 object-contain"
+                    onError={(e) => {
+                      const imgElement = e.currentTarget;
+                      imgElement.src = `https://placehold.co/200x200?text=${encodeURIComponent(selectedModel.name)}`;
+                      imgElement.onerror = null;
+                    }}
+                  />
                 ) : (
                   <span className="text-gray-500">No Image</span>
                 )}
               </div>
               <div>
                 <h2 className="text-xl font-semibold">
-                  {modelData.name} {selectedVariant && `(${selectedVariant})`}
+                  {selectedModel.name} {selectedVariant && `(${selectedVariant})`}
                 </h2>
                 <p className="text-gray-600">{deviceTypeObj?.name}</p>
                 <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -200,7 +354,7 @@ const ValuationPage: React.FC = () => {
               </div>
             </div>
 
-            {modelData.variants && modelData.variants.length > 0 && (
+            {selectedModel.variants && selectedModel.variants.length > 0 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Select Variant</label>
                 <select
@@ -208,7 +362,7 @@ const ValuationPage: React.FC = () => {
                   onChange={(e) => setSelectedVariant(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 >
-                  {modelData.variants.map((variant) => (
+                  {selectedModel.variants.map((variant) => (
                     <option key={variant} value={variant}>
                       {variant}
                     </option>
