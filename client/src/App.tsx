@@ -349,13 +349,13 @@ function App() {
                   
                   {/* Device Management */}
                   <Route path="device-types" element={<AdminCQS />} />
-                  <Route path="brands" element={<AdminBrands />} />
-                  <Route path="device-models" element={<AdminModels />} />
+                  <Route path="AdminBrands" element={<AdminBrands />} />
+                  <Route path="AdminModels" element={<AdminModels />} />
                   <Route path="devices" element={<AdminDevices />} />
                   
                   {/* Buyback Program */}
                   <Route path="buyback" element={<AdminDashboard />} />
-                  <Route path="condition-questions" element={<AdminCQS />} />
+                  <Route path="AdminCQS" element={<AdminCQS />} />
                   <Route path="valuations" element={<AdminPricing />} />
                   
                   {/* Marketplace */}

@@ -84,14 +84,14 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
           <SidebarItem
             icon={<TagIcon className="h-5 w-5" />}
             label="Brands"
-            href="/admin/brands"
-            active={activePath === "/admin/brands"}
+            href="/admin/AdminBrands"
+            active={activePath === "/admin/AdminBrands"}
           />
           <SidebarItem
             icon={<MonitorSmartphone className="h-5 w-5" />}
             label="Device Models"
-            href="/admin/device-models"
-            active={activePath === "/admin/device-models"}
+            href="/admin/AdminModels"
+            active={activePath === "/admin/AdminModels"}
           />
           <SidebarItem
             icon={<Layers className="h-5 w-5" />}
@@ -114,8 +114,8 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
           <SidebarItem
             icon={<CheckCircle className="h-5 w-5" />}
             label="Condition Questions"
-            href="/admin/condition-questions"
-            active={activePath === "/admin/condition-questions"}
+            href="/admin/AdminCQS"
+            active={activePath === "/admin/AdminCQS"}
           />
           <SidebarItem
             icon={<Briefcase className="h-5 w-5" />}
