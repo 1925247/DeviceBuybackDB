@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, MapPin, Check, Info } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, MapPin, Check, Info, Loader2 } from 'lucide-react';
 import { getLocationFromPincode } from '../api/pincode';
+import { apiRequest } from '../lib/queryClient';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -37,6 +38,7 @@ const getAvailableDates = () => {
 const CheckoutPage: React.FC = () => {
   const [deviceValuation, setDeviceValuation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -53,6 +55,7 @@ const CheckoutPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [orderError, setOrderError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -120,12 +123,53 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (validateForm()) {
-      const randomOrderId = 'ORD' + Math.floor(100000 + Math.random() * 900000);
-      setOrderId(randomOrderId);
-      setOrderPlaced(true);
+      try {
+        setSubmitting(true);
+        setOrderError(null);
+        
+        // Create a buyback request in the database
+        const buybackData = {
+          user_id: 1, // Default user ID - in a real app this would be the logged-in user
+          device_model_id: deviceValuation.deviceModelId,
+          condition_score: deviceValuation.conditionScore,
+          offered_price: deviceValuation.finalPrice,
+          variant: deviceValuation.selectedVariant,
+          status: 'pending',
+          customer_name: formData.name,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          pickup_address: `${formData.address}, ${formData.city}, ${formData.state}, ${formData.pincode}`,
+          pickup_date: formData.pickupDate,
+          pickup_time: formData.pickupTime,
+          notes: formData.additionalNotes || null
+        };
+        
+        const response = await apiRequest('/api/buyback-requests', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(buybackData),
+        });
+        
+        // Extract the order ID from the response
+        const { id } = await response.json();
+        setOrderId(id.toString());
+        setOrderPlaced(true);
+        
+        // Clear any existing storage now that the order is in the database
+        localStorage.removeItem('deviceCondition');
+        localStorage.removeItem('deviceValuation');
+      } catch (error) {
+        console.error('Error creating order:', error);
+        setOrderError('There was a problem creating your order. Please try again.');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 

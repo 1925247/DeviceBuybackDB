@@ -147,7 +147,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deviceTypeId = req.query.deviceTypeId ? Number(req.query.deviceTypeId) : undefined;
       const questionsData = await storage.getConditionQuestions(deviceTypeId);
-      res.json(questionsData);
+      
+      // Format questions to match the frontend expected format
+      const formattedQuestions = questionsData.map(question => ({
+        id: question.id.toString(),
+        question: question.question,
+        device_type_id: question.deviceTypeId,
+        tooltip: `Answer accurately to get the best price estimate.`,
+        order: question.order,
+        active: question.active,
+        multiSelect: false, // Default to false
+        options: question.options.map(option => ({
+          id: option.id.toString(),
+          label: option.text || option.answer,
+          value: option.value
+        }))
+      }));
+      
+      res.json(formattedQuestions);
     } catch (error: any) {
       console.error("Error fetching condition questions:", error);
       res.status(500).json({ message: error.message || "Failed to fetch condition questions" });
@@ -158,7 +175,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(apiRouter("/valuations"), async (req: Request, res: Response) => {
     try {
       const deviceModelId = req.query.deviceModelId ? Number(req.query.deviceModelId) : undefined;
+      const variant = req.query.variant as string | undefined;
+      
       const valuationsData = await storage.getValuations(deviceModelId);
+      
+      // If we have a device model ID and variant, we can create a more focused response
+      if (deviceModelId) {
+        const modelValuations = valuationsData.filter(v => v.device_model_id === deviceModelId);
+        
+        // If there are no valuations for this model, create default ones
+        if (modelValuations.length === 0) {
+          // Create default valuations based on device model
+          const deviceModels = await storage.getDeviceModels();
+          const model = deviceModels.find(m => m.id === deviceModelId);
+          
+          if (model) {
+            // Base price depends on the model - we'll create a reasonable placeholder
+            const basePrice = 1000; // Default base price 
+            
+            // Generate valuations for default conditions
+            const defaultValuations = [
+              {
+                id: 0,
+                device_model_id: deviceModelId,
+                variant: variant || null,
+                condition_multiplier: 1.0, // Excellent condition
+                base_price: basePrice,
+                active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                deviceModel: model
+              },
+              {
+                id: 0,
+                device_model_id: deviceModelId,
+                variant: variant || null,
+                condition_multiplier: 0.8, // Good condition
+                base_price: basePrice * 0.8,
+                active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                deviceModel: model
+              },
+              {
+                id: 0,
+                device_model_id: deviceModelId,
+                variant: variant || null,
+                condition_multiplier: 0.6, // Fair condition
+                base_price: basePrice * 0.6,
+                active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                deviceModel: model
+              }
+            ];
+            
+            return res.json(defaultValuations);
+          }
+        }
+        
+        // If we have valuations for this model but no variant specified, return all
+        if (!variant) {
+          return res.json(modelValuations);
+        }
+        
+        // If we have a variant, filter for that variant
+        const variantValuations = modelValuations.filter(v => 
+          v.variant === variant || v.variant === null || v.variant === undefined
+        );
+        
+        if (variantValuations.length > 0) {
+          return res.json(variantValuations);
+        }
+        
+        // If no valuations for this variant, use the base model valuations
+        const baseValuations = modelValuations.filter(v => 
+          v.variant === null || v.variant === undefined
+        );
+        
+        if (baseValuations.length > 0) {
+          // Adjust the base valuations to include the variant
+          const adjustedValuations = baseValuations.map(v => ({
+            ...v,
+            variant
+          }));
+          
+          return res.json(adjustedValuations);
+        }
+      }
+      
+      // Default case: return all valuations
       res.json(valuationsData);
     } catch (error: any) {
       console.error("Error fetching valuations:", error);
