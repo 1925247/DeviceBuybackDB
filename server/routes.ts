@@ -187,6 +187,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message || "Failed to fetch condition questions" });
     }
   });
+  
+  // Get single condition question by ID
+  app.get(apiRouter("/condition-questions/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const question = await storage.getConditionQuestion(id);
+      
+      if (!question) {
+        return res.status(404).json({ message: "Condition question not found" });
+      }
+      
+      // Format question to match the frontend expected format
+      const formattedQuestion = {
+        id: question.id.toString(),
+        question: question.question,
+        device_type_id: question.deviceTypeId,
+        tooltip: question.tooltip || `Answer accurately to get the best price estimate.`,
+        order: question.order,
+        active: question.active,
+        options: question.options.map((option: ConditionOption) => ({
+          id: option.id.toString(),
+          text: option.text || option.answer,
+          value: option.value
+        }))
+      };
+      
+      res.json(formattedQuestion);
+    } catch (error: any) {
+      console.error("Error fetching condition question:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch condition question" });
+    }
+  });
+  
+  // Create condition question
+  app.post(apiRouter("/condition-questions"), async (req: Request, res: Response) => {
+    try {
+      console.log("Creating condition question:", req.body);
+      // Extract question data and options
+      const { options, ...questionData } = req.body;
+      
+      // Convert device_type_id to deviceTypeId
+      const formattedQuestionData = {
+        ...questionData,
+        deviceTypeId: Number(questionData.device_type_id),
+      };
+      
+      delete formattedQuestionData.device_type_id;
+      
+      // Create the condition question
+      const question = await storage.createConditionQuestion(formattedQuestionData);
+      
+      // Add options for the question
+      if (options && options.length > 0) {
+        for (const option of options) {
+          await storage.createConditionAnswer({
+            question_id: question.id,
+            text: option.text,
+            value: option.value
+          });
+        }
+      }
+      
+      // Get the full question with options
+      const completeQuestion = await storage.getConditionQuestion(question.id);
+      
+      // Format the response
+      const formattedQuestion = {
+        id: completeQuestion.id.toString(),
+        question: completeQuestion.question,
+        device_type_id: completeQuestion.deviceTypeId,
+        tooltip: completeQuestion.tooltip || `Answer accurately to get the best price estimate.`,
+        order: completeQuestion.order,
+        active: completeQuestion.active,
+        options: completeQuestion.options.map((option: ConditionOption) => ({
+          id: option.id.toString(),
+          text: option.text || option.answer,
+          value: option.value
+        }))
+      };
+      
+      res.status(201).json(formattedQuestion);
+    } catch (error: any) {
+      console.error("Error creating condition question:", error);
+      res.status(error.status || 500).json({ message: error.message || "Failed to create condition question" });
+    }
+  });
+  
+  // Update condition question
+  app.put(apiRouter("/condition-questions/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { options, ...questionData } = req.body;
+      
+      // Convert device_type_id to deviceTypeId if present
+      const formattedQuestionData: any = { ...questionData };
+      if (questionData.device_type_id) {
+        formattedQuestionData.deviceTypeId = Number(questionData.device_type_id);
+        delete formattedQuestionData.device_type_id;
+      }
+      
+      // Update the question
+      const updatedQuestion = await storage.updateConditionQuestion(id, formattedQuestionData);
+      
+      if (!updatedQuestion) {
+        return res.status(404).json({ message: "Condition question not found" });
+      }
+      
+      // If options are provided, update them
+      if (options) {
+        // First, delete existing options
+        await storage.deleteConditionAnswersByQuestionId(id);
+        
+        // Then, create new options
+        for (const option of options) {
+          await storage.createConditionAnswer({
+            question_id: id,
+            text: option.text,
+            value: option.value
+          });
+        }
+      }
+      
+      // Get the updated question with options
+      const completeQuestion = await storage.getConditionQuestion(id);
+      
+      // Format the response
+      const formattedQuestion = {
+        id: completeQuestion.id.toString(),
+        question: completeQuestion.question,
+        device_type_id: completeQuestion.deviceTypeId,
+        tooltip: completeQuestion.tooltip || `Answer accurately to get the best price estimate.`,
+        order: completeQuestion.order,
+        active: completeQuestion.active,
+        options: completeQuestion.options.map((option: ConditionOption) => ({
+          id: option.id.toString(),
+          text: option.text || option.answer,
+          value: option.value
+        }))
+      };
+      
+      res.json(formattedQuestion);
+    } catch (error: any) {
+      console.error("Error updating condition question:", error);
+      res.status(error.status || 500).json({ message: error.message || "Failed to update condition question" });
+    }
+  });
+  
+  // Delete condition question
+  app.delete(apiRouter("/condition-questions/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      
+      // Delete all associated options first
+      await storage.deleteConditionAnswersByQuestionId(id);
+      
+      // Then delete the question
+      const deleted = await storage.deleteConditionQuestion(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Condition question not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting condition question:", error);
+      res.status(500).json({ message: error.message || "Failed to delete condition question" });
+    }
+  });
+  
+  // Get all condition answers
+  app.get(apiRouter("/condition-answers"), async (req: Request, res: Response) => {
+    try {
+      const answers = await storage.getConditionAnswers();
+      res.json(answers);
+    } catch (error: any) {
+      console.error("Error fetching condition answers:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch condition answers" });
+    }
+  });
 
   // Valuations API endpoint
   app.get(apiRouter("/valuations"), async (req: Request, res: Response) => {

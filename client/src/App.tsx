@@ -48,6 +48,7 @@ import AdminConfig from './pages/admin/AdminConfig';
 import AdminCQS from './pages/admin/AdminCQS';
 import AdminDiagnostic from './pages/admin/AdminDiagnostic';
 import AdminBuybacks from './pages/admin/AdminBuybacks';
+import ConditionQuestionsAdmin from './pages/admin/ConditionQuestionsAdmin';
 import AdminLayout from './components/admin/AdminLayout';
 
 // Not Found Page
@@ -356,7 +357,7 @@ function App() {
                   
                   {/* Buyback Program */}
                   <Route path="buyback" element={<AdminBuybacks />} />
-                  <Route path="condition-questions" element={<AdminCQS />} />
+                  <Route path="condition-questions" element={<ConditionQuestionsAdmin />} />
                   <Route path="valuations" element={<AdminPricing />} />
                   
                   {/* Marketplace */}

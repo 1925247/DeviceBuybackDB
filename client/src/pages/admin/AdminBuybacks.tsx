@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { Pencil, Trash2, Eye, Phone, Mail, MapPin, CalendarClock } from 'lucide-react';
+import { Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Clock } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -40,86 +40,103 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
+  Badge,
+} from '@/components/ui/badge';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 
 interface BuybackRequest {
   id: number;
   user_id: number;
-  device_type: string;
   device_model_id: number;
+  device_type: string;
   manufacturer: string;
   model: string;
   condition: string;
-  offered_price: number;
+  offered_price: string;
+  variant: string | null;
   status: string;
-  notes?: string;
-  variant?: string;
-  customer_name?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  pickup_address?: string;
-  pickup_date?: string;
-  pickup_time?: string;
-  created_at: string;
-  updated_at: string;
+  notes: string | null;
+  pickup_address: string;
+  pickup_date: string;
+  pickup_time: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  completed: 'bg-blue-100 text-blue-800',
-  cancelled: 'bg-gray-100 text-gray-800'
+const statusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+const getStatusColor = (status: string) => {
+  switch(status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'approved':
+      return 'bg-green-100 text-green-800';
+    case 'rejected':
+      return 'bg-red-100 text-red-800';
+    case 'processing':
+      return 'bg-blue-100 text-blue-800';
+    case 'completed':
+      return 'bg-purple-100 text-purple-800';
+    case 'cancelled':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 };
 
 const AdminBuybacks: React.FC = () => {
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState('all');
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BuybackRequest | null>(null);
-  const [formData, setFormData] = useState({
-    status: '',
-    notes: '',
-  });
+  const [newStatus, setNewStatus] = useState('');
   const { toast } = useToast();
 
-  // Query hook for fetching buyback requests
-  const { data: buybackRequests, isLoading: isLoadingRequests } = useQuery<BuybackRequest[]>({
+  // Query to fetch buyback requests
+  const { data: buybackRequests, isLoading, refetch } = useQuery<{ requests: BuybackRequest[], total: number }>({
     queryKey: ['/api/buyback-requests'],
   });
 
-  // Mutation hook for updating a buyback request
-  const updateRequestMutation = useMutation({
-    mutationFn: async (data: { id: number; status: string; notes?: string }) => {
-      const response = await fetch(`/api/buyback-requests/${data.id}`, {
+  // Mutation to update buyback request status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number, status: string }) => {
+      const response = await fetch(`/api/buyback-requests/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          status: data.status,
-          notes: data.notes,
-        }),
+        body: JSON.stringify({ status }),
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to update buyback request');
+        throw new Error(error.message || 'Failed to update status');
       }
       
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-      setIsEditModalOpen(false);
+      setStatusUpdateModalOpen(false);
       toast({
-        title: 'Success',
-        description: 'Buyback request updated successfully',
+        title: 'Status Updated',
+        description: 'The buyback request status has been updated successfully.',
       });
     },
     onError: (error: Error) => {
@@ -131,8 +148,8 @@ const AdminBuybacks: React.FC = () => {
     },
   });
 
-  // Mutation hook for deleting a buyback request
-  const deleteRequestMutation = useMutation({
+  // Mutation to delete buyback request
+  const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/buyback-requests/${id}`, {
         method: 'DELETE',
@@ -147,11 +164,11 @@ const AdminBuybacks: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-      setIsDeleteModalOpen(false);
+      setDeleteModalOpen(false);
       setSelectedRequest(null);
       toast({
-        title: 'Success',
-        description: 'Buyback request deleted successfully',
+        title: 'Request Deleted',
+        description: 'The buyback request has been deleted successfully.',
       });
     },
     onError: (error: Error) => {
@@ -163,76 +180,43 @@ const AdminBuybacks: React.FC = () => {
     },
   });
 
-  // Helper functions
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleViewRequest = (request: BuybackRequest) => {
+    setSelectedRequest(request);
+    setViewModalOpen(true);
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleDeleteRequest = (request: BuybackRequest) => {
+    setSelectedRequest(request);
+    setDeleteModalOpen(true);
   };
 
-  const handleUpdateRequest = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateStatus = (request: BuybackRequest) => {
+    setSelectedRequest(request);
+    setNewStatus(request.status);
+    setStatusUpdateModalOpen(true);
+  };
+
+  const confirmDeleteRequest = () => {
     if (selectedRequest) {
-      updateRequestMutation.mutate({
-        id: selectedRequest.id,
-        status: formData.status,
-        notes: formData.notes,
-      });
+      deleteMutation.mutate(selectedRequest.id);
     }
   };
 
-  const handleDeleteRequest = () => {
-    if (selectedRequest) {
-      deleteRequestMutation.mutate(selectedRequest.id);
+  const confirmUpdateStatus = () => {
+    if (selectedRequest && newStatus) {
+      updateStatusMutation.mutate({ id: selectedRequest.id, status: newStatus });
     }
   };
 
-  const viewRequest = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setIsViewModalOpen(true);
-  };
+  const filteredRequests = buybackRequests?.requests.filter(request => {
+    if (currentTab === 'all') return true;
+    return request.status === currentTab;
+  }) || [];
 
-  const openEditModal = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setFormData({
-      status: request.status,
-      notes: request.notes || '',
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const openDeleteModal = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setIsDeleteModalOpen(true);
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  if (isLoadingRequests) {
+  if (isLoading) {
     return (
       <div className="p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Buyback Requests</h1>
-        </div>
+        <h1 className="text-2xl font-bold mb-6">Buyback Requests</h1>
         <div className="text-center py-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading buyback requests...</p>
@@ -245,284 +229,286 @@ const AdminBuybacks: React.FC = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Buyback Requests</h1>
+        <Button onClick={() => refetch()} className="flex items-center gap-2">
+          Refresh
+        </Button>
       </div>
 
-      {buybackRequests && buybackRequests.length > 0 ? (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {buybackRequests.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell className="font-medium">#{request.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{request.model}</div>
-                      <div className="text-sm text-gray-500">{request.manufacturer}</div>
-                      {request.variant && (
-                        <div className="text-xs text-gray-400">{request.variant}</div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {request.customer_name || "N/A"}
-                  </TableCell>
-                  <TableCell>{formatCurrency(Number(request.offered_price))}</TableCell>
-                  <TableCell>
-                    <Badge 
-                      className={statusColors[request.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}
-                    >
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(request.created_at)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => viewRequest(request)}
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditModal(request)}
-                        title="Edit status"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openDeleteModal(request)}
-                        title="Delete request"
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-600">No buyback requests found.</p>
-        </div>
-      )}
+      <Tabs defaultValue="all" className="mb-6" onValueChange={setCurrentTab}>
+        <TabsList className="mb-2">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="processing">Processing</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+        </TabsList>
 
-      {/* View Details Modal */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-4xl">
+        <TabsContent value={currentTab}>
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {currentTab === 'all' ? 'All' : currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} Buyback Requests
+              </CardTitle>
+              <CardDescription>
+                {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'} found
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredRequests.length > 0 ? (
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Device</TableHead>
+                        <TableHead>Condition</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRequests.map((request) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="font-medium">#{request.id}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span>{request.customer_name}</span>
+                              <span className="text-sm text-gray-500">{request.customer_email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{request.manufacturer} {request.model}</span>
+                              {request.variant && <span className="text-sm text-gray-500">{request.variant}</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell>{request.condition}</TableCell>
+                          <TableCell className="font-medium">${request.offered_price}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(request.status)}>
+                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-500">
+                            {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleViewRequest(request)}
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleUpdateStatus(request)}
+                                title="Update Status"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteRequest(request)}
+                                title="Delete Request"
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-gray-500">No buyback requests found.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* View Request Modal */}
+      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Buyback Request Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this buyback request
+            </DialogDescription>
           </DialogHeader>
-
+          
           {selectedRequest && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Device Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Device</h3>
-                    <p className="text-lg font-medium">{selectedRequest.model}</p>
-                    <p className="text-sm text-gray-600">{selectedRequest.manufacturer}</p>
-                    {selectedRequest.variant && (
-                      <Badge variant="outline" className="mt-1">
-                        {selectedRequest.variant}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Condition</h3>
-                    <p>{selectedRequest.condition}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Offered Price</h3>
-                    <p className="text-xl font-bold text-green-600">
-                      {formatCurrency(Number(selectedRequest.offered_price))}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                    <Badge 
-                      className={`${
-                        statusColors[selectedRequest.status as keyof typeof statusColors]
-                      } mt-1`}
-                    >
-                      {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
-                    </Badge>
-                  </div>
-                  
-                  {selectedRequest.notes && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Customer Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-start">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
+                        <span className="font-semibold text-lg">
+                          {selectedRequest.customer_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{selectedRequest.customer_name}</h3>
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <Mail className="h-3.5 w-3.5 mr-1" />
+                          <span>{selectedRequest.customer_email}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <Phone className="h-3.5 w-3.5 mr-1" />
+                          <span>{selectedRequest.customer_phone}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <h3 className="text-sm font-medium mb-2">Pickup Information</h3>
+                      <div className="rounded-md bg-gray-50 p-3 space-y-2">
+                        <div className="flex items-start text-sm">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
+                          <span className="flex-1">{selectedRequest.pickup_address}</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                          <span>{selectedRequest.pickup_date}</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                          <span>{selectedRequest.pickup_time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Device Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Notes</h3>
-                      <p className="text-gray-700 whitespace-pre-wrap">{selectedRequest.notes}</p>
+                      <h3 className="font-medium text-lg">
+                        {selectedRequest.manufacturer} {selectedRequest.model}
+                        {selectedRequest.variant && ` (${selectedRequest.variant})`}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {selectedRequest.device_type.charAt(0).toUpperCase() + selectedRequest.device_type.slice(1)}
+                      </p>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium">Condition</h4>
+                        <p className="mt-1">{selectedRequest.condition}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium">Offered Price</h4>
+                        <p className="mt-1 text-xl font-bold">${selectedRequest.offered_price}</p>
+                      </div>
+                    </div>
+                    
+                    {selectedRequest.notes && (
+                      <div className="pt-2">
+                        <h4 className="text-sm font-medium mb-2">Additional Notes</h4>
+                        <div className="rounded-md bg-gray-50 p-3 text-sm">
+                          {selectedRequest.notes}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {selectedRequest.customer_name && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-gray-400 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </span>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Name</h3>
-                        <p>{selectedRequest.customer_name}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedRequest.customer_email && (
-                    <div className="flex items-start gap-2">
-                      <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                        <p>{selectedRequest.customer_email}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedRequest.customer_phone && (
-                    <div className="flex items-start gap-2">
-                      <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Phone</h3>
-                        <p>{selectedRequest.customer_phone}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedRequest.pickup_address && (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Pickup Address</h3>
-                        <p className="whitespace-pre-wrap">{selectedRequest.pickup_address}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(selectedRequest.pickup_date || selectedRequest.pickup_time) && (
-                    <div className="flex items-start gap-2">
-                      <CalendarClock className="h-5 w-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Pickup Schedule</h3>
-                        <p>
-                          {selectedRequest.pickup_date && (
-                            <span className="font-medium">{selectedRequest.pickup_date}</span>
-                          )}
-                          {selectedRequest.pickup_date && selectedRequest.pickup_time && ' • '}
-                          {selectedRequest.pickup_time}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <div className="text-sm text-gray-500 w-full border-t pt-3">
-                    <p>Request date: {formatDate(selectedRequest.created_at)}</p>
-                    <p>Last updated: {formatDate(selectedRequest.updated_at)}</p>
-                  </div>
-                </CardFooter>
-              </Card>
+              <div className="flex items-center justify-between border-t pt-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Current Status</p>
+                  <Badge className={`${getStatusColor(selectedRequest.status)} text-sm px-3 py-1`}>
+                    {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
+                  </Badge>
+                </div>
+                <div className="space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleUpdateStatus(selectedRequest)}
+                  >
+                    Update Status
+                  </Button>
+                  <Button onClick={() => setViewModalOpen(false)}>Close</Button>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Edit Status Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      {/* Update Status Modal */}
+      <Dialog open={statusUpdateModalOpen} onOpenChange={setStatusUpdateModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Update Buyback Request</DialogTitle>
+            <DialogTitle>Update Status</DialogTitle>
             <DialogDescription>
-              Update the status and notes for this buyback request.
+              Change the status of this buyback request
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleUpdateRequest} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange('status', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+          
+          {selectedRequest && (
+            <div className="py-4">
+              <div className="mb-4">
+                <p className="text-sm mb-1">Request #{selectedRequest.id}: {selectedRequest.manufacturer} {selectedRequest.model}</p>
+                <p className="text-sm text-gray-500">Current Status: <span className="font-medium">{selectedRequest.status}</span></p>
+              </div>
+              
+              <div className="space-y-3">
+                <Label htmlFor="status">New Status</Label>
+                <Select
+                  value={newStatus}
+                  onValueChange={setNewStatus}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <DialogFooter className="mt-6">
+                <Button variant="outline" onClick={() => setStatusUpdateModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={confirmUpdateStatus} disabled={updateStatusMutation.isPending}>
+                  {updateStatusMutation.isPending ? 'Updating...' : 'Update Status'}
+                </Button>
+              </DialogFooter>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                className="min-h-[100px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Add notes about this request"
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsEditModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={updateRequestMutation.isPending}
-              >
-                {updateRequestMutation.isPending ? 'Updating...' : 'Update Status'}
-              </Button>
-            </DialogFooter>
-          </form>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Buyback Request</DialogTitle>
@@ -530,38 +516,28 @@ const AdminBuybacks: React.FC = () => {
               Are you sure you want to delete this buyback request? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            {selectedRequest && (
-              <div className="p-4 bg-gray-50 rounded-md">
-                <p>
-                  <span className="font-medium">Device:</span> {selectedRequest.model} ({selectedRequest.manufacturer})
-                </p>
-                {selectedRequest.customer_name && (
-                  <p>
-                    <span className="font-medium">Customer:</span> {selectedRequest.customer_name}
-                  </p>
-                )}
-                <p>
-                  <span className="font-medium">Price:</span> {formatCurrency(Number(selectedRequest.offered_price))}
-                </p>
+          
+          {selectedRequest && (
+            <div className="py-4">
+              <div className="bg-gray-50 p-4 rounded-md">
+                <p><span className="font-medium">Request ID:</span> #{selectedRequest.id}</p>
+                <p><span className="font-medium">Customer:</span> {selectedRequest.customer_name}</p>
+                <p><span className="font-medium">Device:</span> {selectedRequest.manufacturer} {selectedRequest.model}</p>
+                <p><span className="font-medium">Offered Price:</span> ${selectedRequest.offered_price}</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Cancel
             </Button>
             <Button 
-              type="button" 
-              variant="destructive"
-              onClick={handleDeleteRequest}
-              disabled={deleteRequestMutation.isPending}
+              variant="destructive" 
+              onClick={confirmDeleteRequest}
+              disabled={deleteMutation.isPending}
             >
-              {deleteRequestMutation.isPending ? 'Deleting...' : 'Delete Request'}
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete Request'}
             </Button>
           </DialogFooter>
         </DialogContent>
