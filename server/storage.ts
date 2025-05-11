@@ -834,6 +834,307 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
+
+  // Settings operations
+  async getSettings(): Promise<any> {
+    // In a real implementation, this would fetch from a settings table
+    // For now, we return a mocked settings object
+    return {
+      general: {
+        site_name: "GadgetSwap",
+        site_tagline: "Your Trusted Source for Device Buyback and Refurbished Gadgets",
+        contact_email: "info@gadgetswap.com",
+        support_phone: "+1 (555) 123-4567"
+      },
+      buyback: {
+        min_offer_amount: 5,
+        max_processing_days: 3,
+        payment_methods: ["PayPal", "Bank Transfer", "Store Credit"]
+      },
+      marketplace: {
+        enable_marketplace: true,
+        featured_products_count: 8,
+        product_pricing_strategy: "cost_plus_margin" // cost_plus_margin, market_based, dynamic
+      },
+      shipping: {
+        default_shipping_country: "US",
+        free_shipping_min_order: 50,
+        shipping_zones: [
+          { name: "Domestic", countries: ["US"], rate: 5.99 },
+          { name: "International", countries: ["*"], rate: 24.99 }
+        ]
+      }
+    };
+  }
+
+  async updateSettings(settings: any): Promise<any> {
+    // In a real implementation, this would update a settings table
+    // For now, we just return the settings object that was provided
+    return settings;
+  }
+
+  // E-COMMERCE OPERATIONS
+
+  // Product operations
+  async getProducts(options: { page?: number; limit?: number; status?: string; featured?: boolean; categoryId?: number } = {}): Promise<Product[]> {
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      featured, 
+      categoryId 
+    } = options;
+    
+    const offset = (page - 1) * limit;
+    
+    let query = db.select().from(products);
+    
+    // Apply filters
+    if (status) {
+      query = query.where(eq(products.status, status));
+    }
+    
+    if (featured !== undefined) {
+      query = query.where(eq(products.featured, featured));
+    }
+    
+    if (categoryId) {
+      // This would require a join with the product_categories table
+      // For now, we'll handle this filter in memory
+      query = query.where(sql`EXISTS (
+        SELECT 1 FROM product_categories 
+        WHERE product_categories.product_id = products.id 
+        AND product_categories.category_id = ${categoryId}
+      )`);
+    }
+    
+    // Apply pagination
+    query = query.limit(limit).offset(offset);
+    
+    // Get products
+    const productList = await query;
+    
+    return productList;
+  }
+
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const [newProduct] = await db.insert(products).values(product).returning();
+    return newProduct;
+  }
+
+  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
+    const [updatedProduct] = await db
+      .update(products)
+      .set(product)
+      .where(eq(products.id, id))
+      .returning();
+    
+    return updatedProduct;
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    try {
+      await db.delete(products).where(eq(products.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      return false;
+    }
+  }
+
+  // Product variant operations
+  async getProductVariants(productId: number): Promise<ProductVariant[]> {
+    return db.select().from(productVariants).where(eq(productVariants.product_id, productId));
+  }
+
+  async getProductVariant(id: number): Promise<ProductVariant | undefined> {
+    const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, id));
+    return variant;
+  }
+
+  async createProductVariant(variant: InsertProductVariant): Promise<ProductVariant> {
+    const [newVariant] = await db.insert(productVariants).values(variant).returning();
+    return newVariant;
+  }
+
+  async updateProductVariant(id: number, variant: Partial<InsertProductVariant>): Promise<ProductVariant | undefined> {
+    const [updatedVariant] = await db
+      .update(productVariants)
+      .set(variant)
+      .where(eq(productVariants.id, id))
+      .returning();
+    
+    return updatedVariant;
+  }
+
+  async deleteProductVariant(id: number): Promise<boolean> {
+    try {
+      await db.delete(productVariants).where(eq(productVariants.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting product variant:", error);
+      return false;
+    }
+  }
+
+  // Product image operations
+  async getProductImages(productId: number): Promise<ProductImage[]> {
+    return db.select().from(productImages).where(eq(productImages.product_id, productId));
+  }
+
+  async createProductImage(image: InsertProductImage): Promise<ProductImage> {
+    const [newImage] = await db.insert(productImages).values(image).returning();
+    return newImage;
+  }
+
+  async setProductPrimaryImage(productId: number, imageId: number): Promise<boolean> {
+    try {
+      // First, set is_primary to false for all images of this product
+      await db
+        .update(productImages)
+        .set({ is_primary: false })
+        .where(eq(productImages.product_id, productId));
+      
+      // Then, set is_primary to true for the specified image
+      const [updatedImage] = await db
+        .update(productImages)
+        .set({ is_primary: true })
+        .where(and(
+          eq(productImages.id, imageId),
+          eq(productImages.product_id, productId)
+        ))
+        .returning();
+      
+      return !!updatedImage;
+    } catch (error) {
+      console.error("Error setting primary image:", error);
+      return false;
+    }
+  }
+
+  async deleteProductImage(id: number): Promise<boolean> {
+    try {
+      await db.delete(productImages).where(eq(productImages.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting product image:", error);
+      return false;
+    }
+  }
+
+  // Category operations
+  async getCategories(): Promise<Category[]> {
+    return db.select().from(categories);
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const [newCategory] = await db.insert(categories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category | undefined> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set(category)
+      .where(eq(categories.id, id))
+      .returning();
+    
+    return updatedCategory;
+  }
+
+  async deleteCategory(id: number): Promise<boolean> {
+    try {
+      await db.delete(categories).where(eq(categories.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      return false;
+    }
+  }
+
+  // Discount operations
+  async getDiscounts(status?: string): Promise<Discount[]> {
+    let query = db.select().from(discounts);
+    
+    if (status) {
+      query = query.where(eq(discounts.status, status));
+    }
+    
+    return query;
+  }
+
+  async getDiscount(id: number): Promise<Discount | undefined> {
+    const [discount] = await db.select().from(discounts).where(eq(discounts.id, id));
+    return discount;
+  }
+
+  async createDiscount(discount: InsertDiscount): Promise<Discount> {
+    const [newDiscount] = await db.insert(discounts).values(discount).returning();
+    return newDiscount;
+  }
+
+  async updateDiscount(id: number, discount: Partial<InsertDiscount>): Promise<Discount | undefined> {
+    const [updatedDiscount] = await db
+      .update(discounts)
+      .set(discount)
+      .where(eq(discounts.id, id))
+      .returning();
+    
+    return updatedDiscount;
+  }
+
+  async deleteDiscount(id: number): Promise<boolean> {
+    try {
+      await db.delete(discounts).where(eq(discounts.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting discount:", error);
+      return false;
+    }
+  }
+
+  async verifyDiscount(code: string, total?: number): Promise<Discount | undefined> {
+    const now = new Date();
+    
+    // Get discount by code, active status, and valid dates
+    const [discount] = await db
+      .select()
+      .from(discounts)
+      .where(and(
+        eq(discounts.code, code),
+        eq(discounts.status, 'active'),
+        sql`${discounts.start_date} <= ${now}`,
+        sql`${discounts.end_date} >= ${now}`
+      ));
+    
+    if (!discount) {
+      return undefined;
+    }
+    
+    // Check minimum order amount if provided
+    if (total !== undefined && discount.min_order_amount !== null) {
+      if (total < discount.min_order_amount) {
+        return undefined;
+      }
+    }
+    
+    // Check usage limit if set
+    if (discount.usage_limit !== null && discount.usage_count >= discount.usage_limit) {
+      return undefined;
+    }
+    
+    return discount;
+  }
 }
 
 export const storage = new DatabaseStorage();
