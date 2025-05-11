@@ -38,10 +38,22 @@ interface DeviceModel {
   slug: string;
   brand_id: number;
   device_type_id: number;
-  image_url: string;
-  description: string | null;
-  specs: any;
-  released_at: string | null;
+  image: string;
+  active: boolean;
+  featured: boolean;
+  variants: string[];
+  brand?: {
+    id: number;
+    name: string;
+    slug: string;
+    logo: string;
+  };
+  deviceType?: {
+    id: number;
+    name: string;
+    slug: string;
+    icon: string;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -75,10 +87,10 @@ const AdminModels: React.FC = () => {
     slug: '',
     brand_id: '',
     device_type_id: '',
-    image_url: '',
-    description: '',
-    specs: {},
-    released_at: '',
+    image: '',
+    active: true,
+    featured: false,
+    variants: [] as string[],
   });
   const { toast } = useToast();
 
@@ -204,10 +216,10 @@ const AdminModels: React.FC = () => {
       slug: '',
       brand_id: '',
       device_type_id: '',
-      image_url: '',
-      description: '',
-      specs: {},
-      released_at: '',
+      image: '',
+      active: true,
+      featured: false,
+      variants: [],
     });
   };
 
@@ -245,10 +257,10 @@ const AdminModels: React.FC = () => {
       slug: model.slug,
       brand_id: model.brand_id.toString(),
       device_type_id: model.device_type_id.toString(),
-      image_url: model.image_url || '',
-      description: model.description || '',
-      specs: model.specs || {},
-      released_at: model.released_at || '',
+      image: model.image || '',
+      active: model.active,
+      featured: model.featured,
+      variants: model.variants || [],
     });
     setIsEditModalOpen(true);
   };
@@ -259,6 +271,31 @@ const AdminModels: React.FC = () => {
   };
 
   // Render functions
+  // State for handling variants
+  const [variantInput, setVariantInput] = useState('');
+  
+  const addVariant = () => {
+    if (variantInput.trim() !== '') {
+      setFormData(prev => ({
+        ...prev,
+        variants: [...prev.variants, variantInput.trim()]
+      }));
+      setVariantInput('');
+    }
+  };
+
+  const removeVariant = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: checked }));
+  };
+
   const renderAddModal = () => (
     <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
       <DialogTrigger asChild>
@@ -267,7 +304,7 @@ const AdminModels: React.FC = () => {
           Add New Model
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Add New Device Model</DialogTitle>
           <DialogDescription>
@@ -295,6 +332,9 @@ const AdminModels: React.FC = () => {
                 onChange={handleInputChange}
                 required
               />
+              <p className="text-xs text-gray-500">
+                Used in URLs (e.g., "iphone-14-pro")
+              </p>
             </div>
           </div>
           
@@ -304,6 +344,7 @@ const AdminModels: React.FC = () => {
               <Select
                 value={formData.brand_id}
                 onValueChange={(value) => handleSelectChange('brand_id', value)}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Brand" />
@@ -322,6 +363,7 @@ const AdminModels: React.FC = () => {
               <Select
                 value={formData.device_type_id}
                 onValueChange={(value) => handleSelectChange('device_type_id', value)}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Device Type" />
@@ -338,34 +380,86 @@ const AdminModels: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="image_url">Image URL</Label>
+            <Label htmlFor="image">Image URL</Label>
             <Input
-              id="image_url"
-              name="image_url"
-              value={formData.image_url}
+              id="image"
+              name="image"
+              value={formData.image}
               onChange={handleInputChange}
+              placeholder="/assets/models/model-name.png or https://..."
             />
+            <p className="text-xs text-gray-500">
+              Path to device image (local or external URL)
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="active"
+                name="active"
+                checked={formData.active}
+                onChange={handleCheckboxChange}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+              />
+              <Label htmlFor="active" className="cursor-pointer">Active</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleCheckboxChange}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+              />
+              <Label htmlFor="featured" className="cursor-pointer">Featured on Homepage</Label>
+            </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="released_at">Release Date</Label>
-            <Input
-              id="released_at"
-              name="released_at"
-              type="date"
-              value={formData.released_at}
-              onChange={handleInputChange}
-            />
+            <Label>Variants</Label>
+            <div className="flex flex-col space-y-2">
+              <div className="flex space-x-2">
+                <Input 
+                  placeholder="Add a variant (e.g., 128GB, 256GB)"
+                  value={variantInput}
+                  onChange={(e) => setVariantInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addVariant();
+                    }
+                  }}
+                />
+                <Button 
+                  type="button" 
+                  onClick={addVariant}
+                  variant="outline"
+                >
+                  Add
+                </Button>
+              </div>
+              
+              {formData.variants.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.variants.map((variant, index) => (
+                    <div key={index} className="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-1">
+                      <span>{variant}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeVariant(index)}
+                        className="text-gray-500 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           
           <DialogFooter>
@@ -383,7 +477,7 @@ const AdminModels: React.FC = () => {
 
   const renderEditModal = () => (
     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-      <DialogContent>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Edit Device Model</DialogTitle>
           <DialogDescription>
@@ -411,6 +505,9 @@ const AdminModels: React.FC = () => {
                 onChange={handleInputChange}
                 required
               />
+              <p className="text-xs text-gray-500">
+                Used in URLs (e.g., "iphone-14-pro")
+              </p>
             </div>
           </div>
           
@@ -420,6 +517,7 @@ const AdminModels: React.FC = () => {
               <Select
                 value={formData.brand_id}
                 onValueChange={(value) => handleSelectChange('brand_id', value)}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Brand" />
@@ -438,6 +536,7 @@ const AdminModels: React.FC = () => {
               <Select
                 value={formData.device_type_id}
                 onValueChange={(value) => handleSelectChange('device_type_id', value)}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Device Type" />
@@ -454,34 +553,86 @@ const AdminModels: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit-image_url">Image URL</Label>
+            <Label htmlFor="edit-image">Image URL</Label>
             <Input
-              id="edit-image_url"
-              name="image_url"
-              value={formData.image_url}
+              id="edit-image"
+              name="image"
+              value={formData.image}
               onChange={handleInputChange}
+              placeholder="/assets/models/model-name.png or https://..."
             />
+            <p className="text-xs text-gray-500">
+              Path to device image (local or external URL)
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="edit-active"
+                name="active"
+                checked={formData.active}
+                onChange={handleCheckboxChange}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+              />
+              <Label htmlFor="edit-active" className="cursor-pointer">Active</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="edit-featured"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleCheckboxChange}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+              />
+              <Label htmlFor="edit-featured" className="cursor-pointer">Featured on Homepage</Label>
+            </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
-            <Input
-              id="edit-description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="edit-released_at">Release Date</Label>
-            <Input
-              id="edit-released_at"
-              name="released_at"
-              type="date"
-              value={formData.released_at}
-              onChange={handleInputChange}
-            />
+            <Label>Variants</Label>
+            <div className="flex flex-col space-y-2">
+              <div className="flex space-x-2">
+                <Input 
+                  placeholder="Add a variant (e.g., 128GB, 256GB)"
+                  value={variantInput}
+                  onChange={(e) => setVariantInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addVariant();
+                    }
+                  }}
+                />
+                <Button 
+                  type="button" 
+                  onClick={addVariant}
+                  variant="outline"
+                >
+                  Add
+                </Button>
+              </div>
+              
+              {formData.variants.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.variants.map((variant, index) => (
+                    <div key={index} className="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-1">
+                      <span>{variant}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeVariant(index)}
+                        className="text-gray-500 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           
           <DialogFooter>
@@ -576,28 +727,108 @@ const AdminModels: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">ID</TableHead>
+              <TableHead>Image</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Device Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Variants</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {deviceModels.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   No device models found. Add your first device model using the button above.
                 </TableCell>
               </TableRow>
             ) : (
               deviceModels.map((model) => (
-                <TableRow key={model.id}>
+                <TableRow key={model.id} className={!model.active ? "bg-gray-50" : ""}>
                   <TableCell className="font-medium">{model.id}</TableCell>
-                  <TableCell>{model.name}</TableCell>
-                  <TableCell>{model.slug}</TableCell>
-                  <TableCell>{getBrandName(model.brand_id)}</TableCell>
-                  <TableCell>{getDeviceTypeName(model.device_type_id)}</TableCell>
+                  <TableCell>
+                    {model.image ? (
+                      <img 
+                        src={model.image} 
+                        alt={model.name} 
+                        className="h-10 w-auto object-contain rounded"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://placehold.co/60x60?text=No+Image';
+                        }}
+                      />
+                    ) : (
+                      <div className="h-10 w-10 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">
+                        No image
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{model.name}</div>
+                    <div className="text-xs text-gray-500">{model.slug}</div>
+                    {model.featured && (
+                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 mt-1">
+                        Featured
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {model.brand ? (
+                      <div className="flex items-center space-x-2">
+                        {model.brand.logo && (
+                          <img 
+                            src={model.brand.logo} 
+                            alt={model.brand.name} 
+                            className="h-5 w-5 object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://placehold.co/20x20?text=B';
+                            }}
+                          />
+                        )}
+                        <span>{model.brand.name}</span>
+                      </div>
+                    ) : (
+                      getBrandName(model.brand_id)
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {model.deviceType ? (
+                      model.deviceType.name
+                    ) : (
+                      getDeviceTypeName(model.device_type_id)
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {model.active ? (
+                      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                        Inactive
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {model.variants && model.variants.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {model.variants.slice(0, 3).map((variant, idx) => (
+                          <span key={idx} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
+                            {variant}
+                          </span>
+                        ))}
+                        {model.variants.length > 3 && (
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
+                            +{model.variants.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-500">No variants</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
                       <Button 
