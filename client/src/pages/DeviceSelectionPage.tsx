@@ -8,7 +8,7 @@ const DeviceSelectionPage: React.FC = () => {
   const { deviceType: deviceTypeParam } = useParams<{ deviceType: string }>();
   
   // Get data from context
-  const { deviceTypes, brands, isLoading, isError } = useModels();
+  const { deviceTypes, brands, isLoading, error } = useModels();
 
   // Find the matching device type object using the slug.
   const deviceTypeObj = deviceTypes.find(dt => dt.slug === deviceTypeParam);
@@ -26,7 +26,7 @@ const DeviceSelectionPage: React.FC = () => {
   }
 
   // Show error state
-  if (isError) {
+  if (error) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
@@ -61,8 +61,9 @@ const DeviceSelectionPage: React.FC = () => {
     );
   }
 
-  // For now, we'll display all brands as we don't have the device-type association yet in the database
-  // Later, this can be filtered by device type when that relationship is established
+  // If device type is found, filter brands by the device type
+  // For now, we'll display all brands as we don't have the device-type association yet in the database schema
+  // Later, when we have proper relations established, we can use getBrandsByDeviceTypeId
   const filteredBrands = brands;
 
   return (
