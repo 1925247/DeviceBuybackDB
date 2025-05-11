@@ -70,8 +70,8 @@ export interface IStorage {
   // Device models operations
   getDeviceModels(): Promise<DeviceModel[]>;
   getDeviceModel(id: number): Promise<DeviceModel | undefined>;
-  createDeviceModel(model: any): Promise<DeviceModel>; 
-  updateDeviceModel(id: number, model: any): Promise<DeviceModel | undefined>;
+  createDeviceModel(model: Partial<DeviceModel>): Promise<DeviceModel>; 
+  updateDeviceModel(id: number, model: Partial<DeviceModel>): Promise<DeviceModel | undefined>;
   deleteDeviceModel(id: number): Promise<boolean>;
   
   getConditionQuestions(deviceTypeId?: number): Promise<any[]>;
@@ -357,6 +357,88 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(brands).orderBy(brands.name);
   }
 
+  async getDeviceModel(id: number): Promise<DeviceModel | undefined> {
+    const [model] = await db.select({
+      id: deviceModels.id,
+      name: deviceModels.name,
+      slug: deviceModels.slug,
+      brand_id: deviceModels.brand_id,
+      device_type_id: deviceModels.device_type_id,
+      image: deviceModels.image,
+      active: deviceModels.active,
+      featured: deviceModels.featured,
+      variants: deviceModels.variants,
+      brand: brands,
+      deviceType: deviceTypes,
+      created_at: deviceModels.created_at,
+      updated_at: deviceModels.updated_at
+    })
+      .from(deviceModels)
+      .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
+      .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
+      .where(eq(deviceModels.id, id));
+      
+    return model;
+  }
+  
+  async createDeviceModel(model: Partial<DeviceModel>): Promise<DeviceModel> {
+    // Ensure the model has required fields
+    const requiredFields = ['name', 'slug', 'brand_id', 'device_type_id'];
+    for (const field of requiredFields) {
+      if (!model[field]) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    // Insert default values for optional fields if not provided
+    const modelData = {
+      ...model,
+      image: model.image || `https://placehold.co/300x200?text=${encodeURIComponent(model.name)}`,
+      active: model.active !== undefined ? model.active : true,
+      featured: model.featured !== undefined ? model.featured : false,
+      variants: model.variants || [],
+    };
+
+    const [newModel] = await db.insert(deviceModels)
+      .values(modelData)
+      .returning();
+      
+    return newModel;
+  }
+  
+  async updateDeviceModel(id: number, modelData: Partial<DeviceModel>): Promise<DeviceModel | undefined> {
+    // Validate the model exists
+    const existingModel = await this.getDeviceModel(id);
+    if (!existingModel) {
+      return undefined;
+    }
+    
+    // Update the model
+    const [updatedModel] = await db.update(deviceModels)
+      .set({ 
+        ...modelData,
+        updated_at: new Date() 
+      })
+      .where(eq(deviceModels.id, id))
+      .returning();
+      
+    return updatedModel;
+  }
+  
+  async deleteDeviceModel(id: number): Promise<boolean> {
+    // Check if the model exists
+    const existingModel = await this.getDeviceModel(id);
+    if (!existingModel) {
+      return false;
+    }
+    
+    // Delete the model
+    const result = await db.delete(deviceModels)
+      .where(eq(deviceModels.id, id));
+      
+    return true;
+  }
+  
   async getDeviceModels(): Promise<DeviceModel[]> {
     const models = await db.select({
       id: deviceModels.id,
