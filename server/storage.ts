@@ -11,7 +11,7 @@ import {
   conditionQuestions, conditionAnswers, valuations
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, sql, like, ilike } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like, ilike, count } from "drizzle-orm";
 
 // Interface for database operations
 export interface IStorage {
@@ -129,13 +129,13 @@ export class DatabaseStorage implements IStorage {
 
   async getDevices(page: number = 1, limit: number = 10, status?: string): Promise<Device[]> {
     const offset = (page - 1) * limit;
-    let query = db.select().from(devices).limit(limit).offset(offset).orderBy(desc(devices.listed_date));
+    const baseQuery = db.select().from(devices).limit(limit).offset(offset).orderBy(desc(devices.listed_date));
     
     if (status) {
-      query = query.where(eq(devices.status, status));
+      return baseQuery.where(eq(devices.status, status));
     }
     
-    return query;
+    return baseQuery;
   }
 
   async getDevicesBySeller(sellerId: number): Promise<Device[]> {
@@ -211,13 +211,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getBuybackRequestsCount(status?: string): Promise<number> {
-    let query = db.select({ count: count() }).from(buybackRequests);
+    const query = db.select({ count: sql`count(*)` }).from(buybackRequests);
     
-    if (status) {
-      query = query.where(eq(buybackRequests.status, status));
-    }
+    const finalQuery = status 
+      ? query.where(eq(buybackRequests.status, status))
+      : query;
     
-    const result = await query;
+    const result = await finalQuery;
     return Number(result[0]?.count || 0);
   }
 

@@ -68,8 +68,10 @@ export default function BuybackPage() {
     }
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+  const getStatusBadgeColor = (status: string | undefined) => {
+    if (!status) return "bg-gray-100 text-gray-800";
+    
+    switch (status.toLowerCase()) {
       case "approved":
         return "bg-green-100 text-green-800";
       case "pending":
@@ -179,7 +181,7 @@ export default function BuybackPage() {
                         <TableCell>{request.device_type}</TableCell>
                         <TableCell>{request.manufacturer} {request.model}</TableCell>
                         <TableCell>{request.condition}</TableCell>
-                        <TableCell>${parseFloat(request.offered_price).toFixed(2)}</TableCell>
+                        <TableCell>${typeof request.offered_price === 'string' ? parseFloat(request.offered_price).toFixed(2) : request.offered_price.toFixed(2)}</TableCell>
                         <TableCell>
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(request.status)}`}>
                             {request.status}
