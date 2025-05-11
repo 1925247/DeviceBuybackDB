@@ -130,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(apiRouter("/users/:id"), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const userData = validateRequest(insertUserSchema.partial(), req.body);
+      const userData = validateRequest<Partial<InsertUser>>(insertUserSchema.partial(), req.body);
       const updatedUser = await storage.updateUser(id, userData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
@@ -157,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Device endpoints
   app.post(apiRouter("/devices"), async (req: Request, res: Response) => {
     try {
-      const deviceData = validateRequest(insertDeviceSchema, req.body);
+      const deviceData = validateRequest<InsertDevice>(insertDeviceSchema, req.body);
       const device = await storage.createDevice(deviceData);
       res.status(201).json(device);
     } catch (error: any) {
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(apiRouter("/devices/:id"), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const deviceData = validateRequest(insertDeviceSchema.partial(), req.body);
+      const deviceData = validateRequest<Partial<InsertDevice>>(insertDeviceSchema.partial(), req.body);
       const updatedDevice = await storage.updateDevice(id, deviceData);
       if (!updatedDevice) {
         return res.status(404).json({ message: "Device not found" });
@@ -278,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Buyback request endpoints
   app.post(apiRouter("/buyback-requests"), async (req: Request, res: Response) => {
     try {
-      const requestData = validateRequest(insertBuybackRequestSchema, req.body);
+      const requestData = validateRequest<InsertBuybackRequest>(insertBuybackRequestSchema, req.body);
       const request = await storage.createBuybackRequest(requestData);
       res.status(201).json(request);
     } catch (error: any) {
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(apiRouter("/buyback-requests/:id"), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const requestData = validateRequest(insertBuybackRequestSchema.partial(), req.body);
+      const requestData = validateRequest<Partial<InsertBuybackRequest>>(insertBuybackRequestSchema.partial(), req.body);
       const updatedRequest = await storage.updateBuybackRequest(id, requestData);
       if (!updatedRequest) {
         return res.status(404).json({ message: "Buyback request not found" });
