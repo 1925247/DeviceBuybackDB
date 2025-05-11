@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   first_name: text("first_name").notNull(),
   last_name: text("last_name").notNull(),
   role: text("role").notNull().default("user"),
+  stripe_customer_id: text("stripe_customer_id"),
+  stripe_subscription_id: text("stripe_subscription_id"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -406,3 +408,311 @@ export const ordersRelations = relations(orders, ({ one }) => ({
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, created_at: true, updated_at: true });
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
+
+// Products Table (E-Commerce specific)
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  compare_at_price: decimal("compare_at_price", { precision: 10, scale: 2 }),
+  cost_price: decimal("cost_price", { precision: 10, scale: 2 }),
+  sku: text("sku").notNull(),
+  barcode: text("barcode"),
+  status: text("status").notNull().default("draft"), // draft, active, archived
+  is_physical: boolean("is_physical").default(true).notNull(),
+  requires_shipping: boolean("requires_shipping").default(true).notNull(),
+  tax_class: text("tax_class"),
+  weight: decimal("weight", { precision: 8, scale: 2 }),
+  weight_unit: text("weight_unit").default("kg"),
+  has_variants: boolean("has_variants").default(false).notNull(),
+  device_model_id: integer("device_model_id").references(() => deviceModels.id),
+  featured: boolean("featured").default(false).notNull(),
+  vendor: text("vendor"),
+  condition: text("condition"), // excellent, good, fair, poor
+  seo_title: text("seo_title"),
+  seo_description: text("seo_description"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const productsRelations = relations(products, ({ many, one }) => ({
+  variants: many(productVariants),
+  images: many(productImages),
+  categories: many(productCategories),
+  tags: many(productTags),
+  deviceModel: one(deviceModels, {
+    fields: [products.device_model_id],
+    references: [deviceModels.id],
+  }),
+}));
+
+export const insertProductSchema = createInsertSchema(products, {
+  price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val),
+  compare_at_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
+  cost_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
+  status: z.enum(["draft", "active", "archived"]),
+  condition: z.enum(["excellent", "good", "fair", "poor"]).optional(),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+// Product Variants Table
+export const productVariants = pgTable("product_variants", {
+  id: serial("id").primaryKey(),
+  product_id: integer("product_id").references(() => products.id).notNull(),
+  title: text("title").notNull(),
+  sku: text("sku").notNull(),
+  barcode: text("barcode"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  compare_at_price: decimal("compare_at_price", { precision: 10, scale: 2 }),
+  cost_price: decimal("cost_price", { precision: 10, scale: 2 }),
+  position: integer("position").default(0).notNull(),
+  inventory_quantity: integer("inventory_quantity").default(0).notNull(),
+  inventory_policy: text("inventory_policy").default("deny").notNull(), // deny or continue
+  weight: decimal("weight", { precision: 8, scale: 2 }),
+  weight_unit: text("weight_unit").default("kg"),
+  requires_shipping: boolean("requires_shipping").default(true).notNull(),
+  options: json("options").$type<Record<string, string>>().notNull(), // {color: "red", size: "large"}
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const productVariantsRelations = relations(productVariants, ({ one }) => ({
+  product: one(products, {
+    fields: [productVariants.product_id],
+    references: [products.id],
+  }),
+}));
+
+export const insertProductVariantSchema = createInsertSchema(productVariants, {
+  price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val),
+  compare_at_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
+  cost_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
+  inventory_policy: z.enum(["deny", "continue"]),
+  options: z.record(z.string(), z.string()),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
+export type ProductVariant = typeof productVariants.$inferSelect;
+
+// Product Images Table
+export const productImages = pgTable("product_images", {
+  id: serial("id").primaryKey(),
+  product_id: integer("product_id").references(() => products.id).notNull(),
+  url: text("url").notNull(),
+  alt: text("alt"),
+  position: integer("position").default(0).notNull(),
+  is_primary: boolean("is_primary").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const productImagesRelations = relations(productImages, ({ one }) => ({
+  product: one(products, {
+    fields: [productImages.product_id],
+    references: [products.id],
+  }),
+}));
+
+export const insertProductImageSchema = createInsertSchema(productImages).omit({ id: true, created_at: true, updated_at: true });
+export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
+export type ProductImage = typeof productImages.$inferSelect;
+
+// Categories Table
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  parent_id: integer("parent_id").references(() => categories.id),
+  is_visible: boolean("is_visible").default(true).notNull(),
+  image: text("image"),
+  seo_title: text("seo_title"),
+  seo_description: text("seo_description"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  parent: one(categories, {
+    fields: [categories.parent_id],
+    references: [categories.id],
+  }),
+  children: many(categories),
+  products: many(productCategories),
+}));
+
+export const insertCategorySchema = createInsertSchema(categories).omit({ id: true, created_at: true, updated_at: true });
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
+
+// Product-Category Relationship Table
+export const productCategories = pgTable("product_categories", {
+  id: serial("id").primaryKey(),
+  product_id: integer("product_id").references(() => products.id).notNull(),
+  category_id: integer("category_id").references(() => categories.id).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  unq: unique().on(t.product_id, t.category_id),
+}));
+
+export const productCategoriesRelations = relations(productCategories, ({ one }) => ({
+  product: one(products, {
+    fields: [productCategories.product_id],
+    references: [products.id],
+  }),
+  category: one(categories, {
+    fields: [productCategories.category_id],
+    references: [categories.id],
+  }),
+}));
+
+// Tags Table
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  products: many(productTags),
+}));
+
+// Product-Tag Relationship Table
+export const productTags = pgTable("product_tags", {
+  id: serial("id").primaryKey(),
+  product_id: integer("product_id").references(() => products.id).notNull(),
+  tag_id: integer("tag_id").references(() => tags.id).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  unq: unique().on(t.product_id, t.tag_id),
+}));
+
+export const productTagsRelations = relations(productTags, ({ one }) => ({
+  product: one(products, {
+    fields: [productTags.product_id],
+    references: [products.id],
+  }),
+  tag: one(tags, {
+    fields: [productTags.tag_id],
+    references: [tags.id],
+  }),
+}));
+
+// Discounts Table
+export const discounts = pgTable("discounts", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description"),
+  discount_type: text("discount_type").notNull(), // fixed_amount, percentage, free_shipping
+  value: decimal("value", { precision: 10, scale: 2 }),
+  status: text("status").notNull().default("active"), // active, paused, expired
+  min_order_amount: decimal("min_order_amount", { precision: 10, scale: 2 }),
+  max_discount_amount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
+  usage_limit: integer("usage_limit"),
+  usage_count: integer("usage_count").default(0).notNull(),
+  starts_at: timestamp("starts_at"),
+  ends_at: timestamp("ends_at"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertDiscountSchema = createInsertSchema(discounts, {
+  discount_type: z.enum(["fixed_amount", "percentage", "free_shipping"]),
+  status: z.enum(["active", "paused", "expired"]),
+  value: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type InsertDiscount = z.infer<typeof insertDiscountSchema>;
+export type Discount = typeof discounts.$inferSelect;
+
+// Checkout Table
+export const checkouts = pgTable("checkouts", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").references(() => users.id),
+  email: text("email").notNull(),
+  shipping_address_id: integer("shipping_address_id"),
+  billing_address_id: integer("billing_address_id"),
+  shipping_method: text("shipping_method"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  shipping_cost: decimal("shipping_cost", { precision: 10, scale: 2 }),
+  tax_amount: decimal("tax_amount", { precision: 10, scale: 2 }),
+  discount_amount: decimal("discount_amount", { precision: 10, scale: 2 }),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  discount_code: text("discount_code"),
+  payment_status: text("payment_status").default("pending").notNull(), // pending, paid, failed
+  notes: text("notes"),
+  completed_at: timestamp("completed_at"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const checkoutsRelations = relations(checkouts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [checkouts.user_id],
+    references: [users.id],
+  }),
+  items: many(checkoutItems),
+}));
+
+// Checkout Items Table
+export const checkoutItems = pgTable("checkout_items", {
+  id: serial("id").primaryKey(),
+  checkout_id: integer("checkout_id").references(() => checkouts.id).notNull(),
+  product_id: integer("product_id").references(() => products.id).notNull(),
+  variant_id: integer("variant_id").references(() => productVariants.id),
+  quantity: integer("quantity").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const checkoutItemsRelations = relations(checkoutItems, ({ one }) => ({
+  checkout: one(checkouts, {
+    fields: [checkoutItems.checkout_id],
+    references: [checkouts.id],
+  }),
+  product: one(products, {
+    fields: [checkoutItems.product_id],
+    references: [products.id],
+  }),
+  variant: one(productVariants, {
+    fields: [checkoutItems.variant_id],
+    references: [productVariants.id],
+  }),
+}));
+
+// E-commerce Payments Table
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  checkout_id: integer("checkout_id").references(() => checkouts.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("USD").notNull(),
+  payment_method: text("payment_method").notNull(), // credit_card, paypal, etc.
+  payment_method_details: json("payment_method_details"),
+  payment_intent_id: text("payment_intent_id"),
+  charge_id: text("charge_id"),
+  status: text("status").notNull(), // pending, succeeded, failed
+  error_message: text("error_message"),
+  refunded: boolean("refunded").default(false).notNull(),
+  refunded_amount: decimal("refunded_amount", { precision: 10, scale: 2 }),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  checkout: one(checkouts, {
+    fields: [payments.checkout_id],
+    references: [checkouts.id],
+  }),
+}));
+
+
