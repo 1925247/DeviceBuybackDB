@@ -135,16 +135,14 @@ const CheckoutPage: React.FC = () => {
         const buybackData = {
           user_id: 1, // Default user ID - in a real app this would be the logged-in user
           device_model_id: deviceValuation.deviceModelId,
+          device_type: deviceValuation.deviceType,
+          manufacturer: deviceValuation.brandName,
+          model: deviceValuation.modelName,
+          condition: deviceValuation.conditionDescription,
           condition_score: deviceValuation.conditionScore,
           offered_price: deviceValuation.finalPrice,
-          variant: deviceValuation.selectedVariant,
+          variant: deviceValuation.selectedVariant || null,
           status: 'pending',
-          customer_name: formData.name,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          pickup_address: `${formData.address}, ${formData.city}, ${formData.state}, ${formData.pincode}`,
-          pickup_date: formData.pickupDate,
-          pickup_time: formData.pickupTime,
           notes: formData.additionalNotes || null
         };
         
