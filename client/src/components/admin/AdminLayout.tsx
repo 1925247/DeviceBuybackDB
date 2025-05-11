@@ -14,7 +14,23 @@ import {
   Layers,
   Briefcase,
   HelpCircle,
-  ChevronRight
+  ChevronRight,
+  PackageOpen,
+  Truck,
+  CreditCard,
+  DollarSign,
+  Percent,
+  Mail,
+  Globe,
+  PanelLeft,
+  CalendarDays,
+  Ticket,
+  Image as ImageIcon,
+  ClipboardCheck,
+  MessageSquare,
+  ShieldCheck,
+  RefreshCw,
+  Headphones
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -196,19 +212,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ logout }) => {
 
             <div className="px-3 mb-4">
               <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Marketplace
+                E-Commerce
               </h3>
               <nav className="mt-2 space-y-1">
                 <Link
-                  to="/admin/marketplace"
+                  to="/admin/products"
                   className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                    isActive('/admin/marketplace')
+                    isActive('/admin/products')
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <ShoppingBag className="w-5 h-5 mr-3" />
-                  {isSidebarOpen && <span>Listings</span>}
+                  {isSidebarOpen && <span>Products</span>}
                 </Link>
 
                 <Link
@@ -222,12 +238,213 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ logout }) => {
                   <ListChecks className="w-5 h-5 mr-3" />
                   {isSidebarOpen && <span>Orders</span>}
                 </Link>
+
+                <Link
+                  to="/admin/inventory"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/inventory')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <PackageOpen className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Inventory</span>}
+                </Link>
+
+                <Link
+                  to="/admin/shipping"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/shipping')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Truck className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Shipping</span>}
+                </Link>
+
+                <Link
+                  to="/admin/payments"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/payments')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <CreditCard className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Payments</span>}
+                </Link>
+
+                <Link
+                  to="/admin/discounts"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/discounts')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Percent className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Discounts</span>}
+                </Link>
+
+                <Link
+                  to="/admin/marketplace"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/marketplace')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Globe className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Marketplace</span>}
+                </Link>
+
+                <Link
+                  to="/admin/analytics"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/analytics')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <PanelLeft className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Analytics</span>}
+                </Link>
+              </nav>
+            </div>
+
+            <div className="px-3 mb-4">
+              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Marketing
+              </h3>
+              <nav className="mt-2 space-y-1">
+                <Link
+                  to="/admin/campaigns"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/campaigns')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Mail className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Campaigns</span>}
+                </Link>
+
+                <Link
+                  to="/admin/promotions"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/promotions')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <CalendarDays className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Promotions</span>}
+                </Link>
+
+                <Link
+                  to="/admin/coupons"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/coupons')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Ticket className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Coupons</span>}
+                </Link>
+              </nav>
+            </div>
+
+            <div className="px-3 mb-4">
+              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Content
+              </h3>
+              <nav className="mt-2 space-y-1">
+                <Link
+                  to="/admin/media"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/media')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <ImageIcon className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Media Library</span>}
+                </Link>
+
+                <Link
+                  to="/admin/blog"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/blog')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <ClipboardCheck className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Blog Posts</span>}
+                </Link>
+
+                <Link
+                  to="/admin/reviews"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/reviews')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Reviews</span>}
+                </Link>
+              </nav>
+            </div>
+
+            <div className="px-3 mb-4">
+              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Buyback Program
+              </h3>
+              <nav className="mt-2 space-y-1">
+                <Link
+                  to="/admin/buyback"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/buyback')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <BoxIcon className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Buyback Requests</span>}
+                </Link>
+
+                <Link
+                  to="/admin/condition-questions"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/condition-questions')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <CheckCircle className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Condition Questions</span>}
+                </Link>
+
+                <Link
+                  to="/admin/valuations"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/valuations')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Briefcase className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Valuations</span>}
+                </Link>
               </nav>
             </div>
 
             <div className="px-3">
               <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Settings
+                Support & Settings
               </h3>
               <nav className="mt-2 space-y-1">
                 <Link
@@ -240,6 +457,42 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ logout }) => {
                 >
                   <HelpCircle className="w-5 h-5 mr-3" />
                   {isSidebarOpen && <span>FAQs</span>}
+                </Link>
+
+                <Link
+                  to="/admin/support"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/support')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Headphones className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Customer Support</span>}
+                </Link>
+
+                <Link
+                  to="/admin/warranty"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/warranty')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <ShieldCheck className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Warranty Claims</span>}
+                </Link>
+
+                <Link
+                  to="/admin/returns"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/returns')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <RefreshCw className="w-5 h-5 mr-3" />
+                  {isSidebarOpen && <span>Returns & Refunds</span>}
                 </Link>
 
                 <Link

@@ -60,15 +60,188 @@ const HomePage: React.FC = () => {
             <p className="mt-6 text-xl max-w-prose">
               {homeData.hero.subtitle}
             </p>
-            <div className="mt-10">
+            <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <Link
                 to="/sell/device-selection"
-                className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+                className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-gray-50 transition-colors duration-200"
               >
-                {homeData.hero.ctaText}
-                <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
+                <Recycle className="mr-2 h-5 w-5" />
+                Sell Your Device
+              </Link>
+              <Link
+                to="/buy"
+                className="inline-flex items-center justify-center px-8 py-3 border border-white text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 bg-opacity-30 hover:bg-opacity-40 transition-colors duration-200"
+              >
+                <Smartphone className="mr-2 h-5 w-5" />
+                Shop Refurbished
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Featured Refurbished Devices
+            </h2>
+            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
+              Explore our collection of certified refurbished devices at unbeatable prices. All devices come with a 1-year warranty.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {/* Product Card 1 */}
+            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
+                <img
+                  src="/assets/products/iphone-13-pro.png"
+                  alt="iPhone 13 Pro"
+                  className="w-full h-56 object-contain p-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
+                  }}
+                />
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">iPhone 13 Pro</h3>
+                    <p className="mt-1 text-sm text-gray-500">256GB • Graphite • Excellent</p>
+                  </div>
+                  <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">20% OFF</span>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">$699.99</p>
+                    <p className="text-sm text-gray-500 line-through">$879.99</p>
+                  </div>
+                  <Link
+                    to="/buy/details/iphone-13-pro"
+                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Card 2 */}
+            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
+                <img
+                  src="/assets/products/samsung-s22-ultra.png"
+                  alt="Samsung Galaxy S22 Ultra"
+                  className="w-full h-56 object-contain p-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
+                  }}
+                />
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">Galaxy S22 Ultra</h3>
+                    <p className="mt-1 text-sm text-gray-500">512GB • Burgundy • Excellent</p>
+                  </div>
+                  <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">TRENDING</span>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">$749.99</p>
+                    <p className="text-sm text-gray-500 line-through">$899.99</p>
+                  </div>
+                  <Link
+                    to="/buy/details/samsung-galaxy-s22-ultra"
+                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Card 3 */}
+            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
+                <img
+                  src="/assets/products/macbook-pro.png"
+                  alt="MacBook Pro 14-inch"
+                  className="w-full h-56 object-contain p-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
+                  }}
+                />
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">MacBook Pro 14"</h3>
+                    <p className="mt-1 text-sm text-gray-500">M2 • 16GB • 512GB • Good</p>
+                  </div>
+                  <span className="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">HOT DEAL</span>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">$1,299.99</p>
+                    <p className="text-sm text-gray-500 line-through">$1,599.99</p>
+                  </div>
+                  <Link
+                    to="/buy/details/macbook-pro-14"
+                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Card 4 */}
+            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
+                <img
+                  src="/assets/products/ipad-pro.png"
+                  alt="iPad Pro 12.9-inch"
+                  className="w-full h-56 object-contain p-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
+                  }}
+                />
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">iPad Pro 12.9"</h3>
+                    <p className="mt-1 text-sm text-gray-500">M1 • 256GB • Silver • Excellent</p>
+                  </div>
+                  <span className="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">LAST ONE</span>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">$899.99</p>
+                    <p className="text-sm text-gray-500 line-through">$1,099.99</p>
+                  </div>
+                  <Link
+                    to="/buy/details/ipad-pro-12-9"
+                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link
+              to="/buy"
+              className="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+            >
+              Browse All Products
+              <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
+            </Link>
           </div>
         </div>
       </section>
@@ -332,24 +505,47 @@ const HomePage: React.FC = () => {
       {/* CTA Section */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-indigo-700 rounded-3xl shadow-xl overflow-hidden">
-            <div className="px-6 py-12 md:p-12 md:flex md:items-center md:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-white md:text-3xl">
-                  {homeData.cta.title}
+          <div className="bg-gradient-to-r from-indigo-700 to-purple-700 rounded-3xl shadow-xl overflow-hidden">
+            <div className="px-6 py-12 md:p-12">
+              <div className="text-center max-w-3xl mx-auto">
+                <h2 className="text-3xl font-bold text-white md:text-4xl">
+                  Join Our Marketplace
                 </h2>
-                <p className="mt-3 text-indigo-200 max-w-3xl">
-                  {homeData.cta.description}
+                <p className="mt-4 text-lg text-indigo-100">
+                  Buy certified refurbished devices at great prices or sell your used devices for instant cash.
                 </p>
               </div>
-              <div className="mt-8 md:mt-0">
+              
+              <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
                 <Link
                   to="/sell/device-selection"
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50 transition-colors duration-200"
+                  className="flex-1 max-w-xs mx-auto sm:mx-0 flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-xl shadow-lg text-indigo-700 bg-white hover:bg-indigo-50 transition-colors duration-200"
                 >
-                  {homeData.cta.buttonText}
-                  <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
+                  <Recycle className="mr-2 h-5 w-5" />
+                  Sell Your Device
                 </Link>
+                <Link
+                  to="/buy"
+                  className="flex-1 max-w-xs mx-auto sm:mx-0 flex items-center justify-center px-8 py-4 border border-white border-opacity-25 text-lg font-medium rounded-xl shadow-lg text-white bg-indigo-600 bg-opacity-40 hover:bg-opacity-50 transition-colors duration-200"
+                >
+                  <Smartphone className="mr-2 h-5 w-5" />
+                  Shop Refurbished
+                </Link>
+              </div>
+              
+              <div className="mt-8 flex justify-center space-x-6">
+                <div className="flex items-center text-white">
+                  <Shield className="h-5 w-5 mr-2" />
+                  <span className="text-sm">1-Year Warranty</span>
+                </div>
+                <div className="flex items-center text-white">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  <span className="text-sm">Quality Verified</span>
+                </div>
+                <div className="flex items-center text-white">
+                  <Truck className="h-5 w-5 mr-2" />
+                  <span className="text-sm">Free Shipping</span>
+                </div>
               </div>
             </div>
           </div>
