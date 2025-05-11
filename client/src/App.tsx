@@ -33,6 +33,14 @@ import BuyInvoice from './pages/buy/BuyInvoice';
 import ProductDetails from './pages/buy/ProductDetails';
 
 // Admin Panel Pages
+import AdminPage from './pages/admin';  // New admin page
+import DeviceTypesPage from './pages/admin/device-types';
+import BrandsPage from './pages/admin/brands';
+import DeviceModelsPage from './pages/admin/device-models';
+import ConditionQuestionsPage from './pages/admin/condition-questions';
+import ValuationsPage from './pages/admin/valuations';
+
+// Legacy Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminDevices from './pages/admin/AdminDevices';
@@ -333,10 +341,18 @@ function App() {
               />
 
               {/* Admin Routes */}
+              <Route path="/admin" element={<ModelsProvider><AdminPage /></ModelsProvider>} />
+              <Route path="/admin/device-types" element={<ModelsProvider><DeviceTypesPage /></ModelsProvider>} />
+              <Route path="/admin/brands" element={<ModelsProvider><BrandsPage /></ModelsProvider>} />
+              <Route path="/admin/device-models" element={<ModelsProvider><DeviceModelsPage /></ModelsProvider>} />
+              <Route path="/admin/condition-questions" element={<ModelsProvider><ConditionQuestionsPage /></ModelsProvider>} />
+              <Route path="/admin/valuations" element={<ModelsProvider><ValuationsPage /></ModelsProvider>} />
+              
+              {/* Legacy Admin Routes - To be migrated */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<LocalProtectedAdminRoute />}>
                 <Route
-                  path="/admin/*"
+                  path="/admin-legacy/*"
                   element={
                     <ModelsProvider>
                       <AdminLayout />
