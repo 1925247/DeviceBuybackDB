@@ -6,18 +6,37 @@ import { DeviceTable } from "@/components/devices/device-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
 
+// Define the response type
+interface DevicesResponse {
+  devices: Array<{
+    id: number;
+    name: string;
+    manufacturer: string;
+    model: string;
+    condition: string;
+    price: string | number;
+    specs?: string;
+    status: string;
+    seller_id: number;
+    listed_date?: string;
+    created_at?: string;
+    updated_at?: string;
+  }>;
+  totalPages: number;
+  currentPage: number;
+}
+
 export default function DevicesPage() {
   const [location, navigate] = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/devices", currentPage, pageSize],
-    keepPreviousData: true,
+  const { data, isLoading } = useQuery<DevicesResponse>({
+    queryKey: ["/api/devices", currentPage, pageSize]
   });
 
-  // For simplicity, we're assuming a total of 3 pages
-  const totalPages = 3;
+  // Get actual totalPages from the data or default to 1
+  const totalPages = data?.totalPages || 1;
 
   const handleTabChange = (tab: string) => {
     if (tab !== "device-listings") {
@@ -75,41 +94,7 @@ export default function DevicesPage() {
           </Tabs>
           
           <DeviceTable
-            devices={data || [
-              {
-                id: 101,
-                name: "iPhone 13 Pro",
-                specs: "128GB, Sierra Blue",
-                condition: "Excellent",
-                price: "749.99",
-                seller_id: 1,
-                listed_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "Active",
-                manufacturer: "Apple"
-              },
-              {
-                id: 102,
-                name: "MacBook Pro M1",
-                specs: "13-inch, 16GB RAM, 512GB SSD",
-                condition: "Good",
-                price: "1199.99",
-                seller_id: 2,
-                listed_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "Active",
-                manufacturer: "Apple"
-              },
-              {
-                id: 103,
-                name: "iPad Pro 11\"",
-                specs: "256GB, Space Gray, Wi-Fi",
-                condition: "Fair",
-                price: "649.50",
-                seller_id: 3,
-                listed_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "Pending",
-                manufacturer: "Apple"
-              }
-            ]}
+            devices={data?.devices || []}
             isLoading={isLoading}
             currentPage={currentPage}
             totalPages={totalPages}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,6 +6,7 @@ import { insertDeviceSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,10 +53,47 @@ interface DeviceFormProps {
   editingDevice?: any;
 }
 
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
+}
+
+interface DeviceModel {
+  id: number;
+  name: string;
+  slug: string;
+  brand_id: number;
+  device_type_id: number;
+}
+
+interface DeviceType {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export function DeviceForm({ open, onClose, editingDevice }: DeviceFormProps) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fetch dynamic data for selects
+  const { data: brands } = useQuery<Brand[]>({
+    queryKey: ["/api/brands"],
+    enabled: open
+  });
+  
+  const { data: deviceModels } = useQuery<DeviceModel[]>({
+    queryKey: ["/api/device-models"],
+    enabled: open
+  });
+  
+  const { data: deviceTypes } = useQuery<DeviceType[]>({
+    queryKey: ["/api/device-types"],
+    enabled: open
+  });
 
   const defaultValues: Partial<FormValues> = {
     name: editingDevice?.name || "",
@@ -73,6 +111,23 @@ export function DeviceForm({ open, onClose, editingDevice }: DeviceFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+  
+  // Reset form when editingDevice changes
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: editingDevice?.name || "",
+        manufacturer: editingDevice?.manufacturer || "",
+        model: editingDevice?.model || "",
+        condition: editingDevice?.condition || "",
+        price: editingDevice?.price || "",
+        seller_id: editingDevice?.seller_id || 1,
+        status: editingDevice?.status || "active",
+        description: editingDevice?.description || "",
+        specs: editingDevice?.specs || "",
+      });
+    }
+  }, [editingDevice, open, form]);
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
