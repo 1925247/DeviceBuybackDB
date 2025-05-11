@@ -75,6 +75,13 @@ export interface IStorage {
   deleteDeviceModel(id: number): Promise<boolean>;
   
   getConditionQuestions(deviceTypeId?: number): Promise<any[]>;
+  getConditionQuestion(id: number): Promise<any | undefined>;
+  createConditionQuestion(questionData: any): Promise<any>;
+  updateConditionQuestion(id: number, questionData: any): Promise<any | undefined>;
+  deleteConditionQuestion(id: number): Promise<boolean>;
+  createConditionAnswer(answerData: any): Promise<any>;
+  getConditionAnswers(): Promise<any[]>;
+  deleteConditionAnswersByQuestionId(questionId: number): Promise<boolean>;
   getValuations(deviceModelId?: number): Promise<any[]>;
   
   // Database status
@@ -502,6 +509,153 @@ export class DatabaseStorage implements IStorage {
     }
     
     return questions;
+  }
+  
+  // Get a single condition question by ID with its options
+  async getConditionQuestion(id: number): Promise<any | undefined> {
+    try {
+      // First, get the question
+      const [question] = await db.select({
+        id: conditionQuestions.id,
+        question: conditionQuestions.question,
+        deviceTypeId: conditionQuestions.device_type_id,
+        order: conditionQuestions.order,
+        active: conditionQuestions.active,
+      })
+      .from(conditionQuestions)
+      .where(eq(conditionQuestions.id, id));
+      
+      if (!question) {
+        return undefined;
+      }
+      
+      // Then, get the options for this question
+      const answers = await db.select({
+        id: conditionAnswers.id,
+        answer: conditionAnswers.answer,
+        impact: conditionAnswers.impact,
+        order: conditionAnswers.order
+      })
+      .from(conditionAnswers)
+      .where(eq(conditionAnswers.question_id, id))
+      .orderBy(conditionAnswers.order);
+      
+      // Add options property to the question
+      (question as any).options = answers.map(a => ({
+        id: a.id,
+        text: a.answer,
+        value: Number(a.impact),
+        description: a.answer
+      }));
+      
+      // Combine and return
+      return question;
+    } catch (error) {
+      console.error(`Error fetching condition question with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  // Create a new condition question
+  async createConditionQuestion(questionData: any): Promise<any> {
+    try {
+      const [newQuestion] = await db.insert(conditionQuestions)
+        .values({
+          question: questionData.question,
+          device_type_id: questionData.deviceTypeId,
+          order: questionData.order || 1,
+          active: questionData.active !== undefined ? questionData.active : true,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+        .returning();
+      
+      return newQuestion;
+    } catch (error) {
+      console.error("Error creating condition question:", error);
+      throw error;
+    }
+  }
+  
+  // Update an existing condition question
+  async updateConditionQuestion(id: number, questionData: any): Promise<any | undefined> {
+    try {
+      const [updatedQuestion] = await db.update(conditionQuestions)
+        .set({
+          question: questionData.question !== undefined ? questionData.question : undefined,
+          device_type_id: questionData.deviceTypeId !== undefined ? questionData.deviceTypeId : undefined,
+          order: questionData.order !== undefined ? questionData.order : undefined,
+          active: questionData.active !== undefined ? questionData.active : undefined,
+          updated_at: new Date(),
+        })
+        .where(eq(conditionQuestions.id, id))
+        .returning();
+      
+      return updatedQuestion;
+    } catch (error) {
+      console.error(`Error updating condition question with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  // Delete a condition question
+  async deleteConditionQuestion(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(conditionQuestions)
+        .where(eq(conditionQuestions.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting condition question with ID ${id}:`, error);
+      return false;
+    }
+  }
+  
+  // Create a new condition answer option
+  async createConditionAnswer(answerData: any): Promise<any> {
+    try {
+      const [newAnswer] = await db.insert(conditionAnswers)
+        .values({
+          question_id: answerData.question_id,
+          answer: answerData.text,
+          impact: answerData.value,
+          order: answerData.order || 1,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+        .returning();
+      
+      return newAnswer;
+    } catch (error) {
+      console.error("Error creating condition answer:", error);
+      throw error;
+    }
+  }
+  
+  // Get all condition answers
+  async getConditionAnswers(): Promise<any[]> {
+    try {
+      const answers = await db.select()
+        .from(conditionAnswers);
+      
+      return answers;
+    } catch (error) {
+      console.error("Error fetching condition answers:", error);
+      return [];
+    }
+  }
+  
+  // Delete condition answers by question ID
+  async deleteConditionAnswersByQuestionId(questionId: number): Promise<boolean> {
+    try {
+      await db.delete(conditionAnswers)
+        .where(eq(conditionAnswers.question_id, questionId));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting condition answers for question ID ${questionId}:`, error);
+      return false;
+    }
   }
 
   async getValuations(deviceModelId?: number): Promise<any[]> {
