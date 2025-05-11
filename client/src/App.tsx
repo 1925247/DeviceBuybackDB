@@ -335,19 +335,6 @@ function App() {
               />
 
               {/* Admin Routes */}
-              <Route path="/admin" element={
-                <ModelsProvider>
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <AdminDashboard />
-                    </main>
-                    <Footer />
-                  </>
-                </ModelsProvider>
-              } />
-              
-              {/* Legacy Admin Routes - To be migrated */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<LocalProtectedAdminRoute />}>
                 <Route
@@ -359,15 +346,29 @@ function App() {
                   }
                 >
                   <Route index element={<AdminDashboard />} />
-                  <Route path="devices" element={<AdminDevices />} />
+                  
+                  {/* Device Management */}
+                  <Route path="device-types" element={<AdminCQS />} />
                   <Route path="brands" element={<AdminBrands />} />
-                  <Route path="models" element={<AdminModels />} />
+                  <Route path="device-models" element={<AdminModels />} />
+                  <Route path="devices" element={<AdminDevices />} />
+                  
+                  {/* Buyback Program */}
+                  <Route path="buyback" element={<AdminDashboard />} />
+                  <Route path="condition-questions" element={<AdminCQS />} />
+                  <Route path="valuations" element={<AdminPricing />} />
+                  
+                  {/* Marketplace */}
+                  <Route path="marketplace" element={<AdminDashboard />} />
                   <Route path="orders" element={<AdminOrders />} />
+                  
+                  {/* Settings */}
                   <Route path="users" element={<AdminUsers />} />
-                  <Route path="pricing" element={<AdminPricing />} />
+                  <Route path="faqs" element={<AdminDashboard />} />
                   <Route path="settings" element={<AdminSettings />} />
+                  
+                  {/* Legacy */}
                   <Route path="config" element={<AdminConfig />} />
-                  <Route path="CQS" element={<AdminCQS />} />
                   <Route path="diagnostic" element={<AdminDiagnostic />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
