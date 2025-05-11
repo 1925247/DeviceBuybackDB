@@ -4,7 +4,11 @@ import {
   deviceImages, type DeviceImage, type InsertDeviceImage,
   buybackRequests, type BuybackRequest, type InsertBuybackRequest, 
   marketplaceListings, type MarketplaceListing, type InsertMarketplaceListing,
-  orders, type Order, type InsertOrder
+  orders, type Order, type InsertOrder,
+  deviceTypes, type DeviceType,
+  brands, type Brand,
+  deviceModels, type DeviceModel,
+  conditionQuestions, conditionAnswers, valuations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike } from "drizzle-orm";
@@ -306,6 +310,91 @@ export class DatabaseStorage implements IStorage {
   async deleteOrder(id: number): Promise<boolean> {
     const result = await db.delete(orders).where(eq(orders.id, id));
     return !!result;
+  }
+
+  // Reference data operations
+  async getDeviceTypes(): Promise<DeviceType[]> {
+    return await db.select().from(deviceTypes).orderBy(deviceTypes.name);
+  }
+
+  async getBrands(): Promise<Brand[]> {
+    return await db.select().from(brands).orderBy(brands.name);
+  }
+
+  async getDeviceModels(): Promise<DeviceModel[]> {
+    const models = await db.select({
+      id: deviceModels.id,
+      name: deviceModels.name,
+      slug: deviceModels.slug,
+      brand_id: deviceModels.brand_id,
+      device_type_id: deviceModels.device_type_id,
+      image: deviceModels.image,
+      active: deviceModels.active,
+      featured: deviceModels.featured,
+      variants: deviceModels.variants,
+      brand: brands,
+      deviceType: deviceTypes,
+      created_at: deviceModels.created_at,
+      updated_at: deviceModels.updated_at
+    })
+      .from(deviceModels)
+      .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
+      .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
+      .orderBy(deviceModels.name);
+    
+    return models;
+  }
+
+  async getConditionQuestions(deviceTypeId?: number): Promise<any[]> {
+    let query = db.select({
+      id: conditionQuestions.id,
+      question: conditionQuestions.question,
+      deviceTypeId: conditionQuestions.device_type_id,
+      order: conditionQuestions.order,
+      active: conditionQuestions.active
+    })
+      .from(conditionQuestions)
+      .orderBy(conditionQuestions.order);
+    
+    if (deviceTypeId) {
+      query = query.where(eq(conditionQuestions.device_type_id, deviceTypeId));
+    }
+    
+    const questions = await query;
+    
+    // For each question, get its answers
+    for (const question of questions) {
+      const answers = await db.select({
+        id: conditionAnswers.id,
+        answer: conditionAnswers.answer,
+        impact: conditionAnswers.impact,
+        order: conditionAnswers.order
+      })
+        .from(conditionAnswers)
+        .where(eq(conditionAnswers.question_id, question.id))
+        .orderBy(conditionAnswers.order);
+      
+      question.options = answers.map(a => ({
+        id: a.id,
+        text: a.answer,
+        value: Number(a.impact),
+        description: a.answer
+      }));
+    }
+    
+    return questions;
+  }
+
+  async getValuations(deviceModelId?: number): Promise<any[]> {
+    let query = db.select()
+      .from(valuations)
+      .leftJoin(deviceModels, eq(valuations.device_model_id, deviceModels.id));
+    
+    if (deviceModelId) {
+      query = query.where(eq(valuations.device_model_id, deviceModelId));
+    }
+    
+    return await query;
   }
 
   // Database status
