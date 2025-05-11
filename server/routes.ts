@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Marketplace listing endpoints
   app.post(apiRouter("/marketplace-listings"), async (req: Request, res: Response) => {
     try {
-      const listingData = validateRequest(insertMarketplaceListingSchema, req.body);
+      const listingData = validateRequest<InsertMarketplaceListing>(insertMarketplaceListingSchema, req.body);
       const listing = await storage.createMarketplaceListing(listingData);
       res.status(201).json(listing);
     } catch (error: any) {
