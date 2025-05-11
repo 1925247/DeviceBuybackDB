@@ -8,7 +8,12 @@ import {
   deviceTypes, type DeviceType,
   brands, type Brand,
   deviceModels, type DeviceModel,
-  conditionQuestions, conditionAnswers, valuations
+  conditionQuestions, conditionAnswers, valuations,
+  products, type Product, type InsertProduct,
+  productVariants, type ProductVariant, type InsertProductVariant,
+  productImages, type ProductImage, type InsertProductImage,
+  categories, type Category, type InsertCategory,
+  discounts, type Discount, type InsertDiscount
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count } from "drizzle-orm";

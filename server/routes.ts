@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertDeviceSchema, insertUserSchema, insertBuybackRequestSchema, insertMarketplaceListingSchema, insertOrderSchema,
-  type InsertUser, type InsertDevice, type InsertBuybackRequest, type InsertMarketplaceListing, type InsertOrder
+  insertProductSchema, insertProductVariantSchema, insertProductImageSchema, insertCategorySchema, insertDiscountSchema,
+  type InsertUser, type InsertDevice, type InsertBuybackRequest, type InsertMarketplaceListing, type InsertOrder,
+  type InsertProduct, type InsertProductVariant, type InsertProductImage, type InsertCategory, type InsertDiscount
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -1002,6 +1004,247 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting valuations:", error);
       res.status(500).json({ message: error.message || "Failed to delete valuations" });
+    }
+  });
+
+  // E-COMMERCE API ENDPOINTS
+
+  // Stripe payment integration
+  app.post(apiRouter("/create-payment-intent"), async (req: Request, res: Response) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: "Amount is required" });
+      }
+      
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return res.status(500).json({ message: "Stripe secret key is not configured" });
+      }
+      
+      const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+      });
+      
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: error.message || "Failed to create payment intent" });
+    }
+  });
+
+  // Products API
+  app.get(apiRouter("/products"), async (req: Request, res: Response) => {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const status = req.query.status as string | undefined;
+      const featured = req.query.featured ? req.query.featured === 'true' : undefined;
+      const categoryId = req.query.category ? parseInt(req.query.category as string) : undefined;
+      
+      const products = await storage.getProducts({ page, limit, status, featured, categoryId });
+      res.json(products);
+    } catch (error: any) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch products" });
+    }
+  });
+
+  app.get(apiRouter("/products/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      const product = await storage.getProduct(id);
+      
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json(product);
+    } catch (error: any) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch product" });
+    }
+  });
+
+  app.post(apiRouter("/products"), async (req: Request, res: Response) => {
+    try {
+      const productData = validateRequest<InsertProduct>(insertProductSchema, req.body);
+      const product = await storage.createProduct(productData);
+      res.status(201).json(product);
+    } catch (error: any) {
+      if (error.status) {
+        return res.status(error.status).json({ message: error.message });
+      }
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: error.message || "Failed to create product" });
+    }
+  });
+
+  app.put(apiRouter("/products/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      const productData = validateRequest<Partial<InsertProduct>>(insertProductSchema.partial(), req.body);
+      const updatedProduct = await storage.updateProduct(id, productData);
+      
+      if (!updatedProduct) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json(updatedProduct);
+    } catch (error: any) {
+      if (error.status) {
+        return res.status(error.status).json({ message: error.message });
+      }
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: error.message || "Failed to update product" });
+    }
+  });
+
+  app.delete(apiRouter("/products/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      const success = await storage.deleteProduct(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: error.message || "Failed to delete product" });
+    }
+  });
+
+  // Product Variants API
+  app.get(apiRouter("/products/:productId/variants"), async (req: Request, res: Response) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      
+      if (isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      const variants = await storage.getProductVariants(productId);
+      res.json(variants);
+    } catch (error: any) {
+      console.error("Error fetching product variants:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch product variants" });
+    }
+  });
+
+  app.post(apiRouter("/products/:productId/variants"), async (req: Request, res: Response) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      
+      if (isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+      
+      const variantData = validateRequest<InsertProductVariant>(insertProductVariantSchema, {
+        ...req.body,
+        product_id: productId
+      });
+      
+      const variant = await storage.createProductVariant(variantData);
+      res.status(201).json(variant);
+    } catch (error: any) {
+      if (error.status) {
+        return res.status(error.status).json({ message: error.message });
+      }
+      console.error("Error creating product variant:", error);
+      res.status(500).json({ message: error.message || "Failed to create product variant" });
+    }
+  });
+
+  // Categories API
+  app.get(apiRouter("/categories"), async (_req: Request, res: Response) => {
+    try {
+      const categories = await storage.getCategories();
+      res.json(categories);
+    } catch (error: any) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch categories" });
+    }
+  });
+
+  app.post(apiRouter("/categories"), async (req: Request, res: Response) => {
+    try {
+      const categoryData = validateRequest<InsertCategory>(insertCategorySchema, req.body);
+      const category = await storage.createCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error: any) {
+      if (error.status) {
+        return res.status(error.status).json({ message: error.message });
+      }
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: error.message || "Failed to create category" });
+    }
+  });
+
+  // Discounts API
+  app.get(apiRouter("/discounts"), async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const discounts = await storage.getDiscounts(status);
+      res.json(discounts);
+    } catch (error: any) {
+      console.error("Error fetching discounts:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch discounts" });
+    }
+  });
+
+  app.post(apiRouter("/discounts"), async (req: Request, res: Response) => {
+    try {
+      const discountData = validateRequest<InsertDiscount>(insertDiscountSchema, req.body);
+      const discount = await storage.createDiscount(discountData);
+      res.status(201).json(discount);
+    } catch (error: any) {
+      if (error.status) {
+        return res.status(error.status).json({ message: error.message });
+      }
+      console.error("Error creating discount:", error);
+      res.status(500).json({ message: error.message || "Failed to create discount" });
+    }
+  });
+
+  // Verify discount code
+  app.post(apiRouter("/discounts/verify"), async (req: Request, res: Response) => {
+    try {
+      const { code, total } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: "Discount code is required" });
+      }
+      
+      const discount = await storage.verifyDiscount(code, total);
+      
+      if (!discount) {
+        return res.status(404).json({ message: "Invalid or expired discount code" });
+      }
+      
+      res.json(discount);
+    } catch (error: any) {
+      console.error("Error verifying discount:", error);
+      res.status(500).json({ message: error.message || "Failed to verify discount" });
     }
   });
 
