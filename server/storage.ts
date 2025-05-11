@@ -305,13 +305,13 @@ export class DatabaseStorage implements IStorage {
 
   async getOrders(page: number = 1, limit: number = 10, status?: string): Promise<Order[]> {
     const offset = (page - 1) * limit;
-    let query = db.select().from(orders).limit(limit).offset(offset).orderBy(desc(orders.created_at));
+    const baseQuery = db.select().from(orders).limit(limit).offset(offset).orderBy(desc(orders.created_at));
     
     if (status) {
-      query = query.where(eq(orders.status, status));
+      return baseQuery.where(eq(orders.status, status));
     }
     
-    return query;
+    return baseQuery;
   }
 
   async getOrdersByBuyer(buyerId: number): Promise<Order[]> {
@@ -375,7 +375,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConditionQuestions(deviceTypeId?: number): Promise<any[]> {
-    let query = db.select({
+    const baseQuery = db.select({
       id: conditionQuestions.id,
       question: conditionQuestions.question,
       deviceTypeId: conditionQuestions.device_type_id,
@@ -385,11 +385,11 @@ export class DatabaseStorage implements IStorage {
       .from(conditionQuestions)
       .orderBy(conditionQuestions.order);
     
-    if (deviceTypeId) {
-      query = query.where(eq(conditionQuestions.device_type_id, deviceTypeId));
-    }
+    const finalQuery = deviceTypeId 
+      ? baseQuery.where(eq(conditionQuestions.device_type_id, deviceTypeId))
+      : baseQuery;
     
-    const questions = await query;
+    const questions = await finalQuery;
     
     // For each question, get its answers
     for (const question of questions) {
@@ -403,7 +403,8 @@ export class DatabaseStorage implements IStorage {
         .where(eq(conditionAnswers.question_id, question.id))
         .orderBy(conditionAnswers.order);
       
-      question.options = answers.map(a => ({
+      // Add options property to the question
+      (question as any).options = answers.map(a => ({
         id: a.id,
         text: a.answer,
         value: Number(a.impact),
@@ -415,15 +416,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getValuations(deviceModelId?: number): Promise<any[]> {
-    let query = db.select()
+    const baseQuery = db.select()
       .from(valuations)
       .leftJoin(deviceModels, eq(valuations.device_model_id, deviceModels.id));
     
     if (deviceModelId) {
-      query = query.where(eq(valuations.device_model_id, deviceModelId));
+      return await baseQuery.where(eq(valuations.device_model_id, deviceModelId));
     }
     
-    return await query;
+    return await baseQuery;
   }
 
   // Database status
