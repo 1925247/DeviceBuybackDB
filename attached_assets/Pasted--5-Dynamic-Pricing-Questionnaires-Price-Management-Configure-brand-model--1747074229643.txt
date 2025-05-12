@@ -1,0 +1,81 @@
+### **5. Dynamic Pricing & Questionnaires**  
+- **Price Management**:  
+  - Configure **brand/model-specific deductions** (e.g., ₹500 for a cracked iPhone screen).  
+  - Use conditional logic to adjust prices based on customer responses.  
+- **Questionnaire Customization**:  
+  - Design **brand-wise questions** (e.g., Samsung: "Screen burn-in?" | iPhone: "Battery cycles?").  
+  - Allow admins to add/remove questions via a drag-and-drop builder.  
+
+---
+
+### **6. Custom Invoice Generation**  
+- **Template Requirements**:  
+  - **Seller**: Customer’s name, address, contact.  
+  - **Purchaser**: Partner’s name.  
+  - **Device Details**: Model, IMEI, sale price, deductions, sale date.  
+  - **Dynamic Fields**: PIN code, device condition, reason for selling.  
+- **Admin Features**:  
+  - Edit invoice templates with a drag-and-drop editor.  
+  - Auto-send invoices to customers after partner confirmation.  
+
+---
+
+### **7. Region-Based E-Commerce Rules**  
+- **Configuration**:  
+  - Assign products to regions in the admin panel.  
+  - Hide/show products based on customer’s location.  
+  - Restrict partners to operate only in assigned regions (e.g., PIN 22).  
+
+---
+
+### **8. "Sell Ready" Phones in Marketplace**  
+- **Process**:  
+  - Flag phones from **John John** as "sell ready" in the admin panel.  
+  - Auto-publish these phones to the marketplace with details (price, specs, images).  
+  - Use customizable templates for consistent product displays.  
+
+---
+
+### **9. Shopify-like Store Customization**  
+- **Drag-and-Drop Builder**:  
+  - Let admins redesign the store without coding.  
+  - Features:  
+    - Pre-built templates for product pages, carts, headers.  
+    - Adjust colors, fonts, layouts.  
+    - Preview changes before publishing.  
+
+---
+
+### **10. Multi-Tenant Database Architecture**  
+- **Structure**:  
+  - Separate databases for partners to isolate their data.  
+  - Central customer database tagged with PIN codes and regions.  
+
+---
+
+### **11. Frontend Requirements**  
+- **Customer Interface**:  
+  - Region-specific product visibility.  
+  - Dynamic forms for sell requests (questions change by device brand).  
+  - Real-time price estimates during submissions.  
+- **Marketplace**:  
+  - Highlight "sell ready" phones with clear CTAs (e.g., "Buy Now").  
+
+---
+
+### **12. Technical Tools (Optional)**  
+- **Suggested Frameworks**:  
+  - Backend: Node.js/Django for partner portals and APIs.  
+  - Frontend: React.js for dynamic UI.  
+  - Invoices: PDFKit or **React-PDF** for template generation.  
+
+---
+
+### **Summary for Raplit Team**  
+- **Key Customizations**:  
+  1. Multi-tenant partner databases + PIN-based lead assignment.  
+  2. Dynamic pricing with brand-specific questionnaires.  
+  3. Region management + Shopify-like store builder.  
+  4. Automated sell request workflow + invoice system.  
+
+This list ensures all your requirements are covered. Let Raplit know if they need further technical specs! 🚀

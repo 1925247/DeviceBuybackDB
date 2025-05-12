@@ -3,6 +3,67 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Regions Table
+export const regions = pgTable("regions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  code: text("code").notNull().unique(),
+  active: boolean("active").default(true).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertRegionSchema = createInsertSchema(regions, {
+  name: z.string().min(1),
+  code: z.string().min(1),
+  active: z.boolean(),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type InsertRegion = z.infer<typeof insertRegionSchema>;
+export type Region = typeof regions.$inferSelect;
+
+// Partners Table
+export const partners = pgTable("partners", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  address: text("address"),
+  logo: text("logo"),
+  status: text("status").notNull().default("active"),
+  specialization: text("specialization"),
+  regions: json("regions").$type<number[]>(),
+  device_types: json("device_types").$type<number[]>(),
+  pin_codes: json("pin_codes").$type<string[]>(),
+  commission_rate: decimal("commission_rate", { precision: 5, scale: 2 }).default("10").notNull(),
+  tenant_id: text("tenant_id").notNull().unique(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const partnersRelations = relations(partners, ({ many }) => ({
+  users: many(users),
+  leads: many(buybackRequests),
+}));
+
+export const insertPartnerSchema = createInsertSchema(partners, {
+  name: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  logo: z.string().optional(),
+  status: z.enum(["active", "inactive", "pending"]),
+  specialization: z.string().optional(),
+  regions: z.array(z.number()).optional(),
+  device_types: z.array(z.number()).optional(),
+  pin_codes: z.array(z.string()).optional(),
+  commission_rate: z.number().min(0).max(100).optional(),
+  tenant_id: z.string().min(1),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type InsertPartner = z.infer<typeof insertPartnerSchema>;
+export type Partner = typeof partners.$inferSelect;
+
 // Users Table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -13,6 +74,8 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("user"),
   stripe_customer_id: text("stripe_customer_id"),
   stripe_subscription_id: text("stripe_subscription_id"),
+  partner_id: integer("partner_id").references(() => partners.id),
+  region_id: integer("region_id").references(() => regions.id),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

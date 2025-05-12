@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import FileUpload from '@/components/ui/file-upload';
 import { 
   Package2, 
   PlusCircle, 
@@ -798,6 +799,27 @@ const AdminProducts = () => {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Product Images Upload */}
+                    <div>
+                      <FormLabel>Product Images</FormLabel>
+                      <div className="mt-2">
+                        <FileUpload
+                          label="Main Product Image"
+                          description="Upload the primary image for this product"
+                          initialUrl={currentProduct?.images?.[0]?.url || ''}
+                          onFileChange={(file) => {
+                            setProductImage(file);
+                          }}
+                          onUrlChange={(url) => {
+                            setProductImageUrl(url);
+                          }}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Additional images can be added after saving the product
+                      </p>
+                    </div>
                     
                     <FormField
                       control={form.control}
