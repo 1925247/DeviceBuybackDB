@@ -618,7 +618,7 @@ export default function ConditionQuestionsPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="">All device types</SelectItem>
+                                <SelectItem value="none">All device types</SelectItem>
                                 {deviceTypes.map((type: any) => (
                                   <SelectItem key={type.id} value={type.id.toString()}>
                                     {type.name}
