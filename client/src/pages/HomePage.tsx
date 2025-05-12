@@ -32,6 +32,35 @@ interface SectionData {
   settings: Record<string, any>;
 }
 
+interface HowItWorksStep {
+  title: string;
+  description: string;
+}
+
+interface TestimonialItem {
+  name: string;
+  text: string;
+  rating: number;
+}
+
+interface StatItem {
+  value: string;
+  label: string;
+}
+
+interface ContentData {
+  steps?: HowItWorksStep[];
+  items?: TestimonialItem[];
+  description?: string;
+  stats?: StatItem[];
+}
+
+interface BrandData {
+  id: number;
+  name: string;
+  logo?: string;
+}
+
 // Empty initial state
 const initialHomeData = {
   hero: {
@@ -41,7 +70,7 @@ const initialHomeData = {
   howItWorks: {
     title: "",
     subtitle: "",
-    steps: []
+    steps: [] as HowItWorksStep[]
   },
   deviceTypes: {
     title: "",
@@ -50,18 +79,18 @@ const initialHomeData = {
   featuredBrands: {
     title: "",
     subtitle: "",
-    brands: []
+    brands: [] as BrandData[]
   },
   testimonials: {
     title: "",
     subtitle: "",
-    items: []
+    items: [] as TestimonialItem[]
   },
   environmentalImpact: {
     title: "",
     subtitle: "",
     description: "",
-    stats: []
+    stats: [] as StatItem[]
   }
 };
 
@@ -132,10 +161,10 @@ const HomePage: React.FC = () => {
       sections.forEach((section: SectionData) => {
         if (section.active) {
           // Parse content JSON if it exists
-          let content = {};
+          let content: ContentData = {};
           try {
             if (section.content) {
-              content = JSON.parse(section.content);
+              content = JSON.parse(section.content) as ContentData;
             }
           } catch (e) {
             console.error(`Error parsing JSON for section ${section.name}:`, e);
@@ -151,7 +180,7 @@ const HomePage: React.FC = () => {
             newHomeData.howItWorks = {
               title: section.title,
               subtitle: section.subtitle,
-              steps: content.steps || []
+              steps: Array.isArray(content.steps) ? content.steps : []
             };
           } else if (section.name === 'deviceTypes') {
             newHomeData.deviceTypes = {
@@ -168,25 +197,25 @@ const HomePage: React.FC = () => {
             newHomeData.testimonials = {
               title: section.title,
               subtitle: section.subtitle,
-              items: content.items || []
+              items: Array.isArray(content.items) ? content.items : []
             };
           } else if (section.name === 'environmentalImpact') {
             newHomeData.environmentalImpact = {
               title: section.title,
               subtitle: section.subtitle,
-              description: content.description || '',
-              stats: content.stats || []
+              description: typeof content.description === 'string' ? content.description : '',
+              stats: Array.isArray(content.stats) ? content.stats : []
             };
           }
         }
       });
       
       // Set featured brands from brandsData
-      if (brandsData && brandsData.length > 0) {
+      if (brandsData && Array.isArray(brandsData) && brandsData.length > 0) {
         newHomeData.featuredBrands.brands = brandsData.slice(0, 6).map((brand: any) => ({
-          id: brand.id,
-          name: brand.name,
-          logo: brand.logo
+          id: brand.id || 0,
+          name: brand.name || '',
+          logo: brand.logo || ''
         }));
       }
       
@@ -262,13 +291,13 @@ const HomePage: React.FC = () => {
                 </div>
               ))
             ) : (
-              homeData.howItWorks.steps.map((step, index) => (
+              Array.isArray(homeData.howItWorks.steps) && homeData.howItWorks.steps.map((step, index) => (
                 <div key={index} className="bg-white p-6 rounded-lg shadow-md">
                   <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                     <span className="text-blue-600 text-2xl font-bold">{index + 1}</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">{step.title}</h3>
-                  <p className="text-gray-600 text-center">{step.description}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">{step?.title || ''}</h3>
+                  <p className="text-gray-600 text-center">{step?.description || ''}</p>
                 </div>
               ))
             )}
