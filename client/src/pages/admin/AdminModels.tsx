@@ -121,10 +121,10 @@ const AdminModels: React.FC = () => {
   // Filtered models based on selected device type and brand
   const filteredModels = enrichedDeviceModels.filter(model => {
     let matches = true;
-    if (selectedDeviceType !== null) {
+    if (selectedDeviceType !== null && selectedDeviceType !== 0) {
       matches = matches && model.device_type_id === selectedDeviceType;
     }
-    if (selectedBrand !== null) {
+    if (selectedBrand !== null && selectedBrand !== 0) {
       matches = matches && model.brand_id === selectedBrand;
     }
     return matches;
@@ -645,8 +645,8 @@ const AdminModels: React.FC = () => {
         <h1 className="text-2xl font-bold">Device Models</h1>
         <div className="flex flex-col md:flex-row gap-3">
           <Select 
-            value={selectedDeviceType?.toString() || ''} 
-            onValueChange={(value) => setSelectedDeviceType(value ? parseInt(value) : null)}
+            value={selectedDeviceType?.toString() || 'all'} 
+            onValueChange={(value) => setSelectedDeviceType(value === 'all' ? null : parseInt(value))}
           >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filter by device type" />
@@ -662,8 +662,8 @@ const AdminModels: React.FC = () => {
           </Select>
           
           <Select 
-            value={selectedBrand?.toString() || ''} 
-            onValueChange={(value) => setSelectedBrand(value ? parseInt(value) : null)}
+            value={selectedBrand?.toString() || 'all'} 
+            onValueChange={(value) => setSelectedBrand(value === 'all' ? null : parseInt(value))}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by brand" />
