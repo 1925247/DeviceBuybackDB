@@ -444,7 +444,7 @@ export class DatabaseStorage implements IStorage {
     // Ensure the model has required fields
     const requiredFields = ['name', 'slug', 'brand_id', 'device_type_id'];
     for (const field of requiredFields) {
-      if (!model[field]) {
+      if (!(field in model)) {
         throw new Error(`Missing required field: ${field}`);
       }
     }
@@ -452,14 +452,26 @@ export class DatabaseStorage implements IStorage {
     // Insert default values for optional fields if not provided
     const modelData = {
       ...model,
-      image: model.image || `https://placehold.co/300x200?text=${encodeURIComponent(model.name)}`,
+      image: model.image || `https://placehold.co/300x200?text=${model.name ? encodeURIComponent(model.name as string) : 'New Model'}`,
       active: model.active !== undefined ? model.active : true,
       featured: model.featured !== undefined ? model.featured : false,
       variants: model.variants || [],
     };
 
+    // Convert modelData to compatible type
+    const compatibleData = {
+      name: modelData.name as string,
+      slug: modelData.slug as string,
+      image: modelData.image as string,
+      brand_id: modelData.brand_id as number,
+      device_type_id: modelData.device_type_id as number,
+      active: modelData.active as boolean,
+      featured: modelData.featured as boolean,
+      variants: modelData.variants as string[]
+    };
+    
     const [newModel] = await db.insert(deviceModels)
-      .values(modelData)
+      .values([compatibleData])
       .returning();
       
     return newModel;
@@ -730,18 +742,23 @@ export class DatabaseStorage implements IStorage {
         throw new Error("device_model_id is required");
       }
       
+      // Prepare the data with proper types
+      const data = {
+        device_model_id: valuationData.device_model_id as number,
+        base_price: valuationData.base_price?.toString() || "0",
+        condition_excellent: valuationData.condition_excellent?.toString() || "100",
+        condition_good: valuationData.condition_good?.toString() || "80",
+        condition_fair: valuationData.condition_fair?.toString() || "60",
+        condition_poor: valuationData.condition_poor?.toString() || "40",
+        variant_multipliers: valuationData.variant_multipliers ? JSON.stringify(valuationData.variant_multipliers) : null,
+        active: valuationData.active !== undefined ? valuationData.active : true,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      
       // Insert the valuation
       const [newValuation] = await db.insert(valuations)
-        .values({
-          device_model_id: valuationData.device_model_id,
-          variant: valuationData.variant || null,
-          condition: valuationData.condition || "Excellent",
-          base_price: valuationData.base_price || 0,
-          condition_multiplier: valuationData.condition_multiplier || 1.0,
-          active: valuationData.active !== undefined ? valuationData.active : true,
-          created_at: new Date(),
-          updated_at: new Date()
-        })
+        .values([data])
         .returning();
       
       return newValuation;
