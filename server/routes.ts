@@ -531,6 +531,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
+  
+  app.get(apiRouter("/users/count"), async (_req: Request, res: Response) => {
+    try {
+      const userCount = await storage.getUsersCount();
+      const deviceCount = await storage.getDevicesCount();
+      const orderCount = await storage.getOrdersCount();
+      res.json({
+        count: userCount,
+        deviceCount,
+        orderCount
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get users count" });
+    }
+  });
 
   // Device endpoints
   app.post(apiRouter("/devices"), async (req: Request, res: Response) => {
@@ -737,6 +752,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete buyback request" });
     }
   });
+  
+  app.get(apiRouter("/buyback-requests/count"), async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const count = await storage.getBuybackRequestsCount(status);
+      res.json({ count });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get buyback requests count" });
+    }
+  });
+  
+  app.get(apiRouter("/buyback-requests/recent"), async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const requests = await storage.getRecentBuybackRequests(limit);
+      res.json(requests);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get recent buyback requests" });
+    }
+  });
 
   // Marketplace listing endpoints
   app.post(apiRouter("/marketplace-listings"), async (req: Request, res: Response) => {
@@ -881,6 +916,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error: any) {
       res.status(500).json({ message: "Failed to delete order" });
+    }
+  });
+  
+  app.get(apiRouter("/orders/count"), async (_req: Request, res: Response) => {
+    try {
+      const count = await storage.getOrdersCount();
+      res.json({ count });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get orders count" });
+    }
+  });
+  
+  app.get(apiRouter("/orders/recent"), async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const orders = await storage.getRecentOrders(limit);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get recent orders" });
     }
   });
   

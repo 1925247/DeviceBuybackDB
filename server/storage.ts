@@ -26,6 +26,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getUsers(page?: number, limit?: number): Promise<User[]>;
+  getUsersCount(): Promise<number>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
@@ -33,6 +34,7 @@ export interface IStorage {
   getDevice(id: number): Promise<Device | undefined>;
   getDevices(page?: number, limit?: number, status?: string): Promise<Device[]>;
   getDevicesBySeller(sellerId: number): Promise<Device[]>;
+  getDevicesCount(): Promise<number>;
   createDevice(device: InsertDevice): Promise<Device>;
   updateDevice(id: number, device: Partial<InsertDevice>): Promise<Device | undefined>;
   deleteDevice(id: number): Promise<boolean>;
@@ -48,6 +50,7 @@ export interface IStorage {
   getBuybackRequests(page?: number, limit?: number, status?: string): Promise<BuybackRequest[]>;
   getBuybackRequestsCount(status?: string): Promise<number>;
   getBuybackRequestsByUser(userId: number): Promise<BuybackRequest[]>;
+  getRecentBuybackRequests(limit?: number): Promise<BuybackRequest[]>;
   createBuybackRequest(request: InsertBuybackRequest): Promise<BuybackRequest>;
   updateBuybackRequest(id: number, request: Partial<InsertBuybackRequest>): Promise<BuybackRequest | undefined>;
   deleteBuybackRequest(id: number): Promise<boolean>;
@@ -64,6 +67,8 @@ export interface IStorage {
   getOrders(page?: number, limit?: number, status?: string): Promise<Order[]>;
   getOrdersByBuyer(buyerId: number): Promise<Order[]>;
   getOrdersBySeller(sellerId: number): Promise<Order[]>;
+  getOrdersCount(): Promise<number>;
+  getRecentOrders(limit?: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
   deleteOrder(id: number): Promise<boolean>;
