@@ -270,13 +270,15 @@ const HomePage: React.FC = () => {
                 homeData.howItWorks.title
               )}
             </h2>
-            <p className="text-xl text-gray-600">
-              {loading ? (
+            {loading ? (
+              <div className="text-xl text-gray-600">
                 <Skeleton className="h-6 w-96 mx-auto" />
-              ) : (
-                homeData.howItWorks.subtitle
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-xl text-gray-600">
+                {homeData.howItWorks.subtitle}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {loading ? (
@@ -316,13 +318,15 @@ const HomePage: React.FC = () => {
                 homeData.deviceTypes.title
               )}
             </h2>
-            <p className="text-xl text-gray-600">
-              {loading ? (
+            {loading ? (
+              <div className="text-xl text-gray-600">
                 <Skeleton className="h-6 w-96 mx-auto" />
-              ) : (
-                homeData.deviceTypes.subtitle
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-xl text-gray-600">
+                {homeData.deviceTypes.subtitle}
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -373,13 +377,15 @@ const HomePage: React.FC = () => {
                 homeData.featuredBrands.title
               )}
             </h2>
-            <p className="text-xl text-gray-600">
-              {loading ? (
+            {loading ? (
+              <div className="text-xl text-gray-600">
                 <Skeleton className="h-6 w-96 mx-auto" />
-              ) : (
-                homeData.featuredBrands.subtitle
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-xl text-gray-600">
+                {homeData.featuredBrands.subtitle}
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">

@@ -278,7 +278,7 @@ const RegionsManagement: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {regions?.length > 0 ? (
+              {regions && Array.isArray(regions) && regions.length > 0 ? (
                 regions.map((region: Region) => (
                   <TableRow key={region.id}>
                     <TableCell className="font-medium">{region.name}</TableCell>
