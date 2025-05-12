@@ -331,6 +331,8 @@ export const buybackRequests = pgTable("buyback_requests", {
   pickup_address: text("pickup_address"),
   pickup_date: text("pickup_date"),
   pickup_time: text("pickup_time"),
+  assigned_to: text("assigned_to"),
+  pickup_notes: text("pickup_notes"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
