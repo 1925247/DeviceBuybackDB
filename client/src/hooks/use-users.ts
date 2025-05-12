@@ -1,39 +1,43 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-export function useUsers(page: number = 1, limit: number = 10) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/users", page, limit],
-    queryFn: async () => {
-      const url = `/api/users?page=${page}&limit=${limit}`;
-      return queryClient.fetchQuery({ queryKey: [url] });
-    },
-    keepPreviousData: true,
+export function useUsers(page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ["/api/users", { page, limit }],
+    queryFn: () => apiRequest(
+      "GET", 
+      `/api/users?page=${page}&limit=${limit}`
+    ).then(res => res.json()),
   });
-
-  // Assuming we don't have a total count from the API, we'll use a placeholder
-  const totalPages = Math.ceil((data?.length || 0) / limit) || 4;
-
-  return {
-    users: data || [],
-    isLoading,
-    error,
-    totalPages,
-  };
 }
 
 export function useUser(id?: number) {
   return useQuery({
     queryKey: [`/api/users/${id}`],
+    queryFn: () => apiRequest(
+      "GET", 
+      `/api/users/${id}`
+    ).then(res => res.json()),
     enabled: !!id,
+  });
+}
+
+export function useUsersCount() {
+  return useQuery({
+    queryKey: ["/api/users/count"],
+    queryFn: () => apiRequest(
+      "GET", 
+      `/api/users/count`
+    ).then(res => res.json()),
   });
 }
 
 export function useCreateUser() {
   return useMutation({
-    mutationFn: (userData: any) => apiRequest("POST", "/api/users", userData),
+    mutationFn: (data: any) => apiRequest("POST", "/api/users", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/count"] });
     },
   });
 }
@@ -45,6 +49,7 @@ export function useUpdateUser() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: [`/api/users/${variables.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/count"] });
     },
   });
 }
@@ -54,6 +59,7 @@ export function useDeleteUser() {
     mutationFn: (id: number) => apiRequest("DELETE", `/api/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/count"] });
     },
   });
 }
