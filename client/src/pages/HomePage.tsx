@@ -14,9 +14,10 @@ import {
   Clock,
   CreditCard
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Skeleton } from '@/components/ui/skeleton';
 
 // Use ModelsContext instead of static data
 import { useModels } from '../contexts/ModelsContext';
