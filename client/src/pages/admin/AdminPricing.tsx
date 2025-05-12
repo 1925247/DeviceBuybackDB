@@ -311,7 +311,7 @@ const AdminPricing: React.FC = () => {
     setVariantKeys(variants);
     
     setFormData({
-      device_model_id: valuation.device_model_id.toString(),
+      device_model_id: valuation.device_model_id ? valuation.device_model_id.toString() : '',
       base_price: valuation.base_price,
       condition_excellent: valuation.condition_excellent,
       condition_good: valuation.condition_good,
