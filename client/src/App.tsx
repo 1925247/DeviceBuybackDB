@@ -23,6 +23,8 @@ import ContactPage from './pages/ContactPage';
 import FAQPage from './pages/FAQPage';
 import BlogPage from './pages/BlogPage';
 import UserLogin from './pages/UserLogin';
+import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
 import ShopPage from './pages/shop';
 
 // Buy Flow Pages
@@ -247,7 +249,67 @@ function App() {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <UserLogin />
+                      <LoginPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ProfilePage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ProfilePage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
+                path="/devices"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ProfilePage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ProfilePage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ProfilePage />
                     </main>
                     <Footer />
                   </>
