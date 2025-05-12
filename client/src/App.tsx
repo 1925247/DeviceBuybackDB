@@ -353,7 +353,7 @@ function App() {
                   <Route index element={<AdminDashboard />} />
                   
                   {/* Device Management */}
-                  <Route path="device-types" element={<AdminCQS />} />
+                  <Route path="device-types" element={<AdminDevices />} />
                   <Route path="brands" element={<AdminBrands />} />
                   <Route path="models" element={<AdminModels />} />
                   <Route path="device-models" element={<AdminModels />} />
