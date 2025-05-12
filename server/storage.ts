@@ -750,7 +750,7 @@ export class DatabaseStorage implements IStorage {
         condition_good: valuationData.condition_good?.toString() || "80",
         condition_fair: valuationData.condition_fair?.toString() || "60",
         condition_poor: valuationData.condition_poor?.toString() || "40",
-        variant_multipliers: valuationData.variant_multipliers ? JSON.stringify(valuationData.variant_multipliers) : null,
+        variant_multipliers: valuationData.variant_multipliers || null,
         active: valuationData.active !== undefined ? valuationData.active : true,
         created_at: new Date(),
         updated_at: new Date()
@@ -758,7 +758,7 @@ export class DatabaseStorage implements IStorage {
       
       // Insert the valuation
       const [newValuation] = await db.insert(valuations)
-        .values([data])
+        .values(data)
         .returning();
       
       return newValuation;
@@ -773,10 +773,13 @@ export class DatabaseStorage implements IStorage {
     try {
       const [updatedValuation] = await db.update(valuations)
         .set({
-          variant: valuationData.variant !== undefined ? valuationData.variant : undefined,
-          condition: valuationData.condition !== undefined ? valuationData.condition : undefined,
-          base_price: valuationData.base_price !== undefined ? valuationData.base_price : undefined,
-          condition_multiplier: valuationData.condition_multiplier !== undefined ? valuationData.condition_multiplier : undefined,
+          base_price: valuationData.base_price !== undefined ? valuationData.base_price.toString() : undefined,
+          condition_excellent: valuationData.condition_excellent !== undefined ? valuationData.condition_excellent.toString() : undefined,
+          condition_good: valuationData.condition_good !== undefined ? valuationData.condition_good.toString() : undefined,
+          condition_fair: valuationData.condition_fair !== undefined ? valuationData.condition_fair.toString() : undefined,
+          condition_poor: valuationData.condition_poor !== undefined ? valuationData.condition_poor.toString() : undefined,
+          variant_multipliers: valuationData.variant_multipliers !== undefined ? 
+            JSON.stringify(valuationData.variant_multipliers) : undefined,
           active: valuationData.active !== undefined ? valuationData.active : undefined,
           updated_at: new Date()
         })
