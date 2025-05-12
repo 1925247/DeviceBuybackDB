@@ -483,8 +483,8 @@ function App() {
                   
                   {/* User Management */}
                   <Route path="users" element={<AdminUsers />} />
-                  <Route path="user-roles" element={<AdminUsers />} />
-                  <Route path="permissions" element={<AdminUsers />} />
+                  <Route path="user-roles" element={<UserRoleManagement />} />
+                  <Route path="permissions" element={<UserRoleManagement />} />
                   
                   {/* Other Settings */}
                   <Route path="faq" element={<AdminDashboard />} />
