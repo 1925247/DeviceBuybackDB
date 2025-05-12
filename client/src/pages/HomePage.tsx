@@ -425,13 +425,15 @@ const HomePage: React.FC = () => {
                 homeData.testimonials.title
               )}
             </h2>
-            <p className="text-xl text-gray-600">
-              {loading ? (
+            {loading ? (
+              <div className="text-xl text-gray-600">
                 <Skeleton className="h-6 w-96 mx-auto" />
-              ) : (
-                homeData.testimonials.subtitle
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-xl text-gray-600">
+                {homeData.testimonials.subtitle}
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -493,26 +495,28 @@ const HomePage: React.FC = () => {
                 homeData.environmentalImpact.title
               )}
             </h2>
-            <p className="text-xl">
-              {loading ? (
+            {loading ? (
+              <div className="text-xl">
                 <Skeleton className="h-6 w-96 mx-auto bg-white/20" />
-              ) : (
-                homeData.environmentalImpact.subtitle
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-xl">
+                {homeData.environmentalImpact.subtitle}
+              </p>
+            )}
           </div>
           
           <div className="max-w-3xl mx-auto text-center mb-12">
-            <p className="text-lg">
-              {loading ? (
-                <>
-                  <Skeleton className="h-5 w-full mb-2 bg-white/20" />
-                  <Skeleton className="h-5 w-5/6 mx-auto bg-white/20" />
-                </>
-              ) : (
-                homeData.environmentalImpact.description
-              )}
-            </p>
+            {loading ? (
+              <div className="text-lg">
+                <Skeleton className="h-5 w-full mb-2 bg-white/20" />
+                <Skeleton className="h-5 w-5/6 mx-auto bg-white/20" />
+              </div>
+            ) : (
+              <p className="text-lg">
+                {homeData.environmentalImpact.description}
+              </p>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
