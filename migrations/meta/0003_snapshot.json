@@ -1,0 +1,15 @@
+{
+  "id": "0003_region_partner_schema",
+  "checksum": "d2b09ab6ae16cdf3ca7eba7e58a54bf1",
+  "version": "5",
+  "dialect": "pg",
+  "description": "Add regions and partner-related schema",
+  "tables": {},
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}
