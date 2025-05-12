@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Clock } from 'lucide-react';
+import { Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Clock, UserPlus } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -381,6 +381,15 @@ const AdminBuybacks: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={() => handleAssignRequest(request)}
+                                title="Assign to Staff"
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <UserPlus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleDeleteRequest(request)}
                                 title="Delete Request"
                                 className="text-red-600 hover:text-red-800"
@@ -601,6 +610,70 @@ const AdminBuybacks: React.FC = () => {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? 'Deleting...' : 'Delete Request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Assignment Dialog */}
+      <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Request to Staff</DialogTitle>
+            <DialogDescription>
+              Assign this buyback request to a staff member for processing and pickup.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="deviceInfo">Device Information</Label>
+              <div id="deviceInfo" className="text-sm p-2 bg-gray-50 rounded-md">
+                {selectedRequest && (
+                  <>
+                    <p><span className="font-medium">{selectedRequest.manufacturer}</span> {selectedRequest.model}</p>
+                    <p className="text-gray-500">{selectedRequest.condition} condition</p>
+                    {selectedRequest.variant && <p className="text-gray-500">Variant: {selectedRequest.variant}</p>}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="assignedStaff">Assign To</Label>
+              <Select
+                value={assignedStaff}
+                onValueChange={setAssignedStaff}
+              >
+                <SelectTrigger id="assignedStaff">
+                  <SelectValue placeholder="Select staff member" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="john.doe">John Doe</SelectItem>
+                  <SelectItem value="jane.smith">Jane Smith</SelectItem>
+                  <SelectItem value="robert.johnson">Robert Johnson</SelectItem>
+                  <SelectItem value="emily.williams">Emily Williams</SelectItem>
+                  <SelectItem value="michael.brown">Michael Brown</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="pickupNotes">Pickup Notes</Label>
+              <Input
+                id="pickupNotes"
+                value={pickupNotes}
+                onChange={(e) => setPickupNotes(e.target.value)}
+                placeholder="Add any special instructions for pickup"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmAssignRequest}
+              disabled={!assignedStaff}
+            >
+              Assign Request
             </Button>
           </DialogFooter>
         </DialogContent>
