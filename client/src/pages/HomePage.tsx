@@ -239,13 +239,15 @@ const HomePage: React.FC = () => {
                 homeData.hero.title
               )}
             </h1>
-            <p className="text-xl md:text-2xl mb-8">
-              {loading ? (
+            {loading ? (
+              <div className="text-xl md:text-2xl mb-8">
                 <Skeleton className="h-8 w-full mb-2 bg-gray-200/20" />
-              ) : (
-                homeData.hero.subtitle
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-xl md:text-2xl mb-8">
+                {homeData.hero.subtitle}
+              </p>
+            )}
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/sell/device-selection" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md bg-white text-blue-700 hover:bg-gray-100">
                 Sell a Device
@@ -277,7 +279,7 @@ const HomePage: React.FC = () => {
               </div>
             ) : (
               <p className="text-xl text-gray-600">
-                {homeData.howItWorks.subtitle}
+                {homeData.howItWorks.subtitle || 'Simple steps to sell your device'}
               </p>
             )}
           </div>
@@ -515,7 +517,7 @@ const HomePage: React.FC = () => {
               </div>
             ) : (
               <p className="text-lg">
-                {homeData.environmentalImpact.description}
+                {homeData.environmentalImpact.description || 'By choosing to sell your old devices and buy refurbished ones, you contribute to a circular economy that reduces e-waste and conserves precious natural resources.'}
               </p>
             )}
           </div>
