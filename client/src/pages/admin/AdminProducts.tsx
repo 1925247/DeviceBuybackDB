@@ -1262,8 +1262,8 @@ const AdminProducts = () => {
                         <FormItem>
                           <FormLabel>Brand</FormLabel>
                           <Select 
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                            value={field.value?.toString() || ""}
+                            onValueChange={(value) => field.onChange(value !== "none" ? parseInt(value) : null)}
+                            value={field.value?.toString() || "none"}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -1287,8 +1287,8 @@ const AdminProducts = () => {
                         <FormItem>
                           <FormLabel>Device Model</FormLabel>
                           <Select 
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                            value={field.value?.toString() || ""}
+                            onValueChange={(value) => field.onChange(value !== "none" ? parseInt(value) : null)}
+                            value={field.value?.toString() || "none"}
                           >
                             <FormControl>
                               <SelectTrigger>
