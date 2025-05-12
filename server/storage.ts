@@ -76,6 +76,10 @@ export interface IStorage {
   // Reference data operations
   getDeviceTypes(): Promise<DeviceType[]>;
   getBrands(): Promise<Brand[]>;
+  getBrand(id: number): Promise<Brand | undefined>;
+  createBrand(data: { name: string; slug: string; logo?: string }): Promise<Brand>;
+  updateBrand(id: number, data: { name: string; slug: string; logo?: string }): Promise<Brand | undefined>;
+  deleteBrand(id: number): Promise<boolean>;
   
   // Device models operations
   getDeviceModels(): Promise<DeviceModel[]>;
@@ -448,6 +452,38 @@ export class DatabaseStorage implements IStorage {
 
   async getBrands(): Promise<Brand[]> {
     return await db.select().from(brands).orderBy(brands.name);
+  }
+  
+  async getBrand(id: number): Promise<Brand | undefined> {
+    const [brand] = await db.select().from(brands).where(eq(brands.id, id));
+    return brand;
+  }
+  
+  async createBrand(data: { name: string; slug: string; logo?: string }): Promise<Brand> {
+    const [newBrand] = await db.insert(brands).values(data).returning();
+    return newBrand;
+  }
+  
+  async updateBrand(id: number, data: { name: string; slug: string; logo?: string }): Promise<Brand | undefined> {
+    const [updatedBrand] = await db
+      .update(brands)
+      .set(data)
+      .where(eq(brands.id, id))
+      .returning();
+    return updatedBrand;
+  }
+  
+  async deleteBrand(id: number): Promise<boolean> {
+    try {
+      const [deletedBrand] = await db
+        .delete(brands)
+        .where(eq(brands.id, id))
+        .returning({ id: brands.id });
+      return !!deletedBrand;
+    } catch (error) {
+      console.error("Error deleting brand:", error);
+      return false;
+    }
   }
 
   async getDeviceModel(id: number): Promise<DeviceModel | undefined> {

@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Brands API endpoint
+  // Brands API endpoints
   app.get(apiRouter("/brands"), async (_req: Request, res: Response) => {
     try {
       const brandsData = await storage.getBrands();
@@ -77,6 +77,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching brands:", error);
       res.status(500).json({ message: error.message || "Failed to fetch brands" });
+    }
+  });
+  
+  app.get(apiRouter("/brands/:id"), async (req: Request, res: Response) => {
+    try {
+      const brandId = parseInt(req.params.id);
+      if (isNaN(brandId)) {
+        return res.status(400).json({ message: "Invalid brand ID" });
+      }
+      
+      const brand = await storage.getBrand(brandId);
+      if (!brand) {
+        return res.status(404).json({ message: "Brand not found" });
+      }
+      
+      res.json(brand);
+    } catch (error: any) {
+      console.error("Error fetching brand:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch brand" });
+    }
+  });
+  
+  app.post(apiRouter("/brands"), async (req: Request, res: Response) => {
+    try {
+      const { name, slug, logo } = req.body;
+      
+      if (!name || !slug) {
+        return res.status(400).json({ message: "Name and slug are required" });
+      }
+      
+      const brand = await storage.createBrand({ name, slug, logo });
+      res.status(201).json(brand);
+    } catch (error: any) {
+      console.error("Error creating brand:", error);
+      res.status(500).json({ message: error.message || "Failed to create brand" });
+    }
+  });
+  
+  app.put(apiRouter("/brands/:id"), async (req: Request, res: Response) => {
+    try {
+      const brandId = parseInt(req.params.id);
+      if (isNaN(brandId)) {
+        return res.status(400).json({ message: "Invalid brand ID" });
+      }
+      
+      const { name, slug, logo } = req.body;
+      
+      if (!name || !slug) {
+        return res.status(400).json({ message: "Name and slug are required" });
+      }
+      
+      const updatedBrand = await storage.updateBrand(brandId, { name, slug, logo });
+      
+      if (!updatedBrand) {
+        return res.status(404).json({ message: "Brand not found" });
+      }
+      
+      res.json(updatedBrand);
+    } catch (error: any) {
+      console.error("Error updating brand:", error);
+      res.status(500).json({ message: error.message || "Failed to update brand" });
+    }
+  });
+  
+  app.delete(apiRouter("/brands/:id"), async (req: Request, res: Response) => {
+    try {
+      const brandId = parseInt(req.params.id);
+      if (isNaN(brandId)) {
+        return res.status(400).json({ message: "Invalid brand ID" });
+      }
+      
+      const success = await storage.deleteBrand(brandId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Brand not found or could not be deleted" });
+      }
+      
+      res.status(200).json({ message: "Brand deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting brand:", error);
+      res.status(500).json({ message: error.message || "Failed to delete brand" });
     }
   });
 
