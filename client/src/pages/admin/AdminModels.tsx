@@ -897,7 +897,10 @@ const AdminModels: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Badge variant={model.active ? "success" : "secondary"} className="whitespace-nowrap">
+                                <Badge 
+                                  variant="outline" 
+                                  className={`whitespace-nowrap ${model.active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
+                                >
                                   {model.active ? 'Active' : 'Inactive'}
                                 </Badge>
                                 {model.featured && (
