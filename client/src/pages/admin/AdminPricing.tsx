@@ -671,14 +671,14 @@ const AdminPricing: React.FC = () => {
         <h1 className="text-2xl font-bold">Device Valuations</h1>
         <div className="flex flex-col md:flex-row gap-3">
           <Select 
-            value={selectedDeviceType?.toString() || ''} 
-            onValueChange={(value) => setSelectedDeviceType(value ? parseInt(value) : null)}
+            value={selectedDeviceType?.toString() || 'all'} 
+            onValueChange={(value) => setSelectedDeviceType(value === 'all' ? null : parseInt(value))}
           >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filter by device type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Device Types</SelectItem>
+              <SelectItem value="all">All Device Types</SelectItem>
               {deviceTypes?.map((deviceType) => (
                 <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
                   {deviceType.name}
@@ -688,14 +688,14 @@ const AdminPricing: React.FC = () => {
           </Select>
           
           <Select 
-            value={selectedBrand?.toString() || ''} 
-            onValueChange={(value) => setSelectedBrand(value ? parseInt(value) : null)}
+            value={selectedBrand?.toString() || 'all'} 
+            onValueChange={(value) => setSelectedBrand(value === 'all' ? null : parseInt(value))}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by brand" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Brands</SelectItem>
+              <SelectItem value="all">All Brands</SelectItem>
               {brands?.map((brand) => (
                 <SelectItem key={brand.id} value={brand.id.toString()}>
                   {brand.name}
