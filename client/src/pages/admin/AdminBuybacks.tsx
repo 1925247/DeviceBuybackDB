@@ -305,6 +305,7 @@ const AdminBuybacks: React.FC = () => {
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned</TabsTrigger>
           <TabsTrigger value="processing">Processing</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
@@ -333,6 +334,7 @@ const AdminBuybacks: React.FC = () => {
                         <TableHead>Condition</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Assigned To</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -359,6 +361,16 @@ const AdminBuybacks: React.FC = () => {
                             <Badge className={getStatusColor(request.status)}>
                               {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {request.assigned_to ? (
+                              <div className="flex items-center text-sm">
+                                <UserPlus className="h-3.5 w-3.5 mr-1 text-blue-500" />
+                                <span>{request.assigned_to}</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">Not assigned</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm text-gray-500">
                             {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'N/A'}
@@ -468,6 +480,20 @@ const AdminBuybacks: React.FC = () => {
                           <Clock className="h-4 w-4 mr-2 text-gray-500" />
                           <span>{selectedRequest.pickup_time}</span>
                         </div>
+                        
+                        {selectedRequest.assigned_to && (
+                        <div className="border-t border-gray-200 pt-2 mt-2">
+                          <div className="flex items-center text-sm">
+                            <UserPlus className="h-4 w-4 mr-2 text-gray-500" />
+                            <span>Assigned to: <span className="font-medium">{selectedRequest.assigned_to}</span></span>
+                          </div>
+                          {selectedRequest.pickup_notes && (
+                            <div className="text-sm mt-2 pl-6">
+                              <p className="text-gray-500">Notes: {selectedRequest.pickup_notes}</p>
+                            </div>
+                          )}
+                        </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
