@@ -362,21 +362,34 @@ function App() {
                   {/* Buyback Program */}
                   <Route path="buyback" element={<AdminBuybacks />} />
                   <Route path="condition-questions" element={<ConditionQuestionsAdmin />} />
+                  <Route path="price-conditions" element={<AdminPricing />} />
                   <Route path="valuations" element={<AdminPricing />} />
+                  <Route path="partner-program" element={<AdminBuybacks />} />
                   
                   {/* E-commerce */}
                   <Route path="products" element={<AdminProducts />} />
+                  <Route path="product-categories" element={<AdminCategories />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="marketplace" element={<AdminMarketplaceSettings />} />
+                  <Route path="marketplace-settings" element={<AdminMarketplaceSettings />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="discounts" element={<AdminDashboard />} />
                   <Route path="inventory" element={<AdminProducts />} />
                   <Route path="shipping" element={<AdminMarketplaceSettings />} />
                   <Route path="payments" element={<AdminMarketplaceSettings />} />
+                  <Route path="revolutionary" element={<AdminDevices />} />
+                  <Route path="analytics" element={<AdminDashboard />} />
+                  <Route path="campaigns" element={<AdminDashboard />} />
+                  <Route path="promotions" element={<AdminDashboard />} />
+                  <Route path="coupons" element={<AdminDashboard />} />
+                  <Route path="media" element={<AdminDashboard />} />
+                  <Route path="blog" element={<AdminDashboard />} />
+                  <Route path="reviews" element={<AdminDashboard />} />
+                  <Route path="security" element={<AdminSettings />} />
                   
                   {/* Settings */}
                   <Route path="users" element={<AdminUsers />} />
-                  <Route path="faqs" element={<AdminDashboard />} />
+                  <Route path="faq" element={<AdminDashboard />} />
                   <Route path="settings" element={<AdminSettings />} />
                   
                   {/* Legacy */}
