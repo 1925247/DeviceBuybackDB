@@ -214,9 +214,13 @@ export type DeviceModel = typeof deviceModels.$inferSelect;
 export const conditionQuestions = pgTable("condition_questions", {
   id: serial("id").primaryKey(),
   device_type_id: integer("device_type_id").references(() => deviceTypes.id).notNull(),
+  brand_id: integer("brand_id").references(() => brands.id),
   question: text("question").notNull(),
   order: integer("order").notNull(),
   active: boolean("active").default(true).notNull(),
+  question_type: text("question_type").default("multiple_choice").notNull(),
+  required: boolean("required").default(true).notNull(),
+  help_text: text("help_text"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -396,6 +400,14 @@ export const buybackRequests = pgTable("buyback_requests", {
   pickup_time: text("pickup_time"),
   assigned_to: text("assigned_to"),
   pickup_notes: text("pickup_notes"),
+  partner_id: integer("partner_id").references(() => partners.id),
+  region_id: integer("region_id").references(() => regions.id),
+  pin_code: text("pin_code"),
+  staff_id: integer("staff_id").references(() => users.id),
+  questionnaire_answers: json("questionnaire_answers").$type<Record<string, string>>(),
+  image_urls: json("image_urls").$type<string[]>(),
+  deductions: json("deductions").$type<Record<string, number>>(),
+  final_price: decimal("final_price", { precision: 10, scale: 2 }),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -408,6 +420,19 @@ export const buybackRequestsRelations = relations(buybackRequests, ({ one }) => 
   deviceModel: one(deviceModels, {
     fields: [buybackRequests.device_model_id],
     references: [deviceModels.id],
+  }),
+  partner: one(partners, {
+    fields: [buybackRequests.partner_id],
+    references: [partners.id],
+  }),
+  region: one(regions, {
+    fields: [buybackRequests.region_id],
+    references: [regions.id],
+  }),
+  staff: one(users, {
+    fields: [buybackRequests.staff_id],
+    references: [users.id],
+    relationName: "assigned_staff",
   }),
 }));
 
