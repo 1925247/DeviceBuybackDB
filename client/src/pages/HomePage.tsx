@@ -14,11 +14,87 @@ import {
   Clock,
   CreditCard
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Import dynamic content from shared data file
-import { homeData } from '../db/homeData';
 // Use ModelsContext instead of static data
 import { useModels } from '../contexts/ModelsContext';
+
+// Define a homeData structure to replace the static import
+const defaultHomeData = {
+  hero: {
+    title: "Trade in or buy refurbished devices",
+    subtitle: "Get the best value for your old device or find great deals on certified refurbished products"
+  },
+  howItWorks: {
+    title: "How It Works",
+    subtitle: "Simple process to trade in your device or buy a refurbished one",
+    steps: [
+      {
+        title: "Select Your Device",
+        description: "Choose your device type, brand, and model"
+      },
+      {
+        title: "Get an Instant Quote",
+        description: "Answer a few questions and receive an instant value estimate"
+      },
+      {
+        title: "Get Paid Fast",
+        description: "Ship your device or schedule a pickup and get paid quickly"
+      }
+    ]
+  },
+  deviceTypes: {
+    title: "Choose Your Device Type",
+    subtitle: "Select the type of device you want to sell or browse"
+  },
+  featuredBrands: {
+    title: "Popular Brands",
+    subtitle: "Browse devices from top manufacturers",
+    brands: []
+  },
+  testimonials: {
+    title: "What Our Customers Say",
+    subtitle: "Thousands of satisfied customers have sold and purchased devices through our platform",
+    items: [
+      {
+        name: "Sarah J.",
+        text: "I was amazed by how easy it was to sell my old iPhone. The quote was fair and I received payment within 24 hours of them receiving my device!",
+        rating: 5
+      },
+      {
+        name: "Michael T.",
+        text: "The refurbished MacBook I purchased works perfectly! It looks brand new and came with a solid warranty. Saved me hundreds of dollars.",
+        rating: 5
+      },
+      {
+        name: "Priya K.",
+        text: "I've used this service multiple times to sell old gadgets. The process is always smooth and they consistently offer better prices than other buyback services.",
+        rating: 4
+      }
+    ]
+  },
+  environmentalImpact: {
+    title: "Our Environmental Impact",
+    subtitle: "Together we're reducing electronic waste and making a difference",
+    description: "By buying and selling refurbished devices, you're helping extend the lifecycle of electronics and reducing the environmental impact of manufacturing new products.",
+    stats: [
+      {
+        value: "50,000+",
+        label: "Devices Recycled"
+      },
+      {
+        value: "500+",
+        label: "Tons of e-Waste Prevented"
+      },
+      {
+        value: "10,000+",
+        label: "Trees Saved"
+      }
+    ]
+  }
+};
 
 // Helper function to map category colors to Tailwind classes
 const getBgClass = (color: string): string => {
@@ -46,6 +122,34 @@ const IconComponent = (iconName: string): React.ReactNode => {
 const HomePage: React.FC = () => {
   // Get device types from ModelsContext
   const { deviceTypes, isLoading, error } = useModels();
+  
+  // Use the default home data
+  const [homeData, setHomeData] = React.useState(defaultHomeData);
+  
+  // Fetch brands data to populate the featured brands
+  const { data: brandsData = [] } = useQuery({
+    queryKey: ['/api/brands'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/brands');
+      if (!response.ok) {
+        throw new Error('Failed to fetch brands');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setHomeData(prev => ({
+        ...prev,
+        featuredBrands: {
+          ...prev.featuredBrands,
+          brands: data.slice(0, 6).map((brand: any) => ({
+            id: brand.id,
+            name: brand.name,
+            logo: brand.logo
+          }))
+        }
+      }));
+    }
+  });
   
   return (
     <div className="bg-white">
