@@ -10,7 +10,7 @@ const BuyProduct = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
   const clearFilters = () => {
     setSelectedCategory('');
@@ -28,8 +28,8 @@ const BuyProduct = () => {
   });
 
   // Function to add product to cart (increments quantity if already exists)
-  const addToCart = (product) => {
-    setCartItems((prevItems) => {
+  const addToCart = (product: any) => {
+    setCartItems((prevItems: any[]) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
       if (existingItem) {
         return prevItems.map((item) =>
@@ -133,7 +133,7 @@ const BuyProduct = () => {
                 <div className="relative w-full aspect-video rounded-md overflow-hidden">
                   <Link to={`/buy/details/${product.id}`} state={{ cart: cartItems }}>
                     <img
-                      src={product.image}
+                      src={product.imageUrl || (product.images && product.images[0])}
                       alt={product.name}
                       className="w-full h-full object-contain"
                     />

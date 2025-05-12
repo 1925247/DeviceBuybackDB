@@ -495,7 +495,7 @@ const AdminCQS: React.FC = () => {
                 <SelectValue placeholder="Select Device Type (or leave empty for all)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Device Types</SelectItem>
+                <SelectItem value="none">All Device Types</SelectItem>
                 {deviceTypes?.map((type) => (
                   <SelectItem key={type.id} value={type.id.toString()}>
                     {type.name}
@@ -590,7 +590,7 @@ const AdminCQS: React.FC = () => {
                 <SelectValue placeholder="Select Device Type (or leave empty for all)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Device Types</SelectItem>
+                <SelectItem value="none">All Device Types</SelectItem>
                 {deviceTypes?.map((type) => (
                   <SelectItem key={type.id} value={type.id.toString()}>
                     {type.name}

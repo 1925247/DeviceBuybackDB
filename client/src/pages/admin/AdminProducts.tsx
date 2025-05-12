@@ -593,7 +593,7 @@ const AdminProducts = () => {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="none">All statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="archived">Archived</SelectItem>
@@ -607,7 +607,7 @@ const AdminProducts = () => {
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All categories</SelectItem>
+              <SelectItem value="none">All categories</SelectItem>
               {categories.map((category: any) => (
                 <SelectItem key={category.id} value={category.id.toString()}>
                   {category.name}
@@ -1271,7 +1271,7 @@ const AdminProducts = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {/* Map brands here when available */}
                             </SelectContent>
                           </Select>
