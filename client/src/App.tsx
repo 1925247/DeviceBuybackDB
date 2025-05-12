@@ -51,6 +51,8 @@ import AdminCQS from './pages/admin/AdminCQS';
 import AdminDiagnostic from './pages/admin/AdminDiagnostic';
 import AdminBuybacks from './pages/admin/AdminBuybacks';
 import ConditionQuestionsAdmin from './pages/admin/ConditionQuestionsAdmin';
+import RegionsManagement from './pages/admin/RegionsManagement';
+import UserRoleManagement from './pages/admin/UserRoleManagement';
 import AdminLayout from './components/admin/AdminLayout';
 
 // E-commerce Admin Pages
@@ -465,12 +467,28 @@ function App() {
                   <Route path="reviews" element={<AdminDashboard />} />
                   <Route path="security" element={<AdminSettings />} />
                   
-                  {/* Settings */}
+                  {/* Region & Partner Management */}
+                  <Route path="regions" element={<RegionsManagement />} />
+                  <Route path="partners" element={<AdminDashboard />} />
+                  <Route path="partner-staff" element={<AdminUsers />} />
+                  <Route path="pin-codes" element={<AdminDashboard />} />
+                  
+                  {/* Questionnaires */}
+                  <Route path="brand-questionnaires" element={<AdminCQS />} />
+                  
+                  {/* Templates & Customization */}
+                  <Route path="store-templates" element={<AdminDashboard />} />
+                  <Route path="store-themes" element={<AdminDashboard />} />
+                  <Route path="invoice-templates" element={<AdminDashboard />} />
+                  
+                  {/* User Management */}
                   <Route path="users" element={<AdminUsers />} />
+                  <Route path="user-roles" element={<AdminUsers />} />
+                  <Route path="permissions" element={<AdminUsers />} />
+                  
+                  {/* Other Settings */}
                   <Route path="faq" element={<AdminDashboard />} />
                   <Route path="settings" element={<AdminSettings />} />
-                  
-                  {/* Legacy */}
                   <Route path="config" element={<AdminConfig />} />
                   <Route path="diagnostic" element={<AdminDiagnostic />} />
                   <Route path="*" element={<NotFound />} />
