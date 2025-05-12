@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -9,6 +9,8 @@ import {
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import path from "path";
+import { uploadSingleImage, getFileUrl } from "./middleware/upload";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
