@@ -23,7 +23,13 @@ import {
   Globe,
   PanelLeft,
   RefreshCw,
-  Headphones
+  Headphones,
+  Map,
+  Building,
+  Handshake,
+  MapPin,
+  ClipboardList,
+  FileQuestion
 } from "lucide-react";
 
 const AdminLayout: React.FC = () => {
@@ -162,6 +168,61 @@ const AdminLayout: React.FC = () => {
 
             <div className="px-3 mb-4">
               <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Regions & Partners
+              </h3>
+              <nav className="mt-2 space-y-1">
+                <Link
+                  to="/admin/regions"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/regions')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Map className="w-5 h-5 mr-3" />
+                  <span>Region Management</span>
+                </Link>
+
+                <Link
+                  to="/admin/partners"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/partners')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Building className="w-5 h-5 mr-3" />
+                  <span>Partner Management</span>
+                </Link>
+
+                <Link
+                  to="/admin/partner-staff"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/partner-staff')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Users className="w-5 h-5 mr-3" />
+                  <span>Partner Staff</span>
+                </Link>
+
+                <Link
+                  to="/admin/pin-codes"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/pin-codes')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <MapPin className="w-5 h-5 mr-3" />
+                  <span>PIN Code Assignment</span>
+                </Link>
+              </nav>
+            </div>
+            
+            <div className="px-3 mb-4">
+              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Buyback Program
               </h3>
               <nav className="mt-2 space-y-1">
@@ -187,6 +248,18 @@ const AdminLayout: React.FC = () => {
                 >
                   <CheckCircle className="w-5 h-5 mr-3" />
                   <span>Condition Questions</span>
+                </Link>
+
+                <Link
+                  to="/admin/brand-questionnaires"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/brand-questionnaires')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FileQuestion className="w-5 h-5 mr-3" />
+                  <span>Brand Questionnaires</span>
                 </Link>
 
                 <Link
@@ -221,7 +294,7 @@ const AdminLayout: React.FC = () => {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <Headphones className="w-5 h-5 mr-3" />
+                  <Handshake className="w-5 h-5 mr-3" />
                   <span>Partner Program</span>
                 </Link>
               </nav>
@@ -338,6 +411,49 @@ const AdminLayout: React.FC = () => {
                 >
                   <PanelLeft className="w-5 h-5 mr-3" />
                   <span>Analytics</span>
+                </Link>
+              </nav>
+            </div>
+
+            <div className="px-3 mb-4">
+              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Templates & Customization
+              </h3>
+              <nav className="mt-2 space-y-1">
+                <Link
+                  to="/admin/store-templates"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/store-templates')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <ShoppingBag className="w-5 h-5 mr-3" />
+                  <span>Store Templates</span>
+                </Link>
+
+                <Link
+                  to="/admin/store-themes"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/store-themes')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <PanelLeft className="w-5 h-5 mr-3" />
+                  <span>Store Themes</span>
+                </Link>
+
+                <Link
+                  to="/admin/invoice-templates"
+                  className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                    isActive('/admin/invoice-templates')
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <ClipboardList className="w-5 h-5 mr-3" />
+                  <span>Invoice Templates</span>
                 </Link>
               </nav>
             </div>
