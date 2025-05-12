@@ -127,7 +127,7 @@ const ProductDetails = () => {
           <ShoppingCart className="h-8 w-8 text-indigo-600" />
           {cart.length > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-              {cart.reduce((acc, item) => acc + item.quantity, 0)}
+              {cart.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0)}
             </span>
           )}
         </Link>

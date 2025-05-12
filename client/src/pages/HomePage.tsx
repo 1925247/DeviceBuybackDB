@@ -450,21 +450,21 @@ const HomePage: React.FC = () => {
                 </div>
               ))
             ) : (
-              homeData.testimonials.items.map((testimonial, index) => (
+              Array.isArray(homeData.testimonials.items) && homeData.testimonials.items.map((testimonial, index) => (
                 <div key={index} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold mr-4">
-                      {testimonial.name.charAt(0)}
+                      {testimonial?.name ? testimonial.name.charAt(0) : '?'}
                     </div>
                     <div>
-                      <h4 className="text-lg font-semibold">{testimonial.name}</h4>
+                      <h4 className="text-lg font-semibold">{testimonial?.name || 'Anonymous'}</h4>
                       <p className="text-gray-500 text-sm">Customer</p>
                     </div>
                   </div>
-                  <p className="text-gray-600 mb-4">"{testimonial.text}"</p>
+                  <p className="text-gray-600 mb-4">"{testimonial?.text || ''}"</p>
                   <div className="flex">
                     {Array(5).fill(0).map((_, i) => (
-                      <span key={i} className={i < testimonial.rating ? "text-yellow-400" : "text-gray-300"}>
+                      <span key={i} className={i < (testimonial?.rating || 0) ? "text-yellow-400" : "text-gray-300"}>
                         ★
                       </span>
                     ))}
@@ -518,10 +518,10 @@ const HomePage: React.FC = () => {
                 </div>
               ))
             ) : (
-              homeData.environmentalImpact.stats.map((stat, index) => (
+              Array.isArray(homeData.environmentalImpact.stats) && homeData.environmentalImpact.stats.map((stat, index) => (
                 <div key={index} className="bg-white/10 backdrop-blur-sm p-6 rounded-lg text-center">
-                  <div className="text-3xl md:text-4xl font-bold mb-2">{stat.value}</div>
-                  <div className="text-lg">{stat.label}</div>
+                  <div className="text-3xl md:text-4xl font-bold mb-2">{stat?.value || ''}</div>
+                  <div className="text-lg">{stat?.label || ''}</div>
                 </div>
               ))
             )}
