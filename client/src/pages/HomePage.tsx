@@ -6,9 +6,11 @@ import {
   Tablet, 
   Watch, 
   ArrowRight, 
-  Shield, 
+  DollarSign,
+  Truck,
+  ShieldCheck,
   Recycle,
-  Clock
+  ChevronRight
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
@@ -27,92 +29,19 @@ interface SectionData {
   settings: Record<string, any>;
 }
 
-interface HowItWorksStep {
-  title: string;
-  description: string;
-}
-
-interface TestimonialItem {
-  name: string;
-  text: string;
-  rating: number;
-}
-
-interface StatItem {
-  value: string;
-  label: string;
-}
-
-interface ContentData {
-  steps?: HowItWorksStep[];
-  items?: TestimonialItem[];
-  description?: string;
-  stats?: StatItem[];
-}
-
-interface BrandData {
-  id: number;
-  name: string;
-  logo?: string;
-  slug: string;
-}
-
-interface DeviceTypeData {
-  id: number;
-  name: string;
-  slug: string;
-}
-
 interface HomeData {
-  hero: {
-    title: string;
-    subtitle: string;
-  };
-  howItWorks: {
-    title: string;
-    subtitle: string;
-    steps: HowItWorksStep[];
-  };
-  deviceTypes: DeviceTypeData[];
-  brands: BrandData[];
-  testimonials: {
-    title: string;
-    subtitle: string;
-    items: TestimonialItem[];
-  };
-  stats: {
-    title: string;
-    subtitle: string;
-    stats: StatItem[];
-  };
+  deviceTypes: any[];
+  brands: any[];
 }
 
+// Initial home data structure
 const initialHomeData: HomeData = {
-  hero: {
-    title: 'Trade In Your Devices for Cash or Find Certified Refurbished Gadgets',
-    subtitle: 'Get the best value for your old tech and discover affordable refurbished devices'
-  },
-  howItWorks: {
-    title: 'How It Works',
-    subtitle: 'Simple process to buy or sell devices',
-    steps: []
-  },
   deviceTypes: [],
-  brands: [],
-  testimonials: {
-    title: 'What Our Customers Say',
-    subtitle: 'Trusted by thousands',
-    items: []
-  },
-  stats: {
-    title: 'Our Environmental Impact',
-    subtitle: 'Together we\'re making a difference',
-    stats: []
-  }
+  brands: []
 };
 
 const HomePage = () => {
-  const { deviceTypes, brands: brandsData = [] } = useModels();
+  const { deviceTypes, brands = [] } = useModels();
   const [loading, setLoading] = useState(true);
   const [homeData, setHomeData] = useState<HomeData>(initialHomeData);
 
@@ -123,429 +52,312 @@ const HomePage = () => {
 
   // Process API data to update home content
   useEffect(() => {
-    if (sections.length > 0 && brandsData.length > 0) {
+    if (deviceTypes && deviceTypes.length > 0) {
       const newHomeData = { ...initialHomeData };
       
       // Add device types and brands from context
       newHomeData.deviceTypes = deviceTypes || [];
-      newHomeData.brands = brandsData || [];
-      
-      // Process sections from the API
-      sections.forEach((section: SectionData) => {
-        if (section.name === 'hero' && section.active) {
-          newHomeData.hero.title = section.title;
-          newHomeData.hero.subtitle = section.subtitle;
-        }
-        
-        if (section.name === 'how_it_works' && section.active) {
-          newHomeData.howItWorks.title = section.title;
-          newHomeData.howItWorks.subtitle = section.subtitle;
-          
-          try {
-            let content: ContentData = {};
-            if (section.content) {
-              content = JSON.parse(section.content);
-            }
-            if (content.steps) {
-              newHomeData.howItWorks.steps = content.steps;
-            }
-          } catch (error) {
-            console.error('Error parsing how it works content:', error);
-          }
-        }
-        
-        if (section.name === 'testimonials' && section.active) {
-          newHomeData.testimonials.title = section.title;
-          newHomeData.testimonials.subtitle = section.subtitle;
-          
-          try {
-            let content: ContentData = {};
-            if (section.content) {
-              content = JSON.parse(section.content);
-            }
-            if (content.items) {
-              newHomeData.testimonials.items = content.items;
-            }
-          } catch (error) {
-            console.error('Error parsing testimonials content:', error);
-          }
-        }
-        
-        if (section.name === 'environmental_impact' && section.active) {
-          newHomeData.stats.title = section.title;
-          newHomeData.stats.subtitle = section.subtitle;
-          
-          try {
-            let content: ContentData = {};
-            if (section.content) {
-              content = JSON.parse(section.content);
-            }
-            if (content.stats) {
-              newHomeData.stats.stats = content.stats;
-            }
-          } catch (error) {
-            console.error('Error parsing environmental impact content:', error);
-          }
-        }
-      });
+      newHomeData.brands = brands || [];
       
       setHomeData(newHomeData);
       setLoading(false);
     }
-  }, [sections, brandsData, deviceTypes]);
-  
+  }, [sections, deviceTypes, brands]);
+
   return (
-    <div>
-      {/* Hero section */}
-      <section className="bg-gradient-to-r from-primary-900 to-primary-800 text-white py-16">
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section - Blue background with white text */}
+      <section className="bg-blue-600 text-white py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-8 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                {loading ? (
-                  <Skeleton className="h-12 w-full bg-white/20" />
-                ) : (
-                  homeData.hero.title
-                )}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">
+                Sell Your Old Devices for the Best Price
               </h1>
-              {loading ? (
-                <div className="text-xl mb-8">
-                  <Skeleton className="h-6 w-full bg-white/20" />
-                </div>
-              ) : (
-                <p className="text-xl mb-8">
-                  {homeData.hero.subtitle}
-                </p>
-              )}
-              <Link to="/sell" className="bg-white text-primary-900 px-6 py-3 rounded-full font-semibold inline-flex items-center hover:bg-gray-100 transition-all">
-                Sell Your Device <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </div>
-            <div className="md:w-1/2">
-              <div className="relative">
-                <img
-                  src="/hero-devices.png"
-                  alt="Tech devices"
-                  className="rounded-lg shadow-lg w-full"
-                />
-                <div className="absolute -bottom-5 -right-5 bg-secondary text-white p-3 rounded-lg shadow-lg">
-                  <p className="text-sm font-bold">Up to</p>
-                  <p className="text-2xl font-bold">$500</p>
-                  <p className="text-xs">for your old phone</p>
-                </div>
+              <p className="mb-6">
+                Get instant valuation, free doorstep pickup, and quick payment for your used smartphones, laptops, tablets, and smartwatches.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  to="/sell"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-600 font-medium rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  Sell Now
+                </Link>
+                <Link
+                  to="/buy"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-400 transition-colors border border-blue-400"
+                >
+                  Buy Now
+                </Link>
+                <Link
+                  to="/how-it-works"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-400 transition-colors border border-blue-400"
+                >
+                  How It Works
+                </Link>
               </div>
             </div>
+            <div className="hidden md:block">
+              <img
+                src="/images/hero-device-sold.png"
+                alt="Phone with sold tag"
+                className="rounded-lg w-full max-w-md mx-auto"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section - Moved to top */}
-      <section className="py-8 bg-gradient-to-r from-primary-700 to-primary-800 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold mb-4">Ready to Get Started?</h2>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/sell"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-full bg-white text-primary-900 hover:bg-gray-100 transition-colors"
-            >
-              Sell Your Device
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-            <Link
-              to="/buy"
-              className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-full text-white hover:bg-primary-600 transition-colors"
-            >
-              Shop Refurbished
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-      
-      {/* Eco-friendly banner */}
-      <section className="bg-green-50 py-6">
+      {/* Sell Your Devices Section */}
+      <section className="py-10 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center">
-            <Recycle className="text-green-600 h-6 w-6 mr-2" />
-            <p className="text-green-800 font-medium">
-              Every refurbished device saves up to 100kg of CO2 emissions
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-12 text-center">Browse by Device Type</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {loading ? (
-              // Loading skeletons
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <Skeleton className="h-16 w-16 rounded-full mb-3" />
-                  <Skeleton className="h-5 w-24" />
+          <h2 className="text-2xl font-bold mb-8 text-center">Sell Your Devices</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Smartphones */}
+            <div className="bg-white rounded-lg p-5 shadow-sm">
+              <div className="mb-4 text-center">
+                <div className="bg-blue-100 p-4 rounded-md inline-block">
+                  <Smartphone className="h-6 w-6 text-blue-500" />
                 </div>
-              ))
-            ) : (
-              // Actual content
-              homeData.deviceTypes.map((type) => (
-                <Link
-                  to={`/buy/category/${type.slug}`}
-                  key={type.id}
-                  className="flex flex-col items-center p-6 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  {type.name === "Smartphone" ? (
-                    <Smartphone className="h-16 w-16 text-primary-600 mb-3" />
-                  ) : type.name === "Laptop" ? (
-                    <Laptop className="h-16 w-16 text-primary-600 mb-3" />
-                  ) : type.name === "Tablet" ? (
-                    <Tablet className="h-16 w-16 text-primary-600 mb-3" />
-                  ) : (
-                    <Watch className="h-16 w-16 text-primary-600 mb-3" />
-                  )}
-                  <span className="text-lg font-medium">{type.name}</span>
-                </Link>
-              ))
-            )}
+              </div>
+              <h3 className="font-medium text-lg mb-1">Smartphones</h3>
+              <p className="text-sm text-gray-600 mb-2">Best cash offer for your phone!</p>
+              <p className="text-sm text-gray-600 mb-3">Sell your used iPhone, Samsung, OnePlus, and other smartphones.</p>
+              <Link to="/sell/smartphones" className="text-blue-600 text-sm font-medium flex items-center">
+                Sell Now <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Laptops */}
+            <div className="bg-white rounded-lg p-5 shadow-sm">
+              <div className="mb-4 text-center">
+                <div className="bg-green-100 p-4 rounded-md inline-block">
+                  <Laptop className="h-6 w-6 text-green-500" />
+                </div>
+              </div>
+              <h3 className="font-medium text-lg mb-1">Laptops</h3>
+              <p className="text-sm text-gray-600 mb-2">Upgrade your tech with extra cash!</p>
+              <p className="text-sm text-gray-600 mb-3">Get cash for your MacBook, Dell, HP, Lenovo, and more.</p>
+              <Link to="/sell/laptops" className="text-green-600 text-sm font-medium flex items-center">
+                Sell Now <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Tablets */}
+            <div className="bg-white rounded-lg p-5 shadow-sm">
+              <div className="mb-4 text-center">
+                <div className="bg-purple-100 p-4 rounded-md inline-block">
+                  <Tablet className="h-6 w-6 text-purple-500" />
+                </div>
+              </div>
+              <h3 className="font-medium text-lg mb-1">Tablets</h3>
+              <p className="text-sm text-gray-600 mb-2">Turn your tablet into cash!</p>
+              <p className="text-sm text-gray-600 mb-3">Sell your iPad, Samsung Tab, and other tablets easily.</p>
+              <Link to="/sell/tablets" className="text-purple-600 text-sm font-medium flex items-center">
+                Sell Now <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Smartwatches */}
+            <div className="bg-white rounded-lg p-5 shadow-sm">
+              <div className="mb-4 text-center">
+                <div className="bg-orange-100 p-4 rounded-md inline-block">
+                  <Watch className="h-6 w-6 text-orange-500" />
+                </div>
+              </div>
+              <h3 className="font-medium text-lg mb-1">Smartwatches</h3>
+              <p className="text-sm text-gray-600 mb-2">Get the best offer for your wearable!</p>
+              <p className="text-sm text-gray-600 mb-3">Trade in your Apple Watch, Galaxy Watch, and more.</p>
+              <Link to="/sell/smartwatches" className="text-orange-600 text-sm font-medium flex items-center">
+                Sell Now <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-3 text-center">How It Works</h2>
+          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
+            Selling your device is quick and easy with our simple process.
+          </p>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-100 p-4 rounded-full mb-4">
+                <Smartphone className="h-10 w-10 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-center">Select Your Device</h3>
+              <p className="text-gray-600 text-center text-sm">
+                Choose your device and get an instant quote based on its condition.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col items-center">
+              <div className="bg-green-100 p-4 rounded-full mb-4">
+                <Truck className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-center">Schedule Pickup</h3>
+              <p className="text-gray-600 text-center text-sm">
+                Book a free doorstep pickup at your convenient time.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center md:col-span-2 lg:col-span-1">
+              <div className="bg-purple-100 p-4 rounded-full mb-4">
+                <DollarSign className="h-10 w-10 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-center">Get Paid</h3>
+              <p className="text-gray-600 text-center text-sm">
+                Receive payment through your preferred method upon verification.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-8 text-center">Why Choose Us</h2>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Best Value */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="mb-4 flex justify-center">
+                <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+              <h3 className="font-semibold mb-2 text-center">Best Value</h3>
+              <p className="text-gray-600 text-sm text-center">
+                We offer competitive prices for your old devices, guaranteed. Our transparent pricing ensures you get the maximum value.
+              </p>
+            </div>
+
+            {/* Free Pickup */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="mb-4 flex justify-center">
+                <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center">
+                  <Truck className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+              <h3 className="font-semibold mb-2 text-center">Free Pickup</h3>
+              <p className="text-gray-600 text-sm text-center">
+                We handle pickup at a time that's convenient for you. No need to visit a store or ship your device.
+              </p>
+            </div>
+
+            {/* Secure & Safe */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="mb-4 flex justify-center">
+                <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center">
+                  <ShieldCheck className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+              <h3 className="font-semibold mb-2 text-center">Secure & Safe</h3>
+              <p className="text-gray-600 text-sm text-center">
+                Your data is secure with us. We ensure complete data erasure from your device before recycling or refurbishing.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Testimonials */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-8 text-center">What Our Customers Say</h2>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="flex text-yellow-400 mb-2">
+                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4 italic">
+                "I was skeptical at first, but the process was incredibly smooth. I got a great price for my old iPhone, and the payment was instant!"
+              </p>
+              <p className="font-medium">- Sarah Johnson</p>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="flex text-yellow-400 mb-2">
+                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4 italic">
+                "The doorstep pickup was super convenient! The service was professional and the entire process took less than 10 minutes."
+              </p>
+              <p className="font-medium">- Michael Chen</p>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="flex text-yellow-400 mb-2">
+                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4 italic">
+                "I compared prices with other services and Cash Old Device offered the best value. The process was transparent and hassle-free."
+              </p>
+              <p className="font-medium">- Priya Sharma</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Environmental Impact */}
-      <section className="py-16 bg-gradient-to-r from-green-800 to-green-700 text-white">
+      <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center">Make an Environmental Impact</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm">
-              <Recycle className="h-10 w-10 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Reduce E-Waste</h3>
-              <p>By trading in your old devices, you're helping to keep harmful electronics out of landfills and supporting a circular economy.</p>
-            </div>
-            <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm">
-              <Shield className="h-10 w-10 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Save Resources</h3>
-              <p>Each refurbished device saves precious rare earth minerals and reduces the environmental impact of manufacturing new devices.</p>
-            </div>
-            <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm">
-              <Clock className="h-10 w-10 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Extend Device Lifespan</h3>
-              <p>Our certified refurbishment process extends the useful life of quality devices, reducing overall consumption and waste.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {loading ? (
-                <Skeleton className="h-10 w-64 mx-auto mb-2" />
-              ) : (
-                homeData.howItWorks.title
-              )}
-            </h2>
-            {loading ? (
-              <Skeleton className="h-6 w-96 mx-auto" />
-            ) : (
-              <p className="text-lg text-gray-600">
-                {homeData.howItWorks.subtitle}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="text-2xl font-bold mb-3">Making a Positive Environmental Impact</h2>
+              <p className="text-gray-600 mb-6">
+                By choosing to sell your device, you contribute to reducing e-waste and promoting a circular economy. Our certified recycling process ensures maximum environmental benefit.
               </p>
-            )}
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {loading ? (
-              // Loading skeletons
-              Array(3).fill(0).map((_, i) => (
-                <div className="bg-white p-6 rounded-lg shadow-sm" key={i}>
-                  <div className="flex justify-center mb-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                  </div>
-                  <Skeleton className="h-6 w-32 mx-auto mb-3" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-5/6 mx-auto" />
-                </div>
-              ))
-            ) : (
-              // Actual steps
-              (homeData.howItWorks.steps.length > 0 ? homeData.howItWorks.steps : [
-                {
-                  title: "Select Your Device",
-                  description: "Choose the device you want to sell or browse our refurbished products to buy."
-                },
-                {
-                  title: "Get an Instant Quote",
-                  description: "Answer a few questions about your device's condition to receive an immediate buyback offer."
-                },
-                {
-                  title: "Ship or Receive",
-                  description: "Ship your device to us for free or receive your refurbished purchase with our no-hassle warranty."
-                }
-              ]).map((step, index) => (
-                <div className="bg-white p-6 rounded-lg shadow-sm relative" key={index}>
-                  <div className="bg-primary-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold mb-4 mx-auto">
-                    {index + 1}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3 text-center">{step.title}</h3>
-                  <p className="text-gray-600 text-center">{step.description}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-      
-      {/* Popular Brands */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center">Popular Brands</h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {loading ? (
-              // Loading skeletons for brands
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <Skeleton className="h-16 w-16 rounded mb-3" />
-                  <Skeleton className="h-5 w-24" />
-                </div>
-              ))
-            ) : (
-              // Actual brands
-              homeData.brands.map((brand) => (
-                <Link
-                  to={`/buy/brand/${brand.slug}`}
-                  key={brand.id}
-                  className="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  {brand.logo ? (
-                    <img 
-                      src={brand.logo} 
-                      alt={brand.name} 
-                      className="h-16 w-auto mb-3 object-contain"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                      <span className="text-xl font-semibold text-primary-600">
-                        {brand.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <span className="text-lg font-medium">{brand.name}</span>
-                </Link>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-      
-      {/* Testimonials */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center">What Our Customers Say</h2>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {loading ? (
-              // Loading skeletons for testimonials
-              Array(3).fill(0).map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3 mb-4" />
-                  <div className="flex items-center">
-                    <Skeleton className="h-10 w-10 rounded-full mr-3" />
-                    <Skeleton className="h-5 w-32" />
-                  </div>
-                </div>
-              ))
-            ) : (
-              // Actual testimonials
-              (homeData.testimonials.items.length > 0 ? homeData.testimonials.items : [
-                {
-                  name: "Sarah J.",
-                  text: "I was impressed with how easy it was to sell my old iPhone. The price offered was fair, and payment was prompt!",
-                  rating: 5
-                },
-                {
-                  name: "Michael T.",
-                  text: "Bought a refurbished laptop that looks and works like new. Great value and the 1-year warranty gives me peace of mind.",
-                  rating: 5
-                },
-                {
-                  name: "Lisa R.",
-                  text: "The environmental impact information really helped me understand how my choice makes a difference. Will definitely use this service again.",
-                  rating: 5
-                }
-              ]).map((testimonial, index) => (
-                <div key={index} className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="flex mb-4">
-                    {Array(5).fill(0).map((_, i) => (
-                      <span key={i} className={i < testimonial.rating ? "text-yellow-500" : "text-gray-300"}>★</span>
-                    ))}
-                  </div>
-                  <p className="text-gray-700 mb-4">{testimonial.text}</p>
-                  <p className="font-semibold">{testimonial.name}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-      
-      {/* Environmental Stats */}
-      <section className="py-16 bg-primary-900 text-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-2 text-center">Our Environmental Impact</h2>
-          <p className="text-center text-primary-100 mb-12">Together we're making a difference</p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {loading ? (
-              // Loading skeletons for stats
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="text-center">
-                  <Skeleton className="h-12 w-24 mx-auto mb-3 bg-white/20" />
-                  <Skeleton className="h-5 w-32 mx-auto bg-white/20" />
-                </div>
-              ))
-            ) : (
-              // Actual stats
-              (homeData.stats.stats.length > 0 ? homeData.stats.stats : [
-                { value: "20,000+", label: "Devices Recycled" },
-                { value: "2,500", label: "Tons of E-Waste Saved" },
-                { value: "1.2M", label: "kg CO₂ Prevented" },
-                { value: "95%", label: "Materials Recovered" }
-              ]).map((stat, index) => (
-                <div key={index} className="text-center">
-                  <p className="text-4xl font-bold mb-2">{stat.value}</p>
-                  <p className="text-lg">{stat.label}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-      
-      {/* Environmental Message Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Make a Difference Today</h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of customers who are buying and selling devices in an environmentally responsible way.
-          </p>
-          
-          <div className="p-6 bg-white rounded-lg shadow-sm max-w-2xl mx-auto">
-            <div className="flex items-center justify-center mb-4">
-              <Recycle className="text-green-600 h-10 w-10 mr-3" />
-              <h3 className="text-xl font-semibold">Together We Can Reduce E-Waste</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <Recycle className="text-green-600 h-5 w-5 mr-2" />
+                  <span className="text-gray-600">Over 100,000+ devices recycled</span>
+                </li>
+                <li className="flex items-center">
+                  <Recycle className="text-green-600 h-5 w-5 mr-2" />
+                  <span className="text-gray-600">Reduced 500+ tons of e-waste</span>
+                </li>
+                <li className="flex items-center">
+                  <Recycle className="text-green-600 h-5 w-5 mr-2" />
+                  <span className="text-gray-600">ISO 14001 certified recycling process</span>
+                </li>
+              </ul>
             </div>
-            <p className="text-gray-600">
-              Every device you trade in or purchase refurbished helps extend product lifecycles, 
-              conserve resources, and reduce the environmental impact of electronic manufacturing.
-            </p>
+            <div>
+              <img 
+                src="/images/recycling-bins.jpg" 
+                alt="Recycling bins" 
+                className="rounded-lg shadow-sm w-full"
+              />
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="py-12 bg-blue-600 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl font-bold mb-4">Ready to Sell Your Device?</h2>
+          <p className="mb-6">Get an instant quote and turn your unused devices into cash today!</p>
+          <Link
+            to="/sell"
+            className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-600 font-medium rounded-md hover:bg-gray-100 transition-colors"
+          >
+            Get Started Now
+          </Link>
         </div>
       </section>
     </div>
