@@ -117,10 +117,10 @@ const AdminPricing: React.FC = () => {
   const filteredModels = deviceModels?.filter(model => {
     let matches = true;
     if (selectedDeviceType !== null) {
-      matches = matches && model.device_type_id === selectedDeviceType;
+      matches = matches && Number(model.device_type_id) === Number(selectedDeviceType);
     }
     if (selectedBrand !== null) {
-      matches = matches && model.brand_id === selectedBrand;
+      matches = matches && Number(model.brand_id) === Number(selectedBrand);
     }
     return matches;
   });
@@ -130,9 +130,9 @@ const AdminPricing: React.FC = () => {
     if (!valuations || !deviceModels || !brands || !deviceTypes) return [];
 
     return valuations.map(valuation => {
-      const model = deviceModels.find(m => m.id === valuation.device_model_id);
-      const brand = model ? brands.find(b => b.id === model.brand_id) : null;
-      const deviceType = model ? deviceTypes.find(dt => dt.id === model.device_type_id) : null;
+      const model = deviceModels.find(m => Number(m.id) === Number(valuation.device_model_id));
+      const brand = model ? brands.find(b => Number(b.id) === Number(model.brand_id)) : null;
+      const deviceType = model ? deviceTypes.find(dt => Number(dt.id) === Number(model.device_type_id)) : null;
 
       return {
         ...valuation,
@@ -234,8 +234,8 @@ const AdminPricing: React.FC = () => {
 
     // If this is a device model change, update variant options
     if (name === 'device_model_id') {
-      const modelId = parseInt(value);
-      const model = deviceModels?.find(m => m.id === modelId);
+      const modelId = Number(value);
+      const model = deviceModels?.find(m => Number(m.id) === modelId);
       if (model && model.variants && model.variants.length > 0) {
         const newVariantMultipliers = { ...formData.variant_multipliers };
         model.variants.forEach(variant => {
