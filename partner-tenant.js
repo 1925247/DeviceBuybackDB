@@ -1,145 +1,138 @@
-// Script to create and manage multi-tenant databases for partners
-const { Pool } = require('pg');
-const { randomUUID } = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import { Pool } from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import crypto from 'crypto';
 
-// Main function to create a new tenant database for a partner
+dotenv.config();
+
+// Get the current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create a connection pool to the main database
+const mainPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+/**
+ * Creates a new tenant database for a partner
+ * @param {string} partnerName - Name of the partner
+ * @param {string} partnerEmail - Email of the partner
+ * @returns {Promise<object>} - Partner tenant details
+ */
 async function createPartnerTenant(partnerName, partnerEmail) {
   try {
-    // Connect to main database
-    const mainPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
-    
     // Generate a unique tenant ID
-    const tenantId = `partner_${randomUUID().replace(/-/g, '')}`;
-    const safePartnerName = partnerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const databaseName = `${safePartnerName}_${tenantId.substring(0, 8)}`;
+    const tenantId = `tenant-${crypto.randomUUID().slice(0, 8)}`;
     
-    console.log(`Creating tenant database for partner: ${partnerName}`);
-    console.log(`Tenant ID: ${tenantId}`);
-    console.log(`Database Name: ${databaseName}`);
+    // Create a unique database name based on the tenant ID
+    const databaseName = `partner_${tenantId.replace(/[-]/g, '_')}`;
     
-    // Create the new database
-    await mainPool.query(`CREATE DATABASE ${databaseName}`);
+    console.log(`Creating tenant database for ${partnerName} (${partnerEmail})...`);
     
-    // Connect to the new database
-    const tenantPool = new Pool({
-      connectionString: process.env.DATABASE_URL.replace(/\/[^/]*$/, `/${databaseName}`),
-    });
+    // First, register the partner in the main database
+    const partnerResult = await mainPool.query(`
+      INSERT INTO partners (name, email, tenant_id, status) 
+      VALUES ($1, $2, $3, 'active')
+      RETURNING id, name, email, tenant_id
+    `, [partnerName, partnerEmail, tenantId]);
     
-    // Execute migrations on the new database
-    console.log('Running migrations on the tenant database...');
-    const migrationSql = fs.readFileSync(path.join(__dirname, 'migrations/tenant-schema.sql'), 'utf8');
-    await tenantPool.query(migrationSql);
+    const partner = partnerResult.rows[0];
+    console.log(`Partner created with ID: ${partner.id}`);
     
-    // Register the partner in the main database
-    const insertPartnerResult = await mainPool.query(
-      `INSERT INTO partners (name, email, status, tenant_id) 
-       VALUES ($1, $2, 'active', $3) 
-       RETURNING id`,
-      [partnerName, partnerEmail, tenantId]
-    );
+    // Create a new database for the partner (would require elevated privileges in production)
+    // In Replit's environment, we'll simulate this by creating a schema instead
+    await mainPool.query(`
+      CREATE SCHEMA IF NOT EXISTS ${tenantId}
+    `);
     
-    const partnerId = insertPartnerResult.rows[0].id;
+    console.log(`Schema '${tenantId}' created successfully`);
     
-    // Create configuration for connecting to tenant database
-    const tenantConfig = {
-      tenant_id: tenantId,
-      database_name: databaseName,
-      connection_string: process.env.DATABASE_URL.replace(/\/[^/]*$/, `/${databaseName}`),
-      partner_id: partnerId,
-      created_at: new Date().toISOString()
-    };
+    // Read tenant schema creation SQL
+    const tenantSchemaSQL = fs.readFileSync(path.join(__dirname, 'migrations/tenant-schema.sql'), 'utf8');
     
-    // Save tenant configuration to a file for reference
-    fs.writeFileSync(
-      path.join(__dirname, `tenant-configs/${tenantId}.json`), 
-      JSON.stringify(tenantConfig, null, 2)
-    );
+    // Replace schema name placeholder with the tenant ID
+    const tenantSQL = tenantSchemaSQL.replace(/\$\{TENANT_SCHEMA\}/g, tenantId);
     
-    console.log(`Partner tenant database successfully created with ID: ${partnerId}`);
-    console.log(`Tenant ID: ${tenantId}`);
+    // Execute the tenant schema SQL
+    await mainPool.query(tenantSQL);
     
-    // Close connections
-    await tenantPool.end();
-    await mainPool.end();
+    console.log(`Tenant schema tables created successfully`);
     
+    // Return the partner tenant details
     return {
-      partnerId,
-      tenantId,
-      databaseName
+      partnerId: partner.id,
+      partnerName: partner.name,
+      partnerEmail: partner.email,
+      tenantId: partner.tenant_id,
+      schemaName: tenantId,
     };
     
   } catch (error) {
     console.error('Error creating partner tenant:', error);
     throw error;
+  } finally {
+    // Close the connection pool
+    await mainPool.end();
   }
 }
 
-// Function to list all partner tenants
+/**
+ * Lists all partner tenants
+ * @returns {Promise<array>} - List of partner tenants
+ */
 async function listPartnerTenants() {
   try {
-    const mainPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+    const result = await mainPool.query(`
+      SELECT id, name, email, tenant_id, status, created_at
+      FROM partners
+      ORDER BY name
+    `);
     
-    const result = await mainPool.query(
-      `SELECT id, name, email, tenant_id, status FROM partners ORDER BY id`
-    );
-    
-    console.log('\nPartner Tenants:');
-    console.log('----------------');
-    
+    console.log(`Found ${result.rows.length} partner tenants:`);
     result.rows.forEach(partner => {
-      console.log(`ID: ${partner.id}`);
-      console.log(`Name: ${partner.name}`);
-      console.log(`Email: ${partner.email}`);
-      console.log(`Tenant ID: ${partner.tenant_id}`);
-      console.log(`Status: ${partner.status}`);
-      console.log('----------------');
+      console.log(`- ${partner.name} (${partner.email}): ${partner.tenant_id} [${partner.status}]`);
     });
     
-    await mainPool.end();
     return result.rows;
     
   } catch (error) {
     console.error('Error listing partner tenants:', error);
     throw error;
+  } finally {
+    // Close the connection pool
+    await mainPool.end();
   }
 }
 
-// Export functions
-module.exports = {
-  createPartnerTenant,
-  listPartnerTenants
-};
+// Run command based on arguments
+const [command, ...args] = process.argv.slice(2);
 
-// If script is run directly
-if (require.main === module) {
-  const command = process.argv[2];
-  
-  if (command === 'create') {
-    const partnerName = process.argv[3];
-    const partnerEmail = process.argv[4];
-    
-    if (!partnerName || !partnerEmail) {
-      console.error('Usage: node partner-tenant.js create "Partner Name" "partner@email.com"');
+if (command === 'create' && args.length >= 2) {
+  const [partnerName, partnerEmail] = args;
+  createPartnerTenant(partnerName, partnerEmail)
+    .then(tenant => {
+      console.log('Partner tenant created successfully:', tenant);
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Failed to create partner tenant:', err);
       process.exit(1);
-    }
-    
-    createPartnerTenant(partnerName, partnerEmail)
-      .then(() => process.exit(0))
-      .catch(() => process.exit(1));
-  } 
-  else if (command === 'list') {
-    listPartnerTenants()
-      .then(() => process.exit(0))
-      .catch(() => process.exit(1));
-  }
-  else {
-    console.error('Usage: node partner-tenant.js [create|list]');
-    process.exit(1);
-  }
+    });
+} else if (command === 'list') {
+  listPartnerTenants()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Failed to list partner tenants:', err);
+      process.exit(1);
+    });
+} else {
+  console.log('Usage:');
+  console.log('  node partner-tenant.js create "Partner Name" partner@email.com');
+  console.log('  node partner-tenant.js list');
+  process.exit(1);
 }

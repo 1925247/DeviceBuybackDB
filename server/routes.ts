@@ -1148,6 +1148,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PARTNER MANAGEMENT API ENDPOINTS
+  app.get(apiRouter("/partners"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const partners = await partnerService.getAllPartners(req.query.activeOnly !== 'false');
+      res.json(partners);
+    } catch (error: any) {
+      console.error('Error fetching partners:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch partners' });
+    }
+  });
+
+  app.get(apiRouter("/partners/:id"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const partner = await partnerService.getPartnerById(parseInt(req.params.id));
+      res.json(partner);
+    } catch (error: any) {
+      console.error('Error fetching partner:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch partner' });
+    }
+  });
+
+  app.post(apiRouter("/partners"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const partner = await partnerService.createPartner(req.body);
+      res.status(201).json(partner);
+    } catch (error: any) {
+      console.error('Error creating partner:', error);
+      res.status(500).json({ message: error.message || 'Failed to create partner' });
+    }
+  });
+
+  app.put(apiRouter("/partners/:id"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const partner = await partnerService.updatePartner(parseInt(req.params.id), req.body);
+      res.json(partner);
+    } catch (error: any) {
+      console.error('Error updating partner:', error);
+      res.status(500).json({ message: error.message || 'Failed to update partner' });
+    }
+  });
+
+  app.delete(apiRouter("/partners/:id"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const success = await partnerService.disablePartner(parseInt(req.params.id));
+      if (success) {
+        res.json({ success: true, message: 'Partner disabled successfully' });
+      } else {
+        res.status(404).json({ success: false, message: 'Partner not found' });
+      }
+    } catch (error: any) {
+      console.error('Error disabling partner:', error);
+      res.status(500).json({ message: error.message || 'Failed to disable partner' });
+    }
+  });
+
+  app.get(apiRouter("/partners/:id/buyback-requests"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const buybackRequests = await partnerService.getPartnerBuybackRequests(parseInt(req.params.id), {
+        status: req.query.status as string,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+        page: req.query.page ? parseInt(req.query.page as string) : undefined,
+      });
+      res.json(buybackRequests);
+    } catch (error: any) {
+      console.error('Error fetching partner buyback requests:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch partner buyback requests' });
+    }
+  });
+
+  app.post(apiRouter("/partners/assign-buyback"), async (req: Request, res: Response) => {
+    try {
+      const partnerService = require('./services/partner-service');
+      const result = await partnerService.assignBuybackToPartner(req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error assigning buyback to partner:', error);
+      res.status(500).json({ message: error.message || 'Failed to assign buyback to partner' });
+    }
+  });
+
   // QUESTIONNAIRE API ENDPOINTS
   app.get(apiRouter("/questionnaires/device"), async (req: Request, res: Response) => {
     try {

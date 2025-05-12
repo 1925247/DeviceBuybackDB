@@ -1,130 +1,116 @@
--- SQL schema for partner tenant databases
--- This creates a separate database schema for each partner
+-- Tenant-specific schema for partner data
+-- The ${TENANT_SCHEMA} placeholder will be replaced with the actual tenant ID
 
--- Partner staff members table
-CREATE TABLE staff (
+-- Create tenant-specific inventory table
+CREATE TABLE IF NOT EXISTS ${TENANT_SCHEMA}.inventory (
   id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'staff',
-  phone TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Partner inventory table
-CREATE TABLE inventory (
-  id SERIAL PRIMARY KEY,
-  device_id INTEGER NOT NULL,  -- References device from main DB
-  condition TEXT NOT NULL,
-  purchase_price DECIMAL(10, 2) NOT NULL,
+  product_id INTEGER NOT NULL,
+  device_id INTEGER,
+  sku TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 0,
+  location TEXT,
+  condition TEXT,
+  purchase_price DECIMAL(10, 2),
   selling_price DECIMAL(10, 2),
   status TEXT NOT NULL DEFAULT 'in_stock',
-  acquired_date TIMESTAMP NOT NULL DEFAULT NOW(),
-  sold_date TIMESTAMP,
-  serial_number TEXT,
+  last_checked TIMESTAMP,
   notes TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Partner assigned leads table (from buyback requests)
-CREATE TABLE assigned_leads (
+-- Create tenant-specific staff table
+CREATE TABLE IF NOT EXISTS ${TENANT_SCHEMA}.staff (
   id SERIAL PRIMARY KEY,
-  buyback_request_id INTEGER NOT NULL,  -- References buyback request from main DB
-  assigned_to INTEGER REFERENCES staff(id),
-  status TEXT NOT NULL DEFAULT 'pending',
-  priority TEXT DEFAULT 'medium',
-  assigned_date TIMESTAMP NOT NULL DEFAULT NOW(),
-  due_date TIMESTAMP,
-  notes TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Lead status history
-CREATE TABLE lead_status_history (
-  id SERIAL PRIMARY KEY,
-  lead_id INTEGER NOT NULL REFERENCES assigned_leads(id),
-  status TEXT NOT NULL,
-  notes TEXT,
-  updated_by INTEGER REFERENCES staff(id),
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Partner device valuation settings
-CREATE TABLE valuation_settings (
-  id SERIAL PRIMARY KEY,
-  device_model_id INTEGER NOT NULL,  -- References device model from main DB
-  base_price DECIMAL(10, 2) NOT NULL,
-  deduction_rates JSONB,  -- JSON object with deduction rates for different conditions
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Partner pickups
-CREATE TABLE pickups (
-  id SERIAL PRIMARY KEY,
-  lead_id INTEGER NOT NULL REFERENCES assigned_leads(id),
-  staff_id INTEGER REFERENCES staff(id),
-  scheduled_date TIMESTAMP,
-  completed_date TIMESTAMP,
-  status TEXT NOT NULL DEFAULT 'scheduled',
-  address TEXT NOT NULL,
-  notes TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Partner payment records
-CREATE TABLE payments (
-  id SERIAL PRIMARY KEY,
-  lead_id INTEGER REFERENCES assigned_leads(id),
-  amount DECIMAL(10, 2) NOT NULL,
-  payment_method TEXT NOT NULL,
-  transaction_id TEXT,
-  status TEXT NOT NULL DEFAULT 'pending',
-  paid_to TEXT NOT NULL,  -- Name of the person who received the payment
-  notes TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Partner payment methods configuration
-CREATE TABLE payment_methods (
-  id SERIAL PRIMARY KEY,
+  user_id INTEGER,
   name TEXT NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  config JSONB,  -- JSON configuration specific to the payment method
+  email TEXT NOT NULL UNIQUE,
+  phone TEXT,
+  role TEXT NOT NULL DEFAULT 'staff',
+  permissions JSONB,
+  status TEXT NOT NULL DEFAULT 'active',
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Partner specialization for Windows phones (or other device types)
-CREATE TABLE specializations (
+-- Create tenant-specific sales table
+CREATE TABLE IF NOT EXISTS ${TENANT_SCHEMA}.sales (
   id SERIAL PRIMARY KEY,
-  device_type_id INTEGER NOT NULL,  -- References device type from main DB
-  expertise_level TEXT NOT NULL DEFAULT 'medium',
-  priority INTEGER NOT NULL DEFAULT 1,  -- Lower number = higher priority
+  order_id INTEGER,
+  staff_id INTEGER,
+  customer_name TEXT,
+  customer_email TEXT,
+  customer_phone TEXT,
+  sale_date TIMESTAMP NOT NULL DEFAULT NOW(),
+  total_amount DECIMAL(10, 2) NOT NULL,
+  payment_method TEXT,
+  payment_status TEXT NOT NULL DEFAULT 'pending',
   notes TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Partner settings
-CREATE TABLE settings (
+-- Create tenant-specific expenses table
+CREATE TABLE IF NOT EXISTS ${TENANT_SCHEMA}.expenses (
   id SERIAL PRIMARY KEY,
-  setting_key TEXT NOT NULL UNIQUE,
-  setting_value JSONB NOT NULL,
+  category TEXT NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
   description TEXT,
+  expense_date TIMESTAMP NOT NULL DEFAULT NOW(),
+  paid_by TEXT,
+  payment_method TEXT,
+  receipt_url TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Initial settings
-INSERT INTO settings (setting_key, setting_value, description)
-VALUES 
-  ('notification_preferences', '{"email": true, "sms": false, "in_app": true}', 'Notification preferences'),
-  ('lead_auto_assignment', '{"enabled": true, "round_robin": true}', 'Automatic lead assignment settings'),
-  ('commission_rates', '{"default": 0.10, "windows_phones": 0.15}', 'Commission rates for different device types');
+-- Create tenant-specific repairs table
+CREATE TABLE IF NOT EXISTS ${TENANT_SCHEMA}.repairs (
+  id SERIAL PRIMARY KEY,
+  device_id INTEGER,
+  staff_id INTEGER,
+  customer_name TEXT,
+  customer_email TEXT,
+  customer_phone TEXT,
+  description TEXT NOT NULL,
+  diagnosis TEXT,
+  status TEXT NOT NULL DEFAULT 'received',
+  cost DECIMAL(10, 2),
+  parts_used JSONB,
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  notes TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Create tenant-specific store settings table
+CREATE TABLE IF NOT EXISTS ${TENANT_SCHEMA}.store_settings (
+  id SERIAL PRIMARY KEY,
+  store_name TEXT NOT NULL,
+  address TEXT,
+  phone TEXT,
+  email TEXT,
+  logo_url TEXT,
+  business_hours JSONB,
+  tax_rate DECIMAL(5, 2) DEFAULT 0,
+  currency TEXT DEFAULT 'USD',
+  payment_methods JSONB,
+  invoice_prefix TEXT,
+  receipt_footer TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Insert default store settings
+INSERT INTO ${TENANT_SCHEMA}.store_settings (
+  store_name, address, phone, email, business_hours, tax_rate, payment_methods
+) VALUES (
+  'Partner Store', 
+  '123 Main St, City, ST 12345',
+  '(555) 123-4567',
+  'partner@example.com',
+  '{"monday": "9:00-18:00", "tuesday": "9:00-18:00", "wednesday": "9:00-18:00", "thursday": "9:00-18:00", "friday": "9:00-18:00", "saturday": "10:00-16:00", "sunday": "closed"}',
+  7.5,
+  '["cash", "credit_card", "debit_card"]'
+);
