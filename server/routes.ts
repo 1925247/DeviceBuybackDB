@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -15,6 +15,9 @@ import { uploadSingleImage, getFileUrl } from "./middleware/upload";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
   const apiRouter = (path: string) => `/api${path}`;
+
+  // Serve static files from public directory
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
   // Helper for handling validation errors
   const validateRequest = <T>(schema: any, data: unknown): T => {
