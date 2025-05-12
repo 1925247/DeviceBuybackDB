@@ -8,6 +8,13 @@
       "when": 1746974539147,
       "tag": "0000_true_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1746990710810,
+      "tag": "0001_solid_thanos",
+      "breakpoints": true
     }
   ]
 }

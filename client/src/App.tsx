@@ -33,8 +33,6 @@ import BuyInvoice from './pages/buy/BuyInvoice';
 import ProductDetails from './pages/buy/ProductDetails';
 
 // Admin Panel Pages
-
-// Legacy Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminDevices from './pages/admin/AdminDevices';
@@ -50,6 +48,11 @@ import AdminDiagnostic from './pages/admin/AdminDiagnostic';
 import AdminBuybacks from './pages/admin/AdminBuybacks';
 import ConditionQuestionsAdmin from './pages/admin/ConditionQuestionsAdmin';
 import AdminLayout from './components/admin/AdminLayout';
+
+// E-commerce Admin Pages
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminMarketplaceSettings from './pages/admin/AdminMarketplaceSettings';
 
 // Not Found Page
 import NotFound from './pages/NotFound';
@@ -361,9 +364,15 @@ function App() {
                   <Route path="condition-questions" element={<ConditionQuestionsAdmin />} />
                   <Route path="valuations" element={<AdminPricing />} />
                   
-                  {/* Marketplace */}
-                  <Route path="marketplace" element={<AdminDashboard />} />
+                  {/* E-commerce */}
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="marketplace" element={<AdminMarketplaceSettings />} />
                   <Route path="orders" element={<AdminOrders />} />
+                  <Route path="discounts" element={<AdminDashboard />} />
+                  <Route path="inventory" element={<AdminProducts />} />
+                  <Route path="shipping" element={<AdminMarketplaceSettings />} />
+                  <Route path="payments" element={<AdminMarketplaceSettings />} />
                   
                   {/* Settings */}
                   <Route path="users" element={<AdminUsers />} />
