@@ -23,6 +23,7 @@ import ContactPage from './pages/ContactPage';
 import FAQPage from './pages/FAQPage';
 import BlogPage from './pages/BlogPage';
 import UserLogin from './pages/UserLogin';
+import ShopPage from './pages/shop';
 
 // Buy Flow Pages
 import BuyHome from './pages/buy/BuyHome';
@@ -253,6 +254,20 @@ function App() {
                 }
               />
 
+              {/* Shop Route - Database connected marketplace */}
+              <Route
+                path="/shop"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ShopPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
               {/* Buy Flow Routes */}
               <Route
                 path="/buy"
