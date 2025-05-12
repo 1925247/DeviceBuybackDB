@@ -138,9 +138,9 @@ const BuyProduct = () => {
                       className="w-full h-full object-contain"
                     />
                   </Link>
-                  {product.discount && (
+                  {product.discountPercentage > 0 && (
                     <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                      {product.discount} OFF
+                      {product.discountPercentage}% OFF
                     </div>
                   )}
                 </div>
@@ -149,7 +149,7 @@ const BuyProduct = () => {
                     <h3 className="text-lg font-bold text-gray-800">{product.name}</h3>
                   </Link>
                   <p className="text-sm text-gray-600">
-                    {product.brand} &middot; {product.category}
+                    {brands.find(b => b.id === product.brandId)?.name || 'Unknown Brand'} &middot; {categories.find(c => c.id === product.categoryId)?.name || 'Unknown Category'}
                   </p>
                   <p className="mt-2 text-lg font-semibold text-indigo-600">${product.price}</p>
                   <div className="flex items-center mt-2">
@@ -206,7 +206,7 @@ const BuyProduct = () => {
             >
               <div className="relative w-full aspect-video rounded-md overflow-hidden">
                 <img
-                  src={product.image}
+                  src={product.imageUrl || (product.images && product.images[0])}
                   alt={product.name}
                   className="w-full h-full object-contain"
                 />
