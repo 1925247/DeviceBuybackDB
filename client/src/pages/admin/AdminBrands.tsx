@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import {
   Table,
@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import FileUpload from '@/components/ui/file-upload';
 
 interface Brand {
   id: number;
@@ -44,6 +45,7 @@ const AdminBrands: React.FC = () => {
     slug: '',
     logo: '',
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   // Query hooks for fetching data
@@ -153,6 +155,40 @@ const AdminBrands: React.FC = () => {
     },
   });
 
+  // Upload logo mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload image');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setFormData(prev => ({ ...prev, logo: data.url }));
+      toast({
+        title: 'Success',
+        description: 'Logo uploaded successfully',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Helper functions
   const resetForm = () => {
     setFormData({
@@ -160,6 +196,12 @@ const AdminBrands: React.FC = () => {
       slug: '',
       logo: '',
     });
+    setSelectedFile(null);
+  };
+  
+  const handleFileUpload = (file: File) => {
+    setSelectedFile(file);
+    uploadImageMutation.mutate(file);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -267,13 +309,12 @@ const AdminBrands: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="logo">Logo URL</Label>
-            <Input
-              id="logo"
-              name="logo"
-              value={formData.logo}
-              onChange={handleInputChange}
-              placeholder="https://example.com/logo.png"
+            <FileUpload
+              onFileChange={handleFileUpload}
+              onUrlChange={(url) => setFormData((prev) => ({ ...prev, logo: url }))}
+              initialUrl={formData.logo}
+              label="Logo"
+              description="Upload a brand logo or enter a URL (recommended size: 128x128px)"
             />
           </div>
           
@@ -326,13 +367,12 @@ const AdminBrands: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit-logo">Logo URL</Label>
-            <Input
-              id="edit-logo"
-              name="logo"
-              value={formData.logo}
-              onChange={handleInputChange}
-              placeholder="https://example.com/logo.png"
+            <FileUpload
+              onFileChange={handleFileUpload}
+              onUrlChange={(url) => setFormData((prev) => ({ ...prev, logo: url }))}
+              initialUrl={formData.logo}
+              label="Logo"
+              description="Upload a brand logo or enter a URL (recommended size: 128x128px)"
             />
           </div>
           

@@ -16,8 +16,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
   const apiRouter = (path: string) => `/api${path}`;
 
-  // Serve static files from public directory
-  app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+  // File upload endpoints
+  app.post(apiRouter("/upload"), uploadSingleImage, (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const fileUrl = getFileUrl(req.file.filename);
+      return res.status(200).json({ 
+        message: "File uploaded successfully", 
+        url: fileUrl 
+      });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      return res.status(500).json({ message: "Upload failed: " + error.message });
+    }
+  });
 
   // Helper for handling validation errors
   const validateRequest = <T>(schema: any, data: unknown): T => {
