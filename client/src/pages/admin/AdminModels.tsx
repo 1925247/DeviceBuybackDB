@@ -652,7 +652,7 @@ const AdminModels: React.FC = () => {
               <SelectValue placeholder="Filter by device type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Device Types</SelectItem>
+              <SelectItem value="all">All Device Types</SelectItem>
               {deviceTypes.map((deviceType) => (
                 <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
                   {deviceType.name}
@@ -669,7 +669,7 @@ const AdminModels: React.FC = () => {
               <SelectValue placeholder="Filter by brand" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Brands</SelectItem>
+              <SelectItem value="all">All Brands</SelectItem>
               {brands.map((brand) => (
                 <SelectItem key={brand.id} value={brand.id.toString()}>
                   {brand.name}
@@ -771,7 +771,7 @@ const AdminModels: React.FC = () => {
                     ) : "No variants"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={model.active ? "success" : "secondary"}>
+                    <Badge variant={model.active ? "default" : "secondary"}>
                       {model.active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
