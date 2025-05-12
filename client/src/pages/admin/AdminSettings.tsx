@@ -132,17 +132,25 @@ const AdminSettings: React.FC = () => {
   // Query to fetch current settings
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['/api/settings'],
-    onSuccess: (data) => {
-      // Update all forms with the fetched data
-      if (data) {
-        generalForm.reset(data.general || {});
-        seoForm.reset(data.seo || {});
-        buybackForm.reset(data.buyback || {});
-        marketplaceForm.reset(data.marketplace || {});
-        emailForm.reset(data.email || {});
+    queryFn: async () => {
+      const response = await fetch('/api/settings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch settings');
       }
+      return response.json();
     }
   });
+
+  // Update forms when settings data is loaded
+  React.useEffect(() => {
+    if (settings) {
+      generalForm.reset(settings.general || {});
+      seoForm.reset(settings.seo || {});
+      buybackForm.reset(settings.buyback || {});
+      marketplaceForm.reset(settings.marketplace || {});
+      emailForm.reset(settings.email || {});
+    }
+  }, [settings]);
 
   // Setup all the forms
   const generalForm = useForm<GeneralSettings>({
