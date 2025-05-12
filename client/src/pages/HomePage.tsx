@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Smartphone, 
@@ -21,78 +21,47 @@ import { Skeleton } from '@/components/ui/skeleton';
 // Use ModelsContext instead of static data
 import { useModels } from '../contexts/ModelsContext';
 
-// Define a homeData structure to replace the static import
-const defaultHomeData = {
+interface SectionData {
+  id: number;
+  name: string;
+  title: string;
+  subtitle: string;
+  content: string;
+  active: boolean;
+  order: number;
+  settings: Record<string, any>;
+}
+
+// Empty initial state
+const initialHomeData = {
   hero: {
-    title: "Trade in or buy refurbished devices",
-    subtitle: "Get the best value for your old device or find great deals on certified refurbished products"
+    title: "",
+    subtitle: ""
   },
   howItWorks: {
-    title: "How It Works",
-    subtitle: "Simple process to trade in your device or buy a refurbished one",
-    steps: [
-      {
-        title: "Select Your Device",
-        description: "Choose your device type, brand, and model"
-      },
-      {
-        title: "Get an Instant Quote",
-        description: "Answer a few questions and receive an instant value estimate"
-      },
-      {
-        title: "Get Paid Fast",
-        description: "Ship your device or schedule a pickup and get paid quickly"
-      }
-    ]
+    title: "",
+    subtitle: "",
+    steps: []
   },
   deviceTypes: {
-    title: "Choose Your Device Type",
-    subtitle: "Select the type of device you want to sell or browse"
+    title: "",
+    subtitle: ""
   },
   featuredBrands: {
-    title: "Popular Brands",
-    subtitle: "Browse devices from top manufacturers",
+    title: "",
+    subtitle: "",
     brands: []
   },
   testimonials: {
-    title: "What Our Customers Say",
-    subtitle: "Thousands of satisfied customers have sold and purchased devices through our platform",
-    items: [
-      {
-        name: "Sarah J.",
-        text: "I was amazed by how easy it was to sell my old iPhone. The quote was fair and I received payment within 24 hours of them receiving my device!",
-        rating: 5
-      },
-      {
-        name: "Michael T.",
-        text: "The refurbished MacBook I purchased works perfectly! It looks brand new and came with a solid warranty. Saved me hundreds of dollars.",
-        rating: 5
-      },
-      {
-        name: "Priya K.",
-        text: "I've used this service multiple times to sell old gadgets. The process is always smooth and they consistently offer better prices than other buyback services.",
-        rating: 4
-      }
-    ]
+    title: "",
+    subtitle: "",
+    items: []
   },
   environmentalImpact: {
-    title: "Our Environmental Impact",
-    subtitle: "Together we're reducing electronic waste and making a difference",
-    description: "By buying and selling refurbished devices, you're helping extend the lifecycle of electronics and reducing the environmental impact of manufacturing new products.",
-    stats: [
-      {
-        value: "50,000+",
-        label: "Devices Recycled"
-      },
-      {
-        value: "500+",
-        label: "Tons of e-Waste Prevented"
-      },
-      {
-        value: "10,000+",
-        label: "Trees Saved"
-      }
-    ]
+    title: "",
+    subtitle: "",
+    description: "",
+    stats: []
   }
 };
 
@@ -120,13 +89,29 @@ const IconComponent = (iconName: string): React.ReactNode => {
 };
 
 const HomePage: React.FC = () => {
-  // Get device types from ModelsContext
-  const { deviceTypes, isLoading, error } = useModels();
-  
-  // Use the default home data
-  const [homeData, setHomeData] = React.useState(defaultHomeData);
-  
-  // Fetch brands data to populate the featured brands
+  const { deviceTypes, brands } = useModels();
+  const [homeData, setHomeData] = useState(initialHomeData);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all homepage sections
+  const { data: sections, isLoading: sectionsLoading } = useQuery({
+    queryKey: ['/api/home-sections'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/home-sections');
+        if (!response.ok) {
+          throw new Error('Failed to fetch home sections');
+        }
+        return await response.json();
+      } catch (error) {
+        // If API isn't implemented yet, return empty array
+        console.error('Error fetching home sections:', error);
+        return [];
+      }
+    },
+  });
+
+  // Fetch brand data
   const { data: brandsData = [] } = useQuery({
     queryKey: ['/api/brands'],
     queryFn: async () => {
@@ -134,22 +119,81 @@ const HomePage: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to fetch brands');
       }
-      return response.json();
+      return await response.json();
     },
-    onSuccess: (data) => {
-      setHomeData(prev => ({
-        ...prev,
-        featuredBrands: {
-          ...prev.featuredBrands,
-          brands: data.slice(0, 6).map((brand: any) => ({
-            id: brand.id,
-            name: brand.name,
-            logo: brand.logo
-          }))
-        }
-      }));
-    }
   });
+
+  // Update homeData with sections from API or fallback
+  useEffect(() => {
+    if (sections && sections.length > 0) {
+      // Process sections into homeData structure
+      const newHomeData = { ...initialHomeData };
+      
+      sections.forEach((section: SectionData) => {
+        if (section.active) {
+          // Parse content JSON if it exists
+          let content = {};
+          try {
+            if (section.content) {
+              content = JSON.parse(section.content);
+            }
+          } catch (e) {
+            console.error(`Error parsing JSON for section ${section.name}:`, e);
+          }
+          
+          // Update homeData with section data
+          if (section.name === 'hero') {
+            newHomeData.hero = {
+              title: section.title,
+              subtitle: section.subtitle
+            };
+          } else if (section.name === 'howItWorks') {
+            newHomeData.howItWorks = {
+              title: section.title,
+              subtitle: section.subtitle,
+              steps: content.steps || []
+            };
+          } else if (section.name === 'deviceTypes') {
+            newHomeData.deviceTypes = {
+              title: section.title,
+              subtitle: section.subtitle
+            };
+          } else if (section.name === 'featuredBrands') {
+            newHomeData.featuredBrands = {
+              title: section.title,
+              subtitle: section.subtitle,
+              brands: newHomeData.featuredBrands.brands
+            };
+          } else if (section.name === 'testimonials') {
+            newHomeData.testimonials = {
+              title: section.title,
+              subtitle: section.subtitle,
+              items: content.items || []
+            };
+          } else if (section.name === 'environmentalImpact') {
+            newHomeData.environmentalImpact = {
+              title: section.title,
+              subtitle: section.subtitle,
+              description: content.description || '',
+              stats: content.stats || []
+            };
+          }
+        }
+      });
+      
+      // Set featured brands from brandsData
+      if (brandsData && brandsData.length > 0) {
+        newHomeData.featuredBrands.brands = brandsData.slice(0, 6).map((brand: any) => ({
+          id: brand.id,
+          name: brand.name,
+          logo: brand.logo
+        }));
+      }
+      
+      setHomeData(newHomeData);
+      setLoading(false);
+    }
+  }, [sections, brandsData]);
   
   return (
     <div className="bg-white">
@@ -158,194 +202,30 @@ const HomePage: React.FC = () => {
         <div className="absolute inset-0 bg-black opacity-50"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-              {homeData.hero.title}
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              {loading ? (
+                <Skeleton className="h-12 w-3/4 mb-2 bg-gray-200/20" />
+              ) : (
+                homeData.hero.title
+              )}
             </h1>
-            <p className="mt-6 text-xl max-w-prose">
-              {homeData.hero.subtitle}
+            <p className="text-xl md:text-2xl mb-8">
+              {loading ? (
+                <Skeleton className="h-8 w-full mb-2 bg-gray-200/20" />
+              ) : (
+                homeData.hero.subtitle
+              )}
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/sell/device-selection"
-                className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-gray-50 transition-colors duration-200"
-              >
-                <Recycle className="mr-2 h-5 w-5" />
-                Sell Your Device
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/sell/device-selection" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md bg-white text-blue-700 hover:bg-gray-100">
+                Sell a Device
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-              <Link
-                to="/buy"
-                className="inline-flex items-center justify-center px-8 py-3 border border-white text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 bg-opacity-30 hover:bg-opacity-40 transition-colors duration-200"
-              >
-                <Smartphone className="mr-2 h-5 w-5" />
-                Shop Refurbished
+              <Link to="/buy" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600">
+                Buy Refurbished
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Featured Refurbished Devices
-            </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
-              Explore our collection of certified refurbished devices at unbeatable prices. All devices come with a 1-year warranty.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {/* Product Card 1 */}
-            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
-              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
-                <img
-                  src="/assets/products/iphone-13-pro.png"
-                  alt="iPhone 13 Pro"
-                  className="w-full h-56 object-contain p-4"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
-                  }}
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">iPhone 13 Pro</h3>
-                    <p className="mt-1 text-sm text-gray-500">256GB • Graphite • Excellent</p>
-                  </div>
-                  <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">20% OFF</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-gray-900">$699.99</p>
-                    <p className="text-sm text-gray-500 line-through">$879.99</p>
-                  </div>
-                  <Link
-                    to="/buy/details/iphone-13-pro"
-                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Card 2 */}
-            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
-              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
-                <img
-                  src="/assets/products/samsung-s22-ultra.png"
-                  alt="Samsung Galaxy S22 Ultra"
-                  className="w-full h-56 object-contain p-4"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
-                  }}
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">Galaxy S22 Ultra</h3>
-                    <p className="mt-1 text-sm text-gray-500">512GB • Burgundy • Excellent</p>
-                  </div>
-                  <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">TRENDING</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-gray-900">$749.99</p>
-                    <p className="text-sm text-gray-500 line-through">$899.99</p>
-                  </div>
-                  <Link
-                    to="/buy/details/samsung-galaxy-s22-ultra"
-                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Card 3 */}
-            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
-              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
-                <img
-                  src="/assets/products/macbook-pro.png"
-                  alt="MacBook Pro 14-inch"
-                  className="w-full h-56 object-contain p-4"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
-                  }}
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">MacBook Pro 14"</h3>
-                    <p className="mt-1 text-sm text-gray-500">M2 • 16GB • 512GB • Good</p>
-                  </div>
-                  <span className="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">HOT DEAL</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-gray-900">$1,299.99</p>
-                    <p className="text-sm text-gray-500 line-through">$1,599.99</p>
-                  </div>
-                  <Link
-                    to="/buy/details/macbook-pro-14"
-                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Card 4 */}
-            <div className="group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
-              <div className="aspect-w-3 aspect-h-2 bg-gray-100">
-                <img
-                  src="/assets/products/ipad-pro.png"
-                  alt="iPad Pro 12.9-inch"
-                  className="w-full h-56 object-contain p-4"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/placeholder.png';
-                  }}
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">iPad Pro 12.9"</h3>
-                    <p className="mt-1 text-sm text-gray-500">M1 • 256GB • Silver • Excellent</p>
-                  </div>
-                  <span className="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">LAST ONE</span>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-gray-900">$899.99</p>
-                    <p className="text-sm text-gray-500 line-through">$1,099.99</p>
-                  </div>
-                  <Link
-                    to="/buy/details/ipad-pro-12-9"
-                    className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <Link
-              to="/buy"
-              className="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
-            >
-              Browse All Products
-              <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
-            </Link>
           </div>
         </div>
       </section>
@@ -353,88 +233,100 @@ const HomePage: React.FC = () => {
       {/* How It Works */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              {homeData.howItWorks.title}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {loading ? (
+                <Skeleton className="h-10 w-64 mx-auto mb-2" />
+              ) : (
+                homeData.howItWorks.title
+              )}
             </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
-              {homeData.howItWorks.subtitle}
+            <p className="text-xl text-gray-600">
+              {loading ? (
+                <Skeleton className="h-6 w-96 mx-auto" />
+              ) : (
+                homeData.howItWorks.subtitle
+              )}
             </p>
           </div>
-
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-              <div className="w-12 h-12 mx-auto bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                <Smartphone className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-xl font-medium text-gray-900">{homeData.howItWorks.steps[0].title}</h3>
-              <p className="mt-2 text-base text-gray-500">{homeData.howItWorks.steps[0].description}</p>
-            </div>
-
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-              <div className="w-12 h-12 mx-auto bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-xl font-medium text-gray-900">{homeData.howItWorks.steps[1].title}</h3>
-              <p className="mt-2 text-base text-gray-500">{homeData.howItWorks.steps[1].description}</p>
-            </div>
-
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-              <div className="w-12 h-12 mx-auto bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-xl font-medium text-gray-900">{homeData.howItWorks.steps[2].title}</h3>
-              <p className="mt-2 text-base text-gray-500">{homeData.howItWorks.steps[2].description}</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {loading ? (
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-lg shadow-md">
+                  <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-40 mx-auto mb-2" />
+                  <Skeleton className="h-4 w-56 mx-auto mb-1" />
+                  <Skeleton className="h-4 w-48 mx-auto" />
+                </div>
+              ))
+            ) : (
+              homeData.howItWorks.steps.map((step, index) => (
+                <div key={index} className="bg-white p-6 rounded-lg shadow-md">
+                  <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-blue-600 text-2xl font-bold">{index + 1}</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">{step.title}</h3>
+                  <p className="text-gray-600 text-center">{step.description}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
 
-      {/* Device Categories */}
-      <section className="py-16">
+      {/* Device Types */}
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              {homeData.deviceTypes.title}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {loading ? (
+                <Skeleton className="h-10 w-64 mx-auto mb-2" />
+              ) : (
+                homeData.deviceTypes.title
+              )}
             </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
-              {homeData.deviceTypes.subtitle}
+            <p className="text-xl text-gray-600">
+              {loading ? (
+                <Skeleton className="h-6 w-96 mx-auto" />
+              ) : (
+                homeData.deviceTypes.subtitle
+              )}
             </p>
           </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {isLoading ? (
-              <div className="col-span-4 text-center py-8">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
-                <p className="mt-2 text-gray-600">Loading device types...</p>
-              </div>
-            ) : error ? (
-              <div className="col-span-4 text-center py-8 text-red-600">
-                <p>Error loading device types. Please try again later.</p>
-              </div>
-            ) : (
-              deviceTypes.map(category => (
-                <Link
-                  key={category.id}
-                  to={`/sell/${category.slug}`}
-                  className="group relative rounded-lg overflow-hidden bg-white shadow hover:shadow-md transition-shadow duration-300"
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {deviceTypes.length > 0 ? (
+              deviceTypes.map((type) => (
+                <Link 
+                  key={type.id} 
+                  to={`/sell/${type.slug}`}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
                 >
                   <div className="p-6">
                     <div className="mb-4">
-                      {IconComponent(category.icon)}
+                      {IconComponent(type.slug)}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-200">
-                      {category.name}
-                    </h3>
-                    <p className="mt-2 text-sm text-gray-500">
-                      {category.description || `${category.name} devices`}
-                    </p>
-                    <div className="mt-4 flex items-center text-indigo-600 text-sm font-medium">
-                      Sell Your {category.name}
-                      <ArrowRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{type.name}</h3>
+                    <p className="text-gray-600 mb-4">Sell or buy {type.name.toLowerCase()} devices</p>
+                    <div className="flex items-center text-blue-600">
+                      <span className="font-medium">Get started</span>
+                      <ArrowRight className="h-4 w-4 ml-1" />
                     </div>
                   </div>
                 </Link>
+              ))
+            ) : (
+              Array(4).fill(0).map((_, i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md">
+                  <div className="p-6">
+                    <Skeleton className="h-12 w-12 rounded mb-4" />
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-48 mb-4" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
               ))
             )}
           </div>
@@ -444,211 +336,296 @@ const HomePage: React.FC = () => {
       {/* Featured Brands */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              {homeData.featuredBrands.title}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {loading ? (
+                <Skeleton className="h-10 w-64 mx-auto mb-2" />
+              ) : (
+                homeData.featuredBrands.title
+              )}
             </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
-              {homeData.featuredBrands.subtitle}
+            <p className="text-xl text-gray-600">
+              {loading ? (
+                <Skeleton className="h-6 w-96 mx-auto" />
+              ) : (
+                homeData.featuredBrands.subtitle
+              )}
             </p>
           </div>
-
-          <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-5">
-            {homeData.featuredBrands.brands.map((brand, index) => (
-              <div key={index} className="flex justify-center">
-                <img
-                  src={brand.logo}
-                  alt={brand.name}
-                  className="h-12 object-contain opacity-60 hover:opacity-100 transition-opacity duration-300"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Why Sell With Us?
-            </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
-              We offer the best experience and value when selling your used devices.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Best Prices</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                We offer competitive prices for your devices based on their condition and market value.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Quick Process</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Our streamlined process ensures you get an instant quote and quick payment.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Free Pickup</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                We offer free doorstep pickup at a time that's convenient for you.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-                <CreditCard className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Instant Payment</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Receive payment via your preferred method as soon as your device is verified.
-              </p>
-            </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {homeData.featuredBrands.brands.length > 0 ? (
+              homeData.featuredBrands.brands.map((brand) => (
+                <div key={brand.id} className="bg-white p-4 rounded-lg shadow flex items-center justify-center h-32">
+                  {brand.logo ? (
+                    <img 
+                      src={brand.logo} 
+                      alt={brand.name} 
+                      className="max-h-16 max-w-full object-contain" 
+                    />
+                  ) : (
+                    <span className="text-xl font-semibold text-gray-900">{brand.name}</span>
+                  )}
+                </div>
+              ))
+            ) : (
+              Array(6).fill(0).map((_, i) => (
+                <div key={i} className="bg-white p-4 rounded-lg shadow flex items-center justify-center h-32">
+                  <Skeleton className="h-12 w-3/4" />
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              {homeData.testimonials.title}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {loading ? (
+                <Skeleton className="h-10 w-64 mx-auto mb-2" />
+              ) : (
+                homeData.testimonials.title
+              )}
             </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-3xl mx-auto">
-              {homeData.testimonials.subtitle}
+            <p className="text-xl text-gray-600">
+              {loading ? (
+                <Skeleton className="h-6 w-96 mx-auto" />
+              ) : (
+                homeData.testimonials.subtitle
+              )}
             </p>
           </div>
-
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
-            {homeData.testimonials.items.map((testimonial, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center mb-4">
-                  <img
-                    src={testimonial.avatar}
-                    alt={testimonial.name}
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <div className="ml-4">
-                    <h4 className="text-lg font-medium text-gray-900">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-500">{testimonial.location}</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {loading ? (
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <Skeleton className="h-12 w-12 rounded-full mr-4" />
+                    <div>
+                      <Skeleton className="h-5 w-24 mb-1" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className="flex mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-5 h-5 ${
-                          i < testimonial.rating ? 'text-yellow-400' : 'text-gray-300'
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-                        />
-                      </svg>
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-3/4 mb-4" />
+                  <div className="flex">
+                    {Array(5).fill(0).map((_, j) => (
+                      <Skeleton key={j} className="h-5 w-5 mr-1 rounded-full" />
                     ))}
                   </div>
-                  <p className="text-gray-600 italic">"{testimonial.quote}"</p>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              homeData.testimonials.items.map((testimonial, index) => (
+                <div key={index} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold mr-4">
+                      {testimonial.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold">{testimonial.name}</h4>
+                      <p className="text-gray-500 text-sm">Customer</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mb-4">"{testimonial.text}"</p>
+                  <div className="flex">
+                    {Array(5).fill(0).map((_, i) => (
+                      <span key={i} className={i < testimonial.rating ? "text-yellow-400" : "text-gray-300"}>
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
 
       {/* Environmental Impact */}
-      <section className="py-16 bg-gradient-to-r from-green-600 to-green-800 text-white">
+      <section className="py-16 bg-gradient-to-r from-green-600 to-teal-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-              {homeData.environmentalImpact.title}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-2">
+              {loading ? (
+                <Skeleton className="h-10 w-64 mx-auto mb-2 bg-white/20" />
+              ) : (
+                homeData.environmentalImpact.title
+              )}
             </h2>
-            <p className="mt-4 text-lg max-w-3xl mx-auto opacity-80">
-              {homeData.environmentalImpact.subtitle}
+            <p className="text-xl">
+              {loading ? (
+                <Skeleton className="h-6 w-96 mx-auto bg-white/20" />
+              ) : (
+                homeData.environmentalImpact.subtitle
+              )}
             </p>
           </div>
+          
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <p className="text-lg">
+              {loading ? (
+                <>
+                  <Skeleton className="h-5 w-full mb-2 bg-white/20" />
+                  <Skeleton className="h-5 w-5/6 mx-auto bg-white/20" />
+                </>
+              ) : (
+                homeData.environmentalImpact.description
+              )}
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {loading ? (
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="bg-white/10 backdrop-blur-sm p-6 rounded-lg text-center">
+                  <Skeleton className="h-12 w-24 mx-auto mb-2 bg-white/20" />
+                  <Skeleton className="h-6 w-32 mx-auto bg-white/20" />
+                </div>
+              ))
+            ) : (
+              homeData.environmentalImpact.stats.map((stat, index) => (
+                <div key={index} className="bg-white/10 backdrop-blur-sm p-6 rounded-lg text-center">
+                  <div className="text-3xl md:text-4xl font-bold mb-2">{stat.value}</div>
+                  <div className="text-lg">{stat.label}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
 
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
-            {homeData.environmentalImpact.stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <p className="text-4xl font-bold">{stat.value}</p>
-                <p className="mt-2 text-lg opacity-80">{stat.label}</p>
+      {/* Benefits Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Why Choose Us</h2>
+            <p className="text-xl text-gray-600">The benefits of buying and selling through our platform</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-blue-600 mb-4">
+                <DollarSign className="h-12 w-12" />
               </div>
-            ))}
-          </div>
-
-          <div className="mt-12 max-w-3xl mx-auto text-center">
-            <div className="flex justify-center mb-4">
-              <Recycle className="w-12 h-12" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Best Value</h3>
+              <p className="text-gray-600">Get the best prices when selling your device or buying refurbished</p>
             </div>
-            <p className="text-lg opacity-90">
-              {homeData.environmentalImpact.description}
-            </p>
+            
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-blue-600 mb-4">
+                <Truck className="h-12 w-12" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Free Shipping</h3>
+              <p className="text-gray-600">Free shipping on all purchases and free shipping kits for trade-ins</p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-blue-600 mb-4">
+                <Shield className="h-12 w-12" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Quality Guarantee</h3>
+              <p className="text-gray-600">All devices undergo rigorous testing and come with a warranty</p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-blue-600 mb-4">
+                <Recycle className="h-12 w-12" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Eco-Friendly</h3>
+              <p className="text-gray-600">Reduce e-waste and minimize environmental impact</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16">
+      <section className="py-16 bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
+          <p className="text-xl mb-8 max-w-3xl mx-auto">Whether you're looking to sell your device or find a great deal on a refurbished one, we're here to help.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/sell/device-selection" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md bg-white text-blue-700 hover:bg-gray-100">
+              Sell a Device
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+            <Link to="/buy" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">
+              Buy Refurbished
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Process Section */}
+      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-r from-indigo-700 to-purple-700 rounded-3xl shadow-xl overflow-hidden">
-            <div className="px-6 py-12 md:p-12">
-              <div className="text-center max-w-3xl mx-auto">
-                <h2 className="text-3xl font-bold text-white md:text-4xl">
-                  Join Our Marketplace
-                </h2>
-                <p className="mt-4 text-lg text-indigo-100">
-                  Buy certified refurbished devices at great prices or sell your used devices for instant cash.
-                </p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Our Process</h2>
+            <p className="text-xl text-gray-600">Simple, transparent, and hassle-free</p>
+          </div>
+          
+          <div className="relative">
+            {/* Process steps with connecting line */}
+            <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-0 bottom-0 w-1 bg-blue-200"></div>
+            
+            <div className="space-y-12 relative">
+              <div className="flex flex-col md:flex-row items-center">
+                <div className="md:w-1/2 md:pr-12 md:text-right">
+                  <div className="text-blue-600 mb-2 md:hidden">
+                    <CheckCircle className="h-8 w-8 mx-auto" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Your Device</h3>
+                  <p className="text-gray-600">Tell us about your device – choose the type, brand, and model</p>
+                </div>
+                <div className="hidden md:flex justify-center items-center">
+                  <div className="bg-blue-600 text-white rounded-full p-2 z-10">
+                    <CheckCircle className="h-6 w-6" />
+                  </div>
+                </div>
+                <div className="md:w-1/2 md:pl-12 mt-4 md:mt-0">
+                  <img src="https://via.placeholder.com/300x200" alt="Select device" className="rounded-lg shadow-md mx-auto md:mx-0" />
+                </div>
               </div>
               
-              <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                <Link
-                  to="/sell/device-selection"
-                  className="flex-1 max-w-xs mx-auto sm:mx-0 flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-xl shadow-lg text-indigo-700 bg-white hover:bg-indigo-50 transition-colors duration-200"
-                >
-                  <Recycle className="mr-2 h-5 w-5" />
-                  Sell Your Device
-                </Link>
-                <Link
-                  to="/buy"
-                  className="flex-1 max-w-xs mx-auto sm:mx-0 flex items-center justify-center px-8 py-4 border border-white border-opacity-25 text-lg font-medium rounded-xl shadow-lg text-white bg-indigo-600 bg-opacity-40 hover:bg-opacity-50 transition-colors duration-200"
-                >
-                  <Smartphone className="mr-2 h-5 w-5" />
-                  Shop Refurbished
-                </Link>
+              <div className="flex flex-col md:flex-row-reverse items-center">
+                <div className="md:w-1/2 md:pl-12 md:text-left">
+                  <div className="text-blue-600 mb-2 md:hidden">
+                    <CreditCard className="h-8 w-8 mx-auto" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Get Paid Quickly</h3>
+                  <p className="text-gray-600">Choose your preferred payment method and get paid fast</p>
+                </div>
+                <div className="hidden md:flex justify-center items-center">
+                  <div className="bg-blue-600 text-white rounded-full p-2 z-10">
+                    <CreditCard className="h-6 w-6" />
+                  </div>
+                </div>
+                <div className="md:w-1/2 md:pr-12 mt-4 md:mt-0">
+                  <img src="https://via.placeholder.com/300x200" alt="Get paid" className="rounded-lg shadow-md mx-auto md:mx-0" />
+                </div>
               </div>
               
-              <div className="mt-8 flex justify-center space-x-6">
-                <div className="flex items-center text-white">
-                  <Shield className="h-5 w-5 mr-2" />
-                  <span className="text-sm">1-Year Warranty</span>
+              <div className="flex flex-col md:flex-row items-center">
+                <div className="md:w-1/2 md:pr-12 md:text-right">
+                  <div className="text-blue-600 mb-2 md:hidden">
+                    <Clock className="h-8 w-8 mx-auto" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Ship Your Device</h3>
+                  <p className="text-gray-600">Use our free shipping kit or schedule a pickup</p>
                 </div>
-                <div className="flex items-center text-white">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  <span className="text-sm">Quality Verified</span>
+                <div className="hidden md:flex justify-center items-center">
+                  <div className="bg-blue-600 text-white rounded-full p-2 z-10">
+                    <Clock className="h-6 w-6" />
+                  </div>
                 </div>
-                <div className="flex items-center text-white">
-                  <Truck className="h-5 w-5 mr-2" />
-                  <span className="text-sm">Free Shipping</span>
+                <div className="md:w-1/2 md:pl-12 mt-4 md:mt-0">
+                  <img src="https://via.placeholder.com/300x200" alt="Ship device" className="rounded-lg shadow-md mx-auto md:mx-0" />
                 </div>
               </div>
             </div>

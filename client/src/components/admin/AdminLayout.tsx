@@ -572,6 +572,18 @@ const AdminLayout: React.FC = () => {
                 </h3>
                 <nav className="mt-2 space-y-1">
                   <Link
+                    to="/admin/routes"
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                      isActive('/admin/routes')
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Route className="w-5 h-5 mr-3" />
+                    <span>Routes & Content</span>
+                  </Link>
+
+                  <Link
                     to="/admin/store-templates"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
                       isActive('/admin/store-templates')

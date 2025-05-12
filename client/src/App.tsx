@@ -53,6 +53,7 @@ import AdminBuybacks from './pages/admin/AdminBuybacks';
 import ConditionQuestionsAdmin from './pages/admin/ConditionQuestionsAdmin';
 import RegionsManagement from './pages/admin/RegionsManagement';
 import UserRoleManagement from './pages/admin/UserRoleManagement';
+import RouteManagement from './pages/admin/RouteManagement';
 import AdminLayout from './components/admin/AdminLayout';
 
 // E-commerce Admin Pages
@@ -476,7 +477,8 @@ function App() {
                   {/* Questionnaires */}
                   <Route path="brand-questionnaires" element={<AdminCQS />} />
                   
-                  {/* Templates & Customization */}
+                  {/* Routes & Templates */}
+                  <Route path="routes" element={<RouteManagement />} />
                   <Route path="store-templates" element={<AdminDashboard />} />
                   <Route path="store-themes" element={<AdminDashboard />} />
                   <Route path="invoice-templates" element={<AdminDashboard />} />
