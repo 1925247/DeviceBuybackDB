@@ -602,13 +602,12 @@ const AdminModels: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit-image">Image URL</Label>
-            <Input
-              id="edit-image"
-              name="image"
-              value={formData.image}
-              onChange={handleInputChange}
-              required
+            <FileUpload
+              onFileChange={handleFileUpload}
+              onUrlChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+              initialUrl={formData.image}
+              label="Model Image"
+              description="Upload a high-quality image of this device model"
             />
           </div>
           

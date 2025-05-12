@@ -18,11 +18,14 @@ const BuyProduct = () => {
     setSearchQuery('');
   };
 
-  const filteredProducts = products.filter((product) =>
-    (!selectedCategory || product.category === selectedCategory) &&
-    (!selectedBrand || product.brand === selectedBrand) &&
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((product) => {
+    const category = categories.find(c => c.id === product.categoryId)?.name;
+    const brand = brands.find(b => b.id === product.brandId)?.name;
+    
+    return (!selectedCategory || category === selectedCategory) &&
+           (!selectedBrand || brand === selectedBrand) &&
+           product.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   // Function to add product to cart (increments quantity if already exists)
   const addToCart = (product) => {
@@ -73,18 +76,18 @@ const BuyProduct = () => {
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
               <button
-                key={category}
+                key={category.id}
                 onClick={() => {
-                  setSelectedCategory(category);
+                  setSelectedCategory(category.name);
                   setSelectedBrand('');
                 }}
                 className={`px-4 py-2 rounded-full border transition duration-300 text-sm font-medium ${
-                  selectedCategory === category
+                  selectedCategory === category.name
                     ? 'bg-indigo-600 text-white border-indigo-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-indigo-50'
                 }`}
               >
-                {category}
+                {category.name}
               </button>
             ))}
           </div>
@@ -93,17 +96,17 @@ const BuyProduct = () => {
           <div className="mb-4">
             <h3 className="text-xl font-semibold mb-2">Brands</h3>
             <div className="flex flex-wrap gap-2">
-              {brands[selectedCategory].map((brand) => (
+              {brands.map((brand) => (
                 <button
-                  key={brand}
-                  onClick={() => setSelectedBrand(brand)}
+                  key={brand.id}
+                  onClick={() => setSelectedBrand(brand.name)}
                   className={`px-4 py-2 rounded-full border transition duration-300 text-sm font-medium ${
-                    selectedBrand === brand
+                    selectedBrand === brand.name
                       ? 'bg-indigo-600 text-white border-indigo-600'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-indigo-50'
                   }`}
                 >
-                  {brand}
+                  {brand.name}
                 </button>
               ))}
             </div>
