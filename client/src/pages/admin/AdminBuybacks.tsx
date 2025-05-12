@@ -67,6 +67,8 @@ interface BuybackRequest {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
+  assigned_to?: string;
+  pickup_notes?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -104,8 +106,11 @@ const AdminBuybacks: React.FC = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BuybackRequest | null>(null);
   const [newStatus, setNewStatus] = useState('');
+  const [assignedStaff, setAssignedStaff] = useState('');
+  const [pickupNotes, setPickupNotes] = useState('');
   const { toast } = useToast();
 
   // Query to fetch buyback requests
@@ -137,6 +142,47 @@ const AdminBuybacks: React.FC = () => {
       toast({
         title: 'Status Updated',
         description: 'The buyback request status has been updated successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Mutation to assign buyback request to staff
+  const assignRequestMutation = useMutation({
+    mutationFn: async ({ id, assignedTo, pickupNotes }: { id: number, assignedTo: string, pickupNotes: string }) => {
+      const response = await fetch(`/api/buyback-requests/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          assigned_to: assignedTo, 
+          pickup_notes: pickupNotes,
+          status: 'assigned' 
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to assign request');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
+      setAssignModalOpen(false);
+      setAssignedStaff('');
+      setPickupNotes('');
+      toast({
+        title: 'Request Assigned',
+        description: 'The buyback request has been assigned successfully.',
       });
     },
     onError: (error: Error) => {
@@ -195,6 +241,13 @@ const AdminBuybacks: React.FC = () => {
     setNewStatus(request.status);
     setStatusUpdateModalOpen(true);
   };
+  
+  const handleAssignRequest = (request: BuybackRequest) => {
+    setSelectedRequest(request);
+    setAssignedStaff(request.assigned_to || '');
+    setPickupNotes(request.pickup_notes || '');
+    setAssignModalOpen(true);
+  };
 
   const confirmDeleteRequest = () => {
     if (selectedRequest) {
@@ -205,6 +258,16 @@ const AdminBuybacks: React.FC = () => {
   const confirmUpdateStatus = () => {
     if (selectedRequest && newStatus) {
       updateStatusMutation.mutate({ id: selectedRequest.id, status: newStatus });
+    }
+  };
+  
+  const confirmAssignRequest = () => {
+    if (selectedRequest && assignedStaff) {
+      assignRequestMutation.mutate({ 
+        id: selectedRequest.id, 
+        assignedTo: assignedStaff, 
+        pickupNotes: pickupNotes 
+      });
     }
   };
 
