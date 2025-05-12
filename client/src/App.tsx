@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 // Client Pages
 import HomePage from './pages/HomePage';
 import DeviceSelectionPage from './pages/DeviceSelectionPage';
+import DeviceSelection from './pages/sell/DeviceSelection';
 import ModelSelectionPage from './pages/ModelSelectionPage';
 import ConditionAssessmentPage from './pages/ConditionAssessmentPage';
 import ValuationPage from './pages/ValuationPage';
@@ -168,7 +169,7 @@ function App() {
                     <Navbar />
                     <main className="flex-grow">
                       <ModelsProvider>
-                        <DeviceSelectionPage />
+                        <DeviceSelection />
                       </ModelsProvider>
                     </main>
                     <Footer />
