@@ -1081,6 +1081,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // REGION MANAGEMENT API ENDPOINTS
+  app.get(apiRouter("/regions"), async (req: Request, res: Response) => {
+    try {
+      const regionService = require('./services/region-service');
+      const regions = await regionService.getAllRegions(req.query.activeOnly !== 'false');
+      res.json(regions);
+    } catch (error: any) {
+      console.error('Error fetching regions:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch regions' });
+    }
+  });
+
+  app.get(apiRouter("/regions/:id"), async (req: Request, res: Response) => {
+    try {
+      const regionService = require('./services/region-service');
+      const region = await regionService.getRegionById(parseInt(req.params.id));
+      res.json(region);
+    } catch (error: any) {
+      console.error('Error fetching region:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch region' });
+    }
+  });
+
+  app.post(apiRouter("/regions"), async (req: Request, res: Response) => {
+    try {
+      const regionService = require('./services/region-service');
+      const region = await regionService.createRegion(req.body);
+      res.status(201).json(region);
+    } catch (error: any) {
+      console.error('Error creating region:', error);
+      res.status(500).json({ message: error.message || 'Failed to create region' });
+    }
+  });
+
+  app.put(apiRouter("/regions/:id"), async (req: Request, res: Response) => {
+    try {
+      const regionService = require('./services/region-service');
+      const region = await regionService.updateRegion(parseInt(req.params.id), req.body);
+      res.json(region);
+    } catch (error: any) {
+      console.error('Error updating region:', error);
+      res.status(500).json({ message: error.message || 'Failed to update region' });
+    }
+  });
+
+  app.get(apiRouter("/regions/:id/partners"), async (req: Request, res: Response) => {
+    try {
+      const regionService = require('./services/region-service');
+      const partners = await regionService.getPartnersByRegion(parseInt(req.params.id));
+      res.json(partners);
+    } catch (error: any) {
+      console.error('Error fetching partners by region:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch partners by region' });
+    }
+  });
+
+  app.get(apiRouter("/regions/:id/products"), async (req: Request, res: Response) => {
+    try {
+      const regionService = require('./services/region-service');
+      const products = await regionService.getProductsByRegion(parseInt(req.params.id));
+      res.json(products);
+    } catch (error: any) {
+      console.error('Error fetching products by region:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch products by region' });
+    }
+  });
+
+  // QUESTIONNAIRE API ENDPOINTS
+  app.get(apiRouter("/questionnaires/device"), async (req: Request, res: Response) => {
+    try {
+      const questionnaireService = require('./services/questionnaire-service');
+      const questionnaire = await questionnaireService.getDeviceQuestionnaire({
+        deviceTypeId: parseInt(req.query.deviceTypeId as string),
+        brandId: req.query.brandId ? parseInt(req.query.brandId as string) : undefined,
+      });
+      res.json(questionnaire);
+    } catch (error: any) {
+      console.error('Error fetching device questionnaire:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch device questionnaire' });
+    }
+  });
+
+  app.get(apiRouter("/questionnaires/brands"), async (req: Request, res: Response) => {
+    try {
+      const questionnaireService = require('./services/questionnaire-service');
+      const questionnaires = await questionnaireService.getAllBrandQuestionnaires();
+      res.json(questionnaires);
+    } catch (error: any) {
+      console.error('Error fetching brand questionnaires:', error);
+      res.status(500).json({ message: error.message || 'Failed to fetch brand questionnaires' });
+    }
+  });
+
+  app.post(apiRouter("/questionnaires"), async (req: Request, res: Response) => {
+    try {
+      const questionnaireService = require('./services/questionnaire-service');
+      const result = await questionnaireService.createQuestionWithAnswers(req.body);
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error('Error creating questionnaire:', error);
+      res.status(500).json({ message: error.message || 'Failed to create questionnaire' });
+    }
+  });
+
+  app.post(apiRouter("/questionnaires/calculate-impact"), async (req: Request, res: Response) => {
+    try {
+      const questionnaireService = require('./services/questionnaire-service');
+      const impact = await questionnaireService.calculateQuestionnaireImpact({
+        deviceModelId: parseInt(req.body.deviceModelId),
+        answers: req.body.answers,
+      });
+      res.json(impact);
+    } catch (error: any) {
+      console.error('Error calculating questionnaire impact:', error);
+      res.status(500).json({ message: error.message || 'Failed to calculate questionnaire impact' });
+    }
+  });
+  
   // E-COMMERCE API ENDPOINTS
 
   // Stripe payment integration
