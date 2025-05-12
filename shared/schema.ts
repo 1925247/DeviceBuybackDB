@@ -240,6 +240,11 @@ export const conditionAnswers = pgTable("condition_answers", {
   answer: text("answer").notNull(),
   impact: decimal("impact", { precision: 5, scale: 2 }).notNull(),
   order: integer("order").notNull(),
+  deduction_type: text("deduction_type").default("percentage").notNull(), // percentage or fixed
+  fixed_amount: decimal("fixed_amount", { precision: 10, scale: 2 }),
+  applicable_brands: json("applicable_brands").$type<number[]>(),
+  applicable_models: json("applicable_models").$type<number[]>(),
+  description: text("description"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -448,6 +453,13 @@ export const marketplaceListings = pgTable("marketplace_listings", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("active"),
+  sell_ready: boolean("sell_ready").default(false).notNull(),
+  partner_sourced: boolean("partner_sourced").default(false),
+  partner_id: integer("partner_id").references(() => partners.id),
+  regions: json("regions").$type<number[]>(),  // Regions where this listing is available
+  template_id: integer("template_id"),  // For consistent display templates
+  seo_title: text("seo_title"),
+  seo_description: text("seo_description"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -456,6 +468,10 @@ export const marketplaceListingsRelations = relations(marketplaceListings, ({ on
   device: one(devices, {
     fields: [marketplaceListings.device_id],
     references: [devices.id],
+  }),
+  partner: one(partners, {
+    fields: [marketplaceListings.partner_id],
+    references: [partners.id],
   }),
 }));
 
@@ -499,6 +515,57 @@ export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, cre
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
 
+// Store Templates Table (for Shopify-like customization)
+export const storeTemplates = pgTable("store_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // product, category, cart, checkout, etc.
+  thumbnail: text("thumbnail"),
+  is_default: boolean("is_default").default(false),
+  configuration: json("configuration").$type<any>(), // Template configuration
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertStoreTemplateSchema = createInsertSchema(storeTemplates).omit({ id: true, created_at: true, updated_at: true });
+export type InsertStoreTemplate = z.infer<typeof insertStoreTemplateSchema>;
+export type StoreTemplate = typeof storeTemplates.$inferSelect;
+
+// Store Theme Table (for overall store design)
+export const storeThemes = pgTable("store_themes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  is_active: boolean("is_active").default(false),
+  colors: json("colors").$type<Record<string, string>>(),
+  fonts: json("fonts").$type<Record<string, string>>(),
+  layout: json("layout").$type<any>(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertStoreThemeSchema = createInsertSchema(storeThemes).omit({ id: true, created_at: true, updated_at: true });
+export type InsertStoreTheme = z.infer<typeof insertStoreThemeSchema>;
+export type StoreTheme = typeof storeThemes.$inferSelect;
+
+// Invoice Templates Table
+export const invoiceTemplates = pgTable("invoice_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  is_default: boolean("is_default").default(false),
+  html_template: text("html_template").notNull(),
+  css_styles: text("css_styles"),
+  configuration: json("configuration").$type<any>(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertInvoiceTemplateSchema = createInsertSchema(invoiceTemplates).omit({ id: true, created_at: true, updated_at: true });
+export type InsertInvoiceTemplate = z.infer<typeof insertInvoiceTemplateSchema>;
+export type InvoiceTemplate = typeof invoiceTemplates.$inferSelect;
+
 // Products Table (E-Commerce specific)
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
@@ -523,6 +590,11 @@ export const products = pgTable("products", {
   condition: text("condition"), // excellent, good, fair, poor
   seo_title: text("seo_title"),
   seo_description: text("seo_description"),
+  regions: json("regions").$type<number[]>(), // Regions where this product is available
+  template_id: integer("template_id").references(() => storeTemplates.id),
+  sell_ready: boolean("sell_ready").default(false),
+  refurbished: boolean("refurbished").default(false),
+  partner_id: integer("partner_id").references(() => partners.id),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
