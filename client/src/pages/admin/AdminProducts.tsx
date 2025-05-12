@@ -1296,7 +1296,7 @@ const AdminProducts = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {/* Map device models here when available */}
                             </SelectContent>
                           </Select>
