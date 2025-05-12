@@ -177,6 +177,11 @@ export class DatabaseStorage implements IStorage {
     const offset = (page - 1) * limit;
     return db.select().from(users).limit(limit).offset(offset);
   }
+  
+  async getUsersCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(users);
+    return Number(result[0].count);
+  }
 
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     const [updatedUser] = await db
@@ -211,6 +216,11 @@ export class DatabaseStorage implements IStorage {
 
   async getDevicesBySeller(sellerId: number): Promise<Device[]> {
     return db.select().from(devices).where(eq(devices.seller_id, sellerId));
+  }
+  
+  async getDevicesCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(devices);
+    return Number(result[0].count);
   }
 
   async createDevice(device: InsertDevice): Promise<Device> {
@@ -312,6 +322,13 @@ export class DatabaseStorage implements IStorage {
   async getBuybackRequestsByUser(userId: number): Promise<BuybackRequest[]> {
     return db.select().from(buybackRequests).where(eq(buybackRequests.user_id, userId));
   }
+  
+  async getRecentBuybackRequests(limit: number = 5): Promise<BuybackRequest[]> {
+    return db.select()
+      .from(buybackRequests)
+      .orderBy(desc(buybackRequests.created_at))
+      .limit(limit);
+  }
 
   async createBuybackRequest(request: InsertBuybackRequest): Promise<BuybackRequest> {
     const [newRequest] = await db.insert(buybackRequests).values(request).returning();
@@ -391,6 +408,18 @@ export class DatabaseStorage implements IStorage {
 
   async getOrdersBySeller(sellerId: number): Promise<Order[]> {
     return db.select().from(orders).where(eq(orders.seller_id, sellerId));
+  }
+  
+  async getOrdersCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(orders);
+    return Number(result[0].count);
+  }
+  
+  async getRecentOrders(limit: number = 5): Promise<Order[]> {
+    return db.select()
+      .from(orders)
+      .orderBy(desc(orders.created_at))
+      .limit(limit);
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
