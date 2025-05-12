@@ -76,6 +76,7 @@ interface BuybackRequest {
 const statusOptions = [
   { value: 'pending', label: 'Pending' },
   { value: 'approved', label: 'Approved' },
+  { value: 'assigned', label: 'Assigned to Staff' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'processing', label: 'Processing' },
   { value: 'completed', label: 'Completed' },
@@ -88,6 +89,8 @@ const getStatusColor = (status: string) => {
       return 'bg-yellow-100 text-yellow-800';
     case 'approved':
       return 'bg-green-100 text-green-800';
+    case 'assigned':
+      return 'bg-indigo-100 text-indigo-800';
     case 'rejected':
       return 'bg-red-100 text-red-800';
     case 'processing':
