@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Smartphone, 
@@ -41,28 +41,19 @@ const initialHomeData: HomeData = {
 };
 
 const HomePage = () => {
-  const { deviceTypes, brands = [] } = useModels();
-  const [loading, setLoading] = useState(true);
-  const [homeData, setHomeData] = useState<HomeData>(initialHomeData);
+  const { deviceTypes = [], brands = [], isLoading } = useModels();
+  
+  // Create homeData from context data
+  const homeData = useMemo(() => {
+    return {
+      ...initialHomeData,
+      deviceTypes: deviceTypes || [],
+      brands: brands || []
+    };
+  }, [deviceTypes, brands]);
 
-  // Fetch home sections from API
-  const { data: sections = [] } = useQuery<SectionData[]>({
-    queryKey: ['/api/home-sections'],
-  });
-
-  // Process API data to update home content
-  useEffect(() => {
-    if (deviceTypes && deviceTypes.length > 0) {
-      const newHomeData = { ...initialHomeData };
-      
-      // Add device types and brands from context
-      newHomeData.deviceTypes = deviceTypes || [];
-      newHomeData.brands = brands || [];
-      
-      setHomeData(newHomeData);
-      setLoading(false);
-    }
-  }, [sections, deviceTypes, brands]);
+  // Use the loading state from the context
+  const loading = isLoading;
 
   return (
     <div className="min-h-screen bg-gray-50">
