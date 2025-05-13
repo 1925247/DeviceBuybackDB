@@ -70,7 +70,7 @@ const HomePage = () => {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
-                  to="/sell/device-type"
+                  to="/sell/device-selection"
                   className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-600 font-medium rounded-md hover:bg-gray-100 transition-colors"
                 >
                   Sell Now
@@ -115,7 +115,7 @@ const HomePage = () => {
               <h3 className="font-medium text-lg mb-1">Smartphones</h3>
               <p className="text-sm text-gray-600 mb-2">Best cash offer for your phone!</p>
               <p className="text-sm text-gray-600 mb-3">Sell your used iPhone, Samsung, OnePlus, and other smartphones.</p>
-              <Link to="/sell/device-type" className="text-blue-600 text-sm font-medium flex items-center">
+              <Link to="/sell/device-selection" className="text-blue-600 text-sm font-medium flex items-center">
                 Sell Now <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
@@ -130,7 +130,7 @@ const HomePage = () => {
               <h3 className="font-medium text-lg mb-1">Laptops</h3>
               <p className="text-sm text-gray-600 mb-2">Upgrade your tech with extra cash!</p>
               <p className="text-sm text-gray-600 mb-3">Get cash for your MacBook, Dell, HP, Lenovo, and more.</p>
-              <Link to="/sell/device-type" className="text-green-600 text-sm font-medium flex items-center">
+              <Link to="/sell/device-selection" className="text-green-600 text-sm font-medium flex items-center">
                 Sell Now <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
@@ -145,7 +145,7 @@ const HomePage = () => {
               <h3 className="font-medium text-lg mb-1">Tablets</h3>
               <p className="text-sm text-gray-600 mb-2">Turn your tablet into cash!</p>
               <p className="text-sm text-gray-600 mb-3">Sell your iPad, Samsung Tab, and other tablets easily.</p>
-              <Link to="/sell/device-type" className="text-purple-600 text-sm font-medium flex items-center">
+              <Link to="/sell/device-selection" className="text-purple-600 text-sm font-medium flex items-center">
                 Sell Now <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
@@ -160,7 +160,7 @@ const HomePage = () => {
               <h3 className="font-medium text-lg mb-1">Smartwatches</h3>
               <p className="text-sm text-gray-600 mb-2">Get the best offer for your wearable!</p>
               <p className="text-sm text-gray-600 mb-3">Trade in your Apple Watch, Galaxy Watch, and more.</p>
-              <Link to="/sell/device-type" className="text-orange-600 text-sm font-medium flex items-center">
+              <Link to="/sell/device-selection" className="text-orange-600 text-sm font-medium flex items-center">
                 Sell Now <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
@@ -344,7 +344,7 @@ const HomePage = () => {
           <h2 className="text-2xl font-bold mb-4">Ready to Sell Your Device?</h2>
           <p className="mb-6">Get an instant quote and turn your unused devices into cash today!</p>
           <Link
-            to="/sell/device-type"
+            to="/sell/device-selection"
             className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-600 font-medium rounded-md hover:bg-gray-100 transition-colors"
           >
             Get Started Now
