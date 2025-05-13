@@ -13,7 +13,8 @@ import {
   productVariants, type ProductVariant, type InsertProductVariant,
   productImages, type ProductImage, type InsertProductImage,
   categories, type Category, type InsertCategory,
-  discounts, type Discount, type InsertDiscount
+  discounts, type Discount, type InsertDiscount,
+  settings, type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count } from "drizzle-orm";
@@ -982,40 +983,113 @@ export class DatabaseStorage implements IStorage {
 
   // Settings operations
   async getSettings(): Promise<any> {
-    // In a real implementation, this would fetch from a settings table
-    // For now, we return a mocked settings object
-    return {
-      general: {
-        site_name: "GadgetSwap",
-        site_tagline: "Your Trusted Source for Device Buyback and Refurbished Gadgets",
-        contact_email: "info@gadgetswap.com",
-        support_phone: "+1 (555) 123-4567"
-      },
-      buyback: {
-        min_offer_amount: 5,
-        max_processing_days: 3,
-        payment_methods: ["PayPal", "Bank Transfer", "Store Credit"]
-      },
-      marketplace: {
-        enable_marketplace: true,
-        featured_products_count: 8,
-        product_pricing_strategy: "cost_plus_margin" // cost_plus_margin, market_based, dynamic
-      },
-      shipping: {
-        default_shipping_country: "US",
-        free_shipping_min_order: 50,
-        shipping_zones: [
-          { name: "Domestic", countries: ["US"], rate: 5.99 },
-          { name: "International", countries: ["*"], rate: 24.99 }
-        ]
+    // Get settings from database, organize by key
+    const allSettings = await db.select().from(settings);
+    
+    // If no settings exist in the database yet, initialize with defaults
+    if (allSettings.length === 0) {
+      await this.initializeDefaultSettings();
+      return this.getSettings();
+    }
+    
+    // Convert array of settings to an object grouped by key
+    const settingsObject: Record<string, any> = {};
+    
+    for (const setting of allSettings) {
+      const keyParts = setting.key.split('.');
+      
+      if (keyParts.length === 1) {
+        settingsObject[keyParts[0]] = setting.value;
+      } else if (keyParts.length === 2) {
+        if (!settingsObject[keyParts[0]]) {
+          settingsObject[keyParts[0]] = {};
+        }
+        settingsObject[keyParts[0]][keyParts[1]] = setting.value;
       }
-    };
+    }
+    
+    return settingsObject;
+  }
+  
+  async initializeDefaultSettings(): Promise<void> {
+    const defaultSettings = [
+      { key: 'general.site_name', value: 'GadgetSwap' },
+      { key: 'general.site_tagline', value: 'Your Trusted Source for Device Buyback and Refurbished Gadgets' },
+      { key: 'general.contact_email', value: 'info@gadgetswap.com' },
+      { key: 'general.support_phone', value: '+1 (555) 123-4567' },
+      { key: 'buyback.min_offer_amount', value: 5 },
+      { key: 'buyback.max_processing_days', value: 3 },
+      { key: 'buyback.payment_methods', value: ["PayPal", "Bank Transfer", "Store Credit"] },
+      { key: 'marketplace.enable_marketplace', value: true },
+      { key: 'marketplace.featured_products_count', value: 8 },
+      { key: 'marketplace.product_pricing_strategy', value: 'cost_plus_margin' },
+      { key: 'shipping.default_shipping_country', value: 'US' },
+      { key: 'shipping.free_shipping_min_order', value: 50 },
+      { key: 'shipping.shipping_zones', value: [
+        { name: 'Domestic', countries: ['US'], rate: 5.99 },
+        { name: 'International', countries: ['*'], rate: 24.99 }
+      ]}
+    ];
+    
+    for (const setting of defaultSettings) {
+      await db.insert(settings).values({
+        key: setting.key,
+        value: setting.value
+      });
+    }
   }
 
-  async updateSettings(settings: any): Promise<any> {
-    // In a real implementation, this would update a settings table
-    // For now, we just return the settings object that was provided
-    return settings;
+  async updateSettings(settingsData: any): Promise<any> {
+    // Update or create settings in database
+    const flattenedSettings: Array<{key: string, value: any}> = [];
+    
+    // Helper function to flatten nested settings object
+    const flattenSettings = (obj: any, prefix: string = '') => {
+      for (const key in obj) {
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          flattenSettings(obj[key], fullKey);
+        } else {
+          flattenedSettings.push({
+            key: fullKey,
+            value: obj[key]
+          });
+        }
+      }
+    };
+    
+    flattenSettings(settingsData);
+    
+    // Update each setting in the database
+    for (const setting of flattenedSettings) {
+      const existingSettings = await db
+        .select()
+        .from(settings)
+        .where(eq(settings.key, setting.key));
+      
+      if (existingSettings.length > 0) {
+        // Update existing setting
+        await db
+          .update(settings)
+          .set({ 
+            value: setting.value,
+            updated_at: new Date()
+          })
+          .where(eq(settings.key, setting.key));
+      } else {
+        // Create new setting
+        await db
+          .insert(settings)
+          .values({
+            key: setting.key,
+            value: setting.value
+          });
+      }
+    }
+    
+    // Return updated settings
+    return this.getSettings();
   }
 
   // E-COMMERCE OPERATIONS
