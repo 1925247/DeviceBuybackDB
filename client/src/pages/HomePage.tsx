@@ -46,10 +46,11 @@ const initialHomeData: HomeData = {
 
 // Environmental impact data
 const environmentalImpact = {
-  impactDescription: "By selling your old devices to us, you're contributing to reducing electronic waste and preserving our environment for future generations.",
+  impactDescription:
+    "By selling your old devices to us, you're contributing to reducing electronic waste and preserving our environment for future generations.",
   devicesRecycled: "50,000+",
   eWasteReduced: "500 tons",
-  certification: "Certified E-Waste Management Partner"
+  certification: "Certified E-Waste Management Partner",
 };
 
 const HomePage = () => {
@@ -98,7 +99,7 @@ const HomePage = () => {
             </div>
             <div className="hidden md:block">
               <img
-                src="/images/hero-device-sold.png"
+                src="https://www.quickmobile.in/assets/images/sold_sell_side.webp"
                 alt="Phone with sold tag"
                 className="rounded-lg w-full max-w-md mx-auto"
               />
@@ -286,7 +287,7 @@ const HomePage = () => {
           </div>
           <div className="text-center">
             <a
-              href="#device-categories"
+              href="sell/device-selection"
               className="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition duration-300"
               aria-label="Start selling your device"
             >

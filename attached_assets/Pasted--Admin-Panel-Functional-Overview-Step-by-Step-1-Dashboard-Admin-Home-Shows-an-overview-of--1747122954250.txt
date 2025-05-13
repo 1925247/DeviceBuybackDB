@@ -1,0 +1,150 @@
+🛠 Admin Panel Functional Overview - Step by Step
+📍 1. Dashboard (Admin Home)
+Shows an overview of:
+
+Total Devices Listed
+
+Total Orders
+
+Active Brands
+
+Devices per Category
+
+Recent Activity / Logs
+
+📁 2. Device Types (Category Management)
+Purpose: To define types of devices supported by the buyback platform.
+
+🔧 Functions:
+Add Device Type (e.g., Smartphone, Laptop, Tablet, Smartwatch)
+
+Fields: Name, Slug (auto), Icon Upload, Status (Active/Inactive)
+
+Edit / Update / Delete Device Types
+
+View List of All Device Types
+
+Columns: Name | Slug | Icon | Status | Created Date | Actions
+
+✅ Use:
+Admin categorizes each product based on this.
+
+Supports icon customization for frontend branding.
+
+📚 3. Q&A Management (Condition Assessment Engine)
+Purpose: Configure condition-based question flows for each device type.
+
+👇 Breakdown:
+Groups: Group of questions (e.g., Screen Condition, Body Condition)
+
+Questions: Add questions like "Is the display cracked?" with logic-based answer types (Yes/No, Multiple Choice)
+
+Choices: For multiple choice or yes/no answers, assign deduction scores.
+
+Category Mapping: Assign groups/questions to specific Device Types.
+
+Copy Questions: Duplicate from one device type to another to save time.
+
+✅ Use:
+The scoring logic here impacts final valuation of the device.
+
+🔖 4. Brands Management
+Purpose: Manage which brands are accepted on the platform.
+
+🔧 Functions:
+Add Brand:
+
+Fields: Brand Name, Slug (auto), Upload Logo, Select Device Types (Multi-select), Status
+
+Edit / Delete Brand
+
+Search / Filter Brands:
+
+By Device Type or Status
+
+✅ Use:
+Brands like Apple, Samsung, HP, etc. are added and associated with device types.
+
+📦 5. Products / Models (Device Listings)
+Purpose: Manage the models of each brand and link with pricing & Q&A.
+
+🔧 Functions:
+Add New Model:
+
+Fields: Name, Slug (auto), Image Upload, Brand, Device Type, Status (Active/Inactive), Featured
+
+Assign Category/Subcategory:
+
+Example: iPhone 13 → iPhone Series → Smartphone
+
+Assign Questionnaire: Attach Q&A set (for condition logic)
+
+Add/Update Price Data:
+
+Max Price
+
+Icon/Image
+
+Description
+
+✅ Use:
+User sees these models on the frontend device-selection flow.
+
+💰 6. Pricing
+Purpose: Define pricing rules per model based on conditions.
+
+🔧 Functions:
+Assign price per condition (auto or manual)
+
+Set base price + condition-based deductions
+
+Variant-based pricing: 64GB / 128GB / 256GB / etc.
+
+Payment method-based discounts/incentives
+
+✅ Use:
+The pricing engine calculates final offer based on answers + model config.
+
+👥 7. Users (Optional)
+Purpose: Manage users who access admin or are part of partner/vendor network.
+
+🔧 Functions:
+Add/Edit/Delete Admin/Staff/Vendor Users
+
+Assign Roles & Permissions
+
+Login Tracking / Activity Logs
+
+⚙️ 8. Settings
+Purpose: Global system settings for the buyback portal.
+
+🧩 Modules:
+Currency, Taxes, Payment Configurations
+
+SEO Settings per Page (for frontend)
+
+Contact Info / Support Channels
+
+Enable/Disable entire Buyback Flow
+
+🔍 9. Diagnostics (Optional Module)
+Purpose: Used for device diagnostics via tool (if integrated).
+
+🧪 Functions:
+Test device hardware in-store (e.g., screen, mic, speaker)
+
+Capture auto-reports to verify condition
+
+Integrate with valuation flow
+
+🛒 10. Orders
+Purpose: Track all device buyback requests from users.
+
+🔧 Functions:
+View All Orders: ID | User | Device | Status | Value
+
+Search/Filter by Status (Pending, Verified, Picked, Paid)
+
+Assign Pickup Partner / Approve Offer / Reject
+
+Export Order Reports
