@@ -855,8 +855,8 @@ export class DatabaseStorage implements IStorage {
       const [newAnswer] = await db.insert(conditionAnswers)
         .values({
           question_id: answerData.question_id,
-          answer: answerData.text,
-          impact: answerData.value,
+          answer: answerData.text || answerData.value?.toString() || 'Option', // Use fallback for null values
+          impact: answerData.value || '0', // Use fallback for null values
           order: answerData.order || 1,
           created_at: new Date(),
           updated_at: new Date(),

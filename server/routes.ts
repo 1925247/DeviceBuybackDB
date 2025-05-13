@@ -424,9 +424,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { options, ...questionData } = req.body;
       
       // Convert device_type_id to deviceTypeId
+      let deviceTypeId = questionData.device_type_id || questionData.deviceTypeId;
+      // Ensure we have a valid number
+      if (deviceTypeId) {
+        deviceTypeId = parseInt(deviceTypeId, 10);
+        if (isNaN(deviceTypeId)) {
+          deviceTypeId = 1; // Default to first device type if invalid
+        }
+      } else {
+        deviceTypeId = 1; // Default to first device type if missing
+      }
+      
       const formattedQuestionData = {
         ...questionData,
-        deviceTypeId: Number(questionData.device_type_id),
+        deviceTypeId: deviceTypeId,
       };
       
       delete formattedQuestionData.device_type_id;

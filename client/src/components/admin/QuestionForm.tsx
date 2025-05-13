@@ -147,7 +147,7 @@ export default function QuestionForm({
       <div className="space-y-2">
         <Label htmlFor="deviceTypeId">Device Type</Label>
         <Select 
-          value={formData.deviceTypeId.toString()} 
+          value={(formData.deviceTypeId || '').toString()} 
           onValueChange={handleDeviceTypeChange}
         >
           <SelectTrigger>
