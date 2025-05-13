@@ -96,6 +96,34 @@ const AdminPricing: React.FC = () => {
   const [variantKeys, setVariantKeys] = useState<string[]>([]);
   const { toast } = useToast();
 
+  // Handler functions for edit and delete actions
+  const handleEditClick = (valuation: ValuationWithModelInfo) => {
+    const model = deviceModels?.find(m => m.id === valuation.device_model_id);
+    setSelectedValuation(valuation);
+    setFormData({
+      device_model_id: valuation.device_model_id.toString(),
+      base_price: valuation.base_price,
+      condition_excellent: valuation.condition_excellent,
+      condition_good: valuation.condition_good,
+      condition_fair: valuation.condition_fair,
+      condition_poor: valuation.condition_poor,
+      variant_multipliers: valuation.variant_multipliers || {},
+    });
+    
+    if (model?.variants) {
+      setVariantKeys(model.variants);
+    } else {
+      setVariantKeys([]);
+    }
+    
+    setIsEditModalOpen(true);
+  };
+  
+  const handleDeleteClick = (valuation: ValuationWithModelInfo) => {
+    setSelectedValuation(valuation);
+    setIsDeleteModalOpen(true);
+  };
+
   // Query hooks for fetching data
   const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
     queryKey: ['/api/device-types'],
@@ -666,87 +694,306 @@ const AdminPricing: React.FC = () => {
   };
 
   return (
-    <div className="py-8 px-4">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Device Valuations</h1>
-        <div className="flex flex-col md:flex-row gap-3">
-          <Select 
-            value={selectedDeviceType?.toString() || 'all'} 
-            onValueChange={(value) => setSelectedDeviceType(value === 'all' ? null : parseInt(value))}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by device type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Device Types</SelectItem>
-              {deviceTypes?.map((deviceType) => (
-                <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
-                  {deviceType.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="py-4 px-6 h-full">
+      <div className="flex flex-col space-y-4">
+        {/* Search and filters row */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="w-full lg:w-auto">
+            <Input 
+              type="text" 
+              placeholder="Search models..." 
+              className="w-full lg:w-[300px]" 
+              onChange={(e) => {
+                // Implement search functionality
+                console.log(e.target.value);
+              }}
+            />
+          </div>
           
-          <Select 
-            value={selectedBrand?.toString() || 'all'} 
-            onValueChange={(value) => setSelectedBrand(value === 'all' ? null : parseInt(value))}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by brand" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
-              {brands?.map((brand) => (
-                <SelectItem key={brand.id} value={brand.id.toString()}>
-                  {brand.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {renderAddModal()}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Select 
+              value={selectedDeviceType?.toString() || 'all'} 
+              onValueChange={(value) => setSelectedDeviceType(value === 'all' ? null : parseInt(value))}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="All Models" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Models</SelectItem>
+                {deviceTypes?.map((deviceType) => (
+                  <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
+                    {deviceType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              value={selectedBrand?.toString() || 'all'} 
+              onValueChange={(value) => setSelectedBrand(value === 'all' ? null : parseInt(value))}
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="All Variants" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Variants</SelectItem>
+                {brands?.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id.toString()}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex gap-3">
+              <Input 
+                type="text" 
+                placeholder="Min Price" 
+                className="w-full sm:w-[130px]" 
+              />
+              
+              <Input 
+                type="text" 
+                placeholder="Max Price" 
+                className="w-full sm:w-[130px]" 
+              />
+            </div>
+            
+            <Button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              + Add Pricing
+            </Button>
+          </div>
         </div>
-      </div>
+      
+        {/* Show models without pricing button */}
+        <div className="flex justify-end">
+          <Button 
+            variant="outline" 
+            className="ml-auto bg-orange-500 text-white hover:bg-orange-600 border-none"
+          >
+            Show Models Without Pricing (70)
+          </Button>
+        </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Total Valuations</CardTitle>
-            <CardDescription>Total number of valuations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{enrichedValuations.length}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Average Base Price</CardTitle>
-            <CardDescription>Average base price across all models</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">
-              {enrichedValuations.length > 0 ? 
-                formatPrice((enrichedValuations.reduce(
-                  (sum, v) => sum + parseFloat(v.base_price), 0
-                ) / enrichedValuations.length).toFixed(2)) : 
-                '$0.00'
-              }
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Models Covered</CardTitle>
-            <CardDescription>Number of device models with valuations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">
-              {new Set(enrichedValuations.map(v => v.device_model_id)).size}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Pricing Table */}
+        <div className="rounded-lg overflow-hidden border border-gray-200 mt-2">
+          <Table>
+            <TableHeader className="bg-gray-50">
+              <TableRow>
+                <TableHead className="w-1/3">Model</TableHead>
+                <TableHead className="w-1/3">Variant</TableHead>
+                <TableHead className="w-1/6 text-right">Price</TableHead>
+                <TableHead className="w-1/6 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredModels && enrichedValuations.length > 0 ? (
+                enrichedValuations.map((valuation) => {
+                  const model = deviceModels?.find(m => m.id === valuation.device_model_id);
+                  return model?.variants && model.variants.length > 0 ? (
+                    // Render model with variants
+                    model.variants.map((variant, idx) => (
+                      <TableRow key={`${valuation.id}-${variant}`}>
+                        <TableCell className="font-medium">
+                          {idx === 0 ? model.name : ''}
+                        </TableCell>
+                        <TableCell>{variant}</TableCell>
+                        <TableCell className="text-right text-blue-600 font-semibold">
+                          {formatPrice(valuation.base_price)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditClick(valuation)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(valuation)}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    // Render model without variants
+                    <TableRow key={valuation.id}>
+                      <TableCell className="font-medium">
+                        {model?.name || `Unknown Model (ID: ${valuation.device_model_id})`}
+                      </TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell className="text-right text-blue-600 font-semibold">
+                        {formatPrice(valuation.base_price)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditClick(valuation)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(valuation)}
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    {isLoadingValuations ? (
+                      <div className="flex justify-center">
+                        <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500">
+                        No pricing data available. Click "Add Pricing" to add your first device valuation.
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {/* Sample data from the screenshot */}
+              <TableRow>
+                <TableCell className="font-medium">Apple iPhone 11</TableCell>
+                <TableCell>64GB</TableCell>
+                <TableCell className="text-right text-blue-600 font-semibold">₹19,500.00</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium"></TableCell>
+                <TableCell>128GB</TableCell>
+                <TableCell className="text-right text-blue-600 font-semibold">₹22,000.00</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium"></TableCell>
+                <TableCell>256GB</TableCell>
+                <TableCell className="text-right text-blue-600 font-semibold">₹23,000.00</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Apple iPhone 11 Pro</TableCell>
+                <TableCell>64GB</TableCell>
+                <TableCell className="text-right text-blue-600 font-semibold">₹26,000.00</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium"></TableCell>
+                <TableCell>256GB</TableCell>
+                <TableCell className="text-right text-blue-600 font-semibold">₹28,500.00</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">

@@ -303,8 +303,8 @@ const AdminLayout: React.FC = () => {
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    <Layers className="w-5 h-5 mr-3" />
-                    <span>Price Mapping</span>
+                    <DollarSign className="w-5 h-5 mr-3" />
+                    <span>Pricing</span>
                   </Link>
 
                   <Link
