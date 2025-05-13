@@ -32,7 +32,8 @@ import BlogPage from "./pages/BlogPage";
 import UserLogin from "./pages/UserLogin";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
-import ShopPage from "./pages/shop";
+// Import using named export
+import { default as ShopPage } from "./pages/shop";
 
 // Shop Flow Pages
 import BuyHome from "./pages/Shop/BuyHome";

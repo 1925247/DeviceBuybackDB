@@ -1,6 +1,7 @@
 // /pages/shop/BuyHome.tsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { ShoppingCart, Smartphone, ArrowRight, Heart } from "lucide-react";
 
 const BuyHome: React.FC = () => {
   return (
@@ -23,7 +24,7 @@ const BuyHome: React.FC = () => {
             quality and support.
           </p>
           <Link
-            to="/buy/products"
+            to="/shop/products"
             className="inline-block bg-white text-indigo-600 px-8 sm:px-10 py-3 sm:py-4 rounded-full font-bold shadow-xl hover:bg-gray-200 transition-all"
           >
             Explore Products
@@ -71,7 +72,7 @@ const BuyHome: React.FC = () => {
                   Grab the latest smartphones at half the price!
                 </p>
                 <Link
-                  to="/buy/products"
+                  to="/shop/products"
                   className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-indigo-700 transition"
                 >
                   Shop Now
@@ -199,6 +200,53 @@ const BuyHome: React.FC = () => {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Shop Categories Banner */}
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-700 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+            Explore Our Shop Categories
+          </h3>
+          <p className="text-white/90 text-lg mb-8 max-w-3xl mx-auto">
+            Browse through our extensive collection of certified refurbished devices. 
+            Find premium smartphones, tablets, laptops and more at unbeatable prices.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl hover:bg-white/20 transition">
+              <Smartphone className="h-10 w-10 text-white mx-auto mb-4" />
+              <h4 className="text-xl font-semibold text-white">Smartphones</h4>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl hover:bg-white/20 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="4" y="2" width="16" height="20" rx="2" />
+                <line x1="12" y1="18" x2="12" y2="18.01" />
+              </svg>
+              <h4 className="text-xl font-semibold text-white">Tablets</h4>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl hover:bg-white/20 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="2" y1="20" x2="22" y2="20" />
+              </svg>
+              <h4 className="text-xl font-semibold text-white">Laptops</h4>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl hover:bg-white/20 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 18c.5 0 1-.2 1.4-.6.4-.4.6-.9.6-1.4a2 2 0 0 0-4 0c0 .5.2 1 .6 1.4.4.4.9.6 1.4.6Z" />
+                <path d="M16 6H8a2 2 0 0 0-2 2v8c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z" />
+                <path d="M5 10H2" />
+                <path d="M5 14H2" />
+                <path d="M22 10h-3" />
+                <path d="M22 14h-3" />
+              </svg>
+              <h4 className="text-xl font-semibold text-white">Accessories</h4>
+            </div>
+          </div>
+          <Link to="/shop/products" className="inline-flex items-center bg-white text-indigo-700 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition">
+            Visit Our Shop <ArrowRight className="ml-2 h-5 w-5" />
+          </Link>
         </div>
       </section>
 
