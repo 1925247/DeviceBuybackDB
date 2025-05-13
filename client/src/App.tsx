@@ -49,6 +49,7 @@ const ShopPage = BuyHome;
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDevices from "./pages/admin/AdminDevices";
+import AdminDeviceTypes from "./pages/admin/AdminDeviceTypes";
 import AdminBrands from "./pages/admin/AdminBrands";
 import AdminModels from "./pages/admin/AdminModels";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -441,7 +442,7 @@ function App() {
                   <Route index element={<AdminDashboard />} />
 
                   {/* Device Management */}
-                  <Route path="device-types" element={<AdminDevices />} />
+                  <Route path="device-types" element={<AdminDeviceTypes />} />
                   <Route path="brands" element={<AdminBrands />} />
                   <Route path="models" element={<AdminModels />} />
                   <Route path="device-models" element={<AdminModels />} />
