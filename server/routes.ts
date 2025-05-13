@@ -236,10 +236,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid brand ID" });
       }
       
-      const success = await storage.deleteBrand(brandId);
+      const result = await storage.deleteBrand(brandId);
       
-      if (!success) {
-        return res.status(404).json({ message: "Brand not found or could not be deleted" });
+      if (!result.success) {
+        // If there's a specific error about dependencies, return 409 Conflict
+        if (result.error && result.error.includes('associated')) {
+          return res.status(409).json({ message: result.error });
+        }
+        // Otherwise assume not found or general error
+        return res.status(404).json({ message: result.error || "Brand not found or could not be deleted" });
       }
       
       res.status(200).json({ message: "Brand deleted successfully" });

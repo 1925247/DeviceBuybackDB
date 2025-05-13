@@ -87,7 +87,7 @@ export interface IStorage {
   getBrand(id: number): Promise<Brand | undefined>;
   createBrand(data: { name: string; slug: string; logo?: string }): Promise<Brand>;
   updateBrand(id: number, data: { name: string; slug: string; logo?: string }): Promise<Brand | undefined>;
-  deleteBrand(id: number): Promise<boolean>;
+  deleteBrand(id: number): Promise<{ success: boolean; error?: string }>;
   
   // Device models operations
   getDeviceModels(): Promise<DeviceModel[]>;
@@ -536,16 +536,58 @@ export class DatabaseStorage implements IStorage {
     return updatedBrand;
   }
   
-  async deleteBrand(id: number): Promise<boolean> {
+  async deleteBrand(id: number): Promise<{ success: boolean; error?: string }> {
     try {
+      // First check if there are device models that use this brand
+      const relatedModels = await db
+        .select({ id: deviceModels.id })
+        .from(deviceModels)
+        .where(eq(deviceModels.brand_id, id));
+      
+      if (relatedModels.length > 0) {
+        return { 
+          success: false, 
+          error: `Cannot delete brand that has ${relatedModels.length} associated device models. Please delete the models first.` 
+        };
+      }
+      
+      // Check if there are any brand_device_types relations
+      const brandDeviceTypeTable = db.dynamic.ref('brand_device_types');
+      const brandDeviceTypes = await db.execute(
+        sql`SELECT * FROM ${brandDeviceTypeTable} WHERE brand_id = ${id}`
+      );
+      
+      if (brandDeviceTypes.rowCount && brandDeviceTypes.rowCount > 0) {
+        return {
+          success: false,
+          error: `Cannot delete brand that has device type associations. Please remove these associations first.`
+        };
+      }
+      
+      // Now safe to delete
       const [deletedBrand] = await db
         .delete(brands)
         .where(eq(brands.id, id))
         .returning({ id: brands.id });
-      return !!deletedBrand;
+        
+      return { success: !!deletedBrand };
     } catch (error) {
       console.error("Error deleting brand:", error);
-      return false;
+      
+      // Check for foreign key violation error
+      if (error instanceof Error && error.message.includes('violates foreign key constraint')) {
+        if (error.message.includes('brand_device_types')) {
+          return {
+            success: false,
+            error: `Cannot delete brand that has device type associations. Please remove these associations first.`
+          };
+        }
+      }
+      
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "An unknown error occurred" 
+      };
     }
   }
 

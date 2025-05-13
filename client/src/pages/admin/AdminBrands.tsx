@@ -130,12 +130,18 @@ const AdminBrands: React.FC = () => {
         method: 'DELETE',
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete brand');
+        // Handle specific error cases
+        if (response.status === 409) {
+          throw new Error(data.message || 'Cannot delete brand that has associated models. Please delete the models first.');
+        } else {
+          throw new Error(data.message || 'Failed to delete brand');
+        }
       }
       
-      return response.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/brands'] });
@@ -152,6 +158,7 @@ const AdminBrands: React.FC = () => {
         description: error.message,
         variant: 'destructive',
       });
+      // Don't close the modal on error so user can try again
     },
   });
 
@@ -390,7 +397,12 @@ const AdminBrands: React.FC = () => {
   );
 
   const renderDeleteModal = () => (
-    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+    <Dialog open={isDeleteModalOpen} onOpenChange={(open) => {
+      // Only allow closing if we're not in the middle of deletion
+      if (!deleteBrandMutation.isPending) {
+        setIsDeleteModalOpen(open);
+      }
+    }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Brand</DialogTitle>
@@ -399,12 +411,38 @@ const AdminBrands: React.FC = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <p className="font-medium">
-            {selectedBrand?.name}
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-medium text-lg">{selectedBrand?.name}</span>
+            {selectedBrand?.logo && (
+              <img 
+                src={selectedBrand.logo} 
+                alt={`${selectedBrand.name} logo`} 
+                className="h-6 w-auto"
+              />
+            )}
+          </div>
+          
+          {deleteBrandMutation.error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+              <p className="font-medium mb-1">Error:</p>
+              <p>{deleteBrandMutation.error.message}</p>
+              
+              {deleteBrandMutation.error.message.includes('models associated') && (
+                <div className="mt-2 text-xs">
+                  <p className="font-medium">Recommendation:</p>
+                  <p>Please delete all device models associated with this brand first, then try again.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setIsDeleteModalOpen(false)}
+            disabled={deleteBrandMutation.isPending}
+          >
             Cancel
           </Button>
           <Button 
