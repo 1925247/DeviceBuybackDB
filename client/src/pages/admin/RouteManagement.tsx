@@ -383,7 +383,7 @@ const RouteManagement: React.FC = () => {
               <SelectValue placeholder="Select partner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {partners?.map((partner) => (
                 <SelectItem key={partner.id} value={partner.id.toString()}>
                   {partner.name}
@@ -403,7 +403,7 @@ const RouteManagement: React.FC = () => {
               <SelectValue placeholder="Select region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {regions?.map((region) => (
                 <SelectItem key={region.id} value={region.id.toString()}>
                   {region.name} ({region.code})
@@ -502,7 +502,7 @@ const RouteManagement: React.FC = () => {
                 <SelectValue placeholder="Select partner" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {partners?.map((partner) => (
                   <SelectItem key={partner.id} value={partner.id.toString()}>
                     {partner.name}
@@ -522,7 +522,7 @@ const RouteManagement: React.FC = () => {
                 <SelectValue placeholder="Select region" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {regions?.map((region) => (
                   <SelectItem key={region.id} value={region.id.toString()}>
                     {region.name} ({region.code})
