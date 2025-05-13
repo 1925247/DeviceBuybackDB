@@ -2048,6 +2048,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Invoice Templates
+  app.get(apiRouter("/invoice-templates"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = req.query.partner_id ? parseInt(req.query.partner_id as string) : undefined;
+      const templates = await storage.getInvoiceTemplates(partnerId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error getting invoice templates:", error);
+      res.status(500).json({ message: "Failed to get invoice templates" });
+    }
+  });
+
+  app.get(apiRouter("/invoice-templates/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const template = await storage.getInvoiceTemplate(id);
+      if (!template) {
+        return res.status(404).json({ message: "Invoice template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error getting invoice template:", error);
+      res.status(500).json({ message: "Failed to get invoice template" });
+    }
+  });
+
+  app.post(apiRouter("/invoice-templates"), async (req: Request, res: Response) => {
+    try {
+      const data = validateRequest<InsertInvoiceTemplate>(insertInvoiceTemplateSchema, req.body);
+      
+      // If this is a default template, unset default flag on all other templates
+      if (data.is_default) {
+        await storage.unsetDefaultInvoiceTemplates(data.partner_id);
+      }
+      
+      const template = await storage.createInvoiceTemplate(data);
+      res.status(201).json(template);
+    } catch (error: any) {
+      if (error.issues) {
+        return res.status(400).json({ message: "Validation failed", errors: error.issues });
+      }
+      console.error("Error creating invoice template:", error);
+      res.status(500).json({ message: "Failed to create invoice template" });
+    }
+  });
+
+  app.put(apiRouter("/invoice-templates/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = validateRequest<Partial<InsertInvoiceTemplate>>(
+        insertInvoiceTemplateSchema.partial(), 
+        req.body
+      );
+      
+      // If this is being set as default, unset default flag on all other templates
+      if (data.is_default) {
+        await storage.unsetDefaultInvoiceTemplates(data.partner_id);
+      }
+      
+      const template = await storage.updateInvoiceTemplate(id, data);
+      if (!template) {
+        return res.status(404).json({ message: "Invoice template not found" });
+      }
+      res.json(template);
+    } catch (error: any) {
+      if (error.issues) {
+        return res.status(400).json({ message: "Validation failed", errors: error.issues });
+      }
+      console.error("Error updating invoice template:", error);
+      res.status(500).json({ message: "Failed to update invoice template" });
+    }
+  });
+
+  app.delete(apiRouter("/invoice-templates/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInvoiceTemplate(id);
+      if (!success) {
+        return res.status(404).json({ message: "Invoice template not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting invoice template:", error);
+      res.status(500).json({ message: "Failed to delete invoice template" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

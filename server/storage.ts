@@ -15,10 +15,12 @@ import {
   productImages, type ProductImage, type InsertProductImage,
   categories, type Category, type InsertCategory,
   discounts, type Discount, type InsertDiscount,
-  settings, type Setting, type InsertSetting
+  settings, type Setting, type InsertSetting,
+  invoiceTemplates, type InvoiceTemplate, type InsertInvoiceTemplate,
+  partners
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, sql, like, ilike, count } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";
 
 // Interface for database operations
 export interface IStorage {
@@ -31,6 +33,15 @@ export interface IStorage {
   getUsersCount(): Promise<number>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Invoice template operations
+  getInvoiceTemplates(partnerId?: number): Promise<InvoiceTemplate[]>;
+  getInvoiceTemplate(id: number): Promise<InvoiceTemplate | undefined>;
+  getDefaultInvoiceTemplate(partnerId?: number): Promise<InvoiceTemplate | undefined>;
+  createInvoiceTemplate(template: InsertInvoiceTemplate): Promise<InvoiceTemplate>;
+  updateInvoiceTemplate(id: number, template: Partial<InsertInvoiceTemplate>): Promise<InvoiceTemplate | undefined>;
+  deleteInvoiceTemplate(id: number): Promise<boolean>;
+  unsetDefaultInvoiceTemplates(partnerId?: number): Promise<void>;
   
   // Device operations
   getDevice(id: number): Promise<Device | undefined>;
@@ -1559,6 +1570,131 @@ export class DatabaseStorage implements IStorage {
     }
     
     return discount;
+  }
+
+  // Invoice Template operations
+  async getInvoiceTemplates(partnerId?: number): Promise<InvoiceTemplate[]> {
+    let query = db.select().from(invoiceTemplates);
+    
+    if (partnerId !== undefined) {
+      // If partnerId is provided, get templates specific to that partner
+      // or templates with null partner_id (global templates)
+      query = query.where(
+        or(
+          eq(invoiceTemplates.partner_id, partnerId),
+          isNull(invoiceTemplates.partner_id)
+        )
+      );
+    }
+    
+    const templates = await query;
+    return templates;
+  }
+
+  async getInvoiceTemplate(id: number): Promise<InvoiceTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(invoiceTemplates)
+      .where(eq(invoiceTemplates.id, id));
+    return template;
+  }
+
+  async getDefaultInvoiceTemplate(partnerId?: number): Promise<InvoiceTemplate | undefined> {
+    let query = db
+      .select()
+      .from(invoiceTemplates)
+      .where(eq(invoiceTemplates.is_default, true));
+    
+    if (partnerId) {
+      // If partner ID is provided, try to find partner-specific default template
+      query = query.where(eq(invoiceTemplates.partner_id, partnerId));
+    } else {
+      // Otherwise get global default template
+      query = query.where(isNull(invoiceTemplates.partner_id));
+    }
+    
+    const [template] = await query;
+    
+    // If no partner-specific default found, fall back to global default
+    if (!template && partnerId) {
+      const [globalDefault] = await db
+        .select()
+        .from(invoiceTemplates)
+        .where(eq(invoiceTemplates.is_default, true))
+        .where(isNull(invoiceTemplates.partner_id));
+      
+      return globalDefault;
+    }
+    
+    return template;
+  }
+
+  async createInvoiceTemplate(template: InsertInvoiceTemplate): Promise<InvoiceTemplate> {
+    const [newTemplate] = await db
+      .insert(invoiceTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+
+  async updateInvoiceTemplate(id: number, template: Partial<InsertInvoiceTemplate>): Promise<InvoiceTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(invoiceTemplates)
+      .set({
+        ...template,
+        updated_at: new Date()
+      })
+      .where(eq(invoiceTemplates.id, id))
+      .returning();
+    
+    return updatedTemplate;
+  }
+
+  async deleteInvoiceTemplate(id: number): Promise<boolean> {
+    try {
+      const [template] = await db
+        .select()
+        .from(invoiceTemplates)
+        .where(eq(invoiceTemplates.id, id));
+      
+      // Don't allow deletion of the only default template
+      if (template.is_default) {
+        const defaultCount = await db
+          .select({ count: count() })
+          .from(invoiceTemplates)
+          .where(eq(invoiceTemplates.is_default, true))
+          .then(result => result[0].count);
+        
+        if (defaultCount <= 1) {
+          throw new Error("Cannot delete the only default template");
+        }
+      }
+      
+      await db.delete(invoiceTemplates).where(eq(invoiceTemplates.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting invoice template:", error);
+      return false;
+    }
+  }
+
+  async unsetDefaultInvoiceTemplates(partnerId?: number): Promise<void> {
+    let query = db
+      .update(invoiceTemplates)
+      .set({ 
+        is_default: false,
+        updated_at: new Date()
+      });
+    
+    if (partnerId) {
+      // If partner ID is provided, only update partner-specific templates
+      query = query.where(eq(invoiceTemplates.partner_id, partnerId));
+    } else {
+      // Otherwise update global templates
+      query = query.where(isNull(invoiceTemplates.partner_id));
+    }
+    
+    await query;
   }
 }
 
