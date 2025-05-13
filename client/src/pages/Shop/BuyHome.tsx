@@ -1,6 +1,6 @@
-// /pages/buy/BuyHome.tsx
-import React from 'react';
-import { Link } from 'react-router-dom';
+// /pages/shop/BuyHome.tsx
+import React from "react";
+import { Link } from "react-router-dom";
 
 const BuyHome: React.FC = () => {
   return (
@@ -10,7 +10,7 @@ const BuyHome: React.FC = () => {
         className="relative h-[90vh] flex items-center justify-center bg-cover bg-center"
         style={{
           backgroundImage:
-            "url('https://img.freepik.com/free-vector/abstract-colorful-sales-banner_23-2148335697.jpg?t=st=1742560953~exp=1742564553~hmac=e6e027c0d417b2e6fb6212ee896222e24ba4fcd84343894945cbf2d5cc63bdb7&w=13800')"
+            "url('https://img.freepik.com/free-vector/abstract-colorful-sales-banner_23-2148335697.jpg?t=st=1742560953~exp=1742564553~hmac=e6e027c0d417b2e6fb6212ee896222e24ba4fcd84343894945cbf2d5cc63bdb7&w=13800')",
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
@@ -19,7 +19,8 @@ const BuyHome: React.FC = () => {
             Welcome to Our Buy Zone
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-200 drop-shadow-md mb-8 max-w-2xl mx-auto">
-            Discover exclusive deals on the latest devices with unmatched quality and support.
+            Discover exclusive deals on the latest devices with unmatched
+            quality and support.
           </p>
           <Link
             to="/buy/products"
@@ -40,8 +41,10 @@ const BuyHome: React.FC = () => {
             Why Choose Us?
           </h3>
           <p className="text-base sm:text-lg text-gray-600">
-            We deliver a hassle-free buying experience with competitive pricing, certified quality, and exceptional support.
-            Trusted by thousands, our platform ensures reliability and superior customer service every time.
+            We deliver a hassle-free buying experience with competitive pricing,
+            certified quality, and exceptional support. Trusted by thousands,
+            our platform ensures reliability and superior customer service every
+            time.
           </p>
         </div>
       </section>
@@ -90,7 +93,7 @@ const BuyHome: React.FC = () => {
                   Save more with exclusive laptop bundles.
                 </p>
                 <Link
-                  to="/buy/products"
+                  to="/shop/products"
                   className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-indigo-700 transition"
                 >
                   Explore Bundles
@@ -112,7 +115,7 @@ const BuyHome: React.FC = () => {
                   Upgrade to the latest tablets at unbeatable prices.
                 </p>
                 <Link
-                  to="/buy/products"
+                  to="/shop/products"
                   className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-indigo-700 transition"
                 >
                   View Offers
@@ -137,11 +140,15 @@ const BuyHome: React.FC = () => {
                 alt="Product One"
                 className="w-full h-48 object-cover rounded-lg mb-4"
               />
-              <h4 className="text-2xl font-bold text-gray-800 mb-2">Product One</h4>
-              <p className="text-gray-600 mb-2">High-quality, latest tech device.</p>
+              <h4 className="text-2xl font-bold text-gray-800 mb-2">
+                Product One
+              </h4>
+              <p className="text-gray-600 mb-2">
+                High-quality, latest tech device.
+              </p>
               <p className="text-lg font-semibold text-indigo-600 mb-4">$999</p>
               <Link
-                to="/buy/checkout"
+                to="/shop/checkout"
                 className="block text-center py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition"
               >
                 Buy Now
@@ -154,11 +161,15 @@ const BuyHome: React.FC = () => {
                 alt="Product Two"
                 className="w-full h-48 object-cover rounded-lg mb-4"
               />
-              <h4 className="text-2xl font-bold text-gray-800 mb-2">Product Two</h4>
-              <p className="text-gray-600 mb-2">Reliable and affordable device.</p>
+              <h4 className="text-2xl font-bold text-gray-800 mb-2">
+                Product Two
+              </h4>
+              <p className="text-gray-600 mb-2">
+                Reliable and affordable device.
+              </p>
               <p className="text-lg font-semibold text-indigo-600 mb-4">$799</p>
               <Link
-                to="/buy/checkout"
+                to="/shop/checkout"
                 className="block text-center py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition"
               >
                 Buy Now
@@ -171,11 +182,17 @@ const BuyHome: React.FC = () => {
                 alt="Product Three"
                 className="w-full h-48 object-cover rounded-lg mb-4"
               />
-              <h4 className="text-2xl font-bold text-gray-800 mb-2">Product Three</h4>
-              <p className="text-gray-600 mb-2">Top-rated device with premium features.</p>
-              <p className="text-lg font-semibold text-indigo-600 mb-4">$1299</p>
+              <h4 className="text-2xl font-bold text-gray-800 mb-2">
+                Product Three
+              </h4>
+              <p className="text-gray-600 mb-2">
+                Top-rated device with premium features.
+              </p>
+              <p className="text-lg font-semibold text-indigo-600 mb-4">
+                $1299
+              </p>
               <Link
-                to="/buy/checkout"
+                to="/shop/checkout"
                 className="block text-center py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition"
               >
                 Buy Now
@@ -194,19 +211,24 @@ const BuyHome: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
               <p className="text-gray-600 italic mb-6">
-                "Amazing service and unbeatable prices. My new device arrived quickly and works flawlessly!"
+                "Amazing service and unbeatable prices. My new device arrived
+                quickly and works flawlessly!"
               </p>
               <div className="font-bold text-gray-800 text-xl">— Sarah J.</div>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
               <p className="text-gray-600 italic mb-6">
-                "The buying process was smooth and transparent. I highly recommend this platform to anyone looking for quality devices."
+                "The buying process was smooth and transparent. I highly
+                recommend this platform to anyone looking for quality devices."
               </p>
-              <div className="font-bold text-gray-800 text-xl">— Michael C.</div>
+              <div className="font-bold text-gray-800 text-xl">
+                — Michael C.
+              </div>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
               <p className="text-gray-600 italic mb-6">
-                "I love how easy it is to find the perfect device. Great deals, excellent customer support, and fast delivery!"
+                "I love how easy it is to find the perfect device. Great deals,
+                excellent customer support, and fast delivery!"
               </p>
               <div className="font-bold text-gray-800 text-xl">— Priya S.</div>
             </div>

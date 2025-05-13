@@ -1,73 +1,79 @@
 // src/App.tsx
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ModelsProvider } from './contexts/ModelsContext';
+import { ModelsProvider } from "./contexts/ModelsContext";
 
 // Shared Components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 // Client Pages
-import HomePage from './pages/HomePage';
-import DeviceSelectionPage from './pages/DeviceSelectionPage';
-import DeviceSelection from './pages/sell/DeviceSelection';
-import ModelSelectionPage from './pages/ModelSelectionPage';
-import ConditionAssessmentPage from './pages/ConditionAssessmentPage';
-import ValuationPage from './pages/ValuationPage';
-import CheckoutPage from './pages/CheckoutPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import FAQPage from './pages/FAQPage';
-import BlogPage from './pages/BlogPage';
-import UserLogin from './pages/UserLogin';
-import LoginPage from './pages/LoginPage';
-import ProfilePage from './pages/ProfilePage';
-import ShopPage from './pages/shop';
+import HomePage from "./pages/HomePage";
+import DeviceSelectionPage from "./pages/DeviceSelectionPage";
+import DeviceSelection from "./pages/sell/DeviceSelection";
+import ModelSelectionPage from "./pages/ModelSelectionPage";
+import ConditionAssessmentPage from "./pages/ConditionAssessmentPage";
+import ValuationPage from "./pages/ValuationPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import FAQPage from "./pages/FAQPage";
+import BlogPage from "./pages/BlogPage";
+import UserLogin from "./pages/UserLogin";
+import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
+import ShopPage from "./pages/shop";
 
-// Buy Flow Pages
-import BuyHome from './pages/buy/BuyHome';
-import BuyProduct from './pages/buy/BuyProduct';
-import BuyCheckout from './pages/buy/BuyCheckout';
-import BuyPayment from './pages/buy/BuyPayment';
-import BuyInvoice from './pages/buy/BuyInvoice';
-import ProductDetails from './pages/buy/ProductDetails';
+// Shop Flow Pages
+import BuyHome from "./pages/Shop/BuyHome";
+import BuyProduct from "./pages/Shop/BuyProduct";
+import BuyCheckout from "./pages/Shop/BuyCheckout";
+import BuyPayment from "./pages/Shop/BuyPayment";
+import BuyInvoice from "./pages/Shop/BuyInvoice";
+import ProductDetails from "./pages/Shop/ProductDetails";
 
 // Admin Panel Pages
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminDevices from './pages/admin/AdminDevices';
-import AdminBrands from './pages/admin/AdminBrands';
-import AdminModels from './pages/admin/AdminModels';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminPricing from './pages/admin/AdminPricing';
-import AdminConfig from './pages/admin/AdminConfig';
-import AdminCQS from './pages/admin/AdminCQS';
-import AdminDiagnostic from './pages/admin/AdminDiagnostic';
-import AdminBuybacks from './pages/admin/AdminBuybacks';
-import ConditionQuestionsAdmin from './pages/admin/ConditionQuestionsAdmin';
-import RegionsManagement from './pages/admin/RegionsManagement';
-import UserRoleManagement from './pages/admin/UserRoleManagement';
-import RouteManagement from './pages/admin/RouteManagement';
-import AdminLayout from './components/admin/AdminLayout';
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDevices from "./pages/admin/AdminDevices";
+import AdminBrands from "./pages/admin/AdminBrands";
+import AdminModels from "./pages/admin/AdminModels";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminPricing from "./pages/admin/AdminPricing";
+import AdminConfig from "./pages/admin/AdminConfig";
+import AdminCQS from "./pages/admin/AdminCQS";
+import AdminDiagnostic from "./pages/admin/AdminDiagnostic";
+import AdminBuybacks from "./pages/admin/AdminBuybacks";
+import ConditionQuestionsAdmin from "./pages/admin/ConditionQuestionsAdmin";
+import RegionsManagement from "./pages/admin/RegionsManagement";
+import UserRoleManagement from "./pages/admin/UserRoleManagement";
+import RouteManagement from "./pages/admin/RouteManagement";
+import AdminLayout from "./components/admin/AdminLayout";
 
 // E-commerce Admin Pages
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminMarketplaceSettings from './pages/admin/AdminMarketplaceSettings';
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminMarketplaceSettings from "./pages/admin/AdminMarketplaceSettings";
 
 // Not Found Page
-import NotFound from './pages/NotFound';
+import NotFound from "./pages/NotFound";
 
 // Local protected route wrapper
 const LocalProtectedAdminRoute: React.FC = () => {
-  const sessionToken = sessionStorage.getItem('adminToken');
-  const persistentToken = localStorage.getItem('adminToken');
+  const sessionToken = sessionStorage.getItem("adminToken");
+  const persistentToken = localStorage.getItem("adminToken");
   const isAuthenticated = Boolean(sessionToken || persistentToken);
 
   return isAuthenticated ? <Outlet /> : <Navigate to="/admin/login" replace />;
@@ -75,11 +81,11 @@ const LocalProtectedAdminRoute: React.FC = () => {
 
 const AdminLogout: React.FC = () => {
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminToken');
-    localStorage.removeItem('adminData');
-    sessionStorage.removeItem('adminData');
-    window.location.href = '/admin/login';
+    localStorage.removeItem("adminToken");
+    sessionStorage.removeItem("adminToken");
+    localStorage.removeItem("adminData");
+    sessionStorage.removeItem("adminData");
+    window.location.href = "/admin/login";
   };
 
   return (
@@ -333,24 +339,8 @@ function App() {
                   </>
                 }
               />
-              
-              {/* Buy Flow Routes */}
               <Route
-                path="/buy"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ModelsProvider>
-                        <BuyHome />
-                      </ModelsProvider>
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/buy/products"
+                path="/shop/products"
                 element={
                   <>
                     <Navbar />
@@ -364,7 +354,7 @@ function App() {
                 }
               />
               <Route
-                path="/buy/details/:slug"
+                path="/shop/details/:slug"
                 element={
                   <>
                     <Navbar />
@@ -378,7 +368,7 @@ function App() {
                 }
               />
               <Route
-                path="/buy/checkout"
+                path="/shop/checkout"
                 element={
                   <>
                     <Navbar />
@@ -392,7 +382,7 @@ function App() {
                 }
               />
               <Route
-                path="/buy/payment"
+                path="/shop/payment"
                 element={
                   <>
                     <Navbar />
@@ -406,7 +396,7 @@ function App() {
                 }
               />
               <Route
-                path="/buy/invoice"
+                path="/shop/invoice"
                 element={
                   <>
                     <Navbar />
@@ -432,32 +422,50 @@ function App() {
                   }
                 >
                   <Route index element={<AdminDashboard />} />
-                  
+
                   {/* Device Management */}
                   <Route path="device-types" element={<AdminDevices />} />
                   <Route path="brands" element={<AdminBrands />} />
                   <Route path="models" element={<AdminModels />} />
                   <Route path="device-models" element={<AdminModels />} />
                   <Route path="devices" element={<AdminDevices />} />
-                  
+
                   {/* Buyback Program */}
                   <Route path="buyback" element={<AdminBuybacks />} />
-                  <Route path="condition-questions" element={<ConditionQuestionsAdmin />} />
+                  <Route
+                    path="condition-questions"
+                    element={<ConditionQuestionsAdmin />}
+                  />
                   <Route path="price-conditions" element={<AdminPricing />} />
                   <Route path="valuations" element={<AdminPricing />} />
                   <Route path="partner-program" element={<AdminBuybacks />} />
-                  
+
                   {/* E-commerce */}
                   <Route path="products" element={<AdminProducts />} />
-                  <Route path="product-categories" element={<AdminCategories />} />
+                  <Route
+                    path="product-categories"
+                    element={<AdminCategories />}
+                  />
                   <Route path="categories" element={<AdminCategories />} />
-                  <Route path="marketplace" element={<AdminMarketplaceSettings />} />
-                  <Route path="marketplace-settings" element={<AdminMarketplaceSettings />} />
+                  <Route
+                    path="marketplace"
+                    element={<AdminMarketplaceSettings />}
+                  />
+                  <Route
+                    path="marketplace-settings"
+                    element={<AdminMarketplaceSettings />}
+                  />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="discounts" element={<AdminDashboard />} />
                   <Route path="inventory" element={<AdminProducts />} />
-                  <Route path="shipping" element={<AdminMarketplaceSettings />} />
-                  <Route path="payments" element={<AdminMarketplaceSettings />} />
+                  <Route
+                    path="shipping"
+                    element={<AdminMarketplaceSettings />}
+                  />
+                  <Route
+                    path="payments"
+                    element={<AdminMarketplaceSettings />}
+                  />
                   <Route path="revolutionary" element={<AdminDevices />} />
                   <Route path="analytics" element={<AdminDashboard />} />
                   <Route path="campaigns" element={<AdminDashboard />} />
@@ -467,27 +475,30 @@ function App() {
                   <Route path="blog" element={<AdminDashboard />} />
                   <Route path="reviews" element={<AdminDashboard />} />
                   <Route path="security" element={<AdminSettings />} />
-                  
+
                   {/* Region & Partner Management */}
                   <Route path="regions" element={<RegionsManagement />} />
                   <Route path="partners" element={<AdminDashboard />} />
                   <Route path="partner-staff" element={<AdminUsers />} />
                   <Route path="pin-codes" element={<AdminDashboard />} />
-                  
+
                   {/* Questionnaires */}
                   <Route path="brand-questionnaires" element={<AdminCQS />} />
-                  
+
                   {/* Routes & Templates */}
                   <Route path="routes" element={<RouteManagement />} />
                   <Route path="store-templates" element={<AdminDashboard />} />
                   <Route path="store-themes" element={<AdminDashboard />} />
-                  <Route path="invoice-templates" element={<AdminDashboard />} />
-                  
+                  <Route
+                    path="invoice-templates"
+                    element={<AdminDashboard />}
+                  />
+
                   {/* User Management */}
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="user-roles" element={<UserRoleManagement />} />
                   <Route path="permissions" element={<UserRoleManagement />} />
-                  
+
                   {/* Other Settings */}
                   <Route path="faq" element={<AdminDashboard />} />
                   <Route path="settings" element={<AdminSettings />} />

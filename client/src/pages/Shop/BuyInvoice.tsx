@@ -1,6 +1,6 @@
-// /pages/buy/BuyInvoice.tsx
-import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
+// /pages/shop/BuyInvoice.tsx
+import React from "react";
+import { useLocation, Link } from "react-router-dom";
 
 interface InvoiceItem {
   id: string;
@@ -30,7 +30,10 @@ const BuyInvoice: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <p className="text-xl text-gray-600">No invoice available.</p>
-        <Link to="/buy/products" className="mt-4 text-indigo-600 hover:underline">
+        <Link
+          to="/shop/products"
+          className="mt-4 text-indigo-600 hover:underline"
+        >
           Back to Products
         </Link>
       </div>
@@ -43,20 +46,22 @@ const BuyInvoice: React.FC = () => {
         <h1 className="text-4xl font-bold mb-6 text-center">Invoice</h1>
         <div className="mb-6">
           <p>
-            <span className="font-bold">Invoice Number:</span> {invoice.invoiceNumber}
+            <span className="font-bold">Invoice Number:</span>{" "}
+            {invoice.invoiceNumber}
           </p>
           <p>
-            <span className="font-bold">Payment Date:</span> {invoice.paymentDate}
+            <span className="font-bold">Payment Date:</span>{" "}
+            {invoice.paymentDate}
           </p>
           <p>
-            <span className="font-bold">Payment Method:</span>{' '}
-            {invoice.paymentMethod === 'card'
-              ? 'Card Payment'
-              : invoice.paymentMethod === 'upi'
-              ? 'UPI / Net Banking'
-              : invoice.paymentMethod === 'netbanking'
-              ? 'Net Banking'
-              : 'Cash on Delivery'}
+            <span className="font-bold">Payment Method:</span>{" "}
+            {invoice.paymentMethod === "card"
+              ? "Card Payment"
+              : invoice.paymentMethod === "upi"
+                ? "UPI / Net Banking"
+                : invoice.paymentMethod === "netbanking"
+                  ? "Net Banking"
+                  : "Cash on Delivery"}
           </p>
         </div>
         <div className="mb-6">
@@ -73,17 +78,23 @@ const BuyInvoice: React.FC = () => {
               <div className="ml-4 flex-1">
                 <h3 className="text-lg font-bold">{item.name}</h3>
                 <p className="text-gray-600">Quantity: {item.quantity}</p>
-                <p className="text-indigo-600 font-semibold">${item.price.toFixed(2)}</p>
+                <p className="text-indigo-600 font-semibold">
+                  ${item.price.toFixed(2)}
+                </p>
               </div>
             </div>
           ))}
         </div>
         <div className="mb-6 text-right">
           <p className="text-lg font-medium">
-            Subtotal: <span className="font-bold">${invoice.subtotal.toFixed(2)}</span>
+            Subtotal:{" "}
+            <span className="font-bold">${invoice.subtotal.toFixed(2)}</span>
           </p>
           <p className="text-lg font-medium">
-            Shipping: <span className="font-bold">${invoice.shippingCost.toFixed(2)}</span>
+            Shipping:{" "}
+            <span className="font-bold">
+              ${invoice.shippingCost.toFixed(2)}
+            </span>
           </p>
           {invoice.discount > 0 && (
             <p className="text-lg font-medium text-green-600">
@@ -91,11 +102,15 @@ const BuyInvoice: React.FC = () => {
             </p>
           )}
           <p className="text-3xl font-bold mt-4">
-            Total: <span className="text-indigo-600">${invoice.total.toFixed(2)}</span>
+            Total:{" "}
+            <span className="text-indigo-600">${invoice.total.toFixed(2)}</span>
           </p>
         </div>
         <div className="text-center">
-          <Link to="/buy/products" className="text-indigo-600 hover:underline text-lg">
+          <Link
+            to="/shop/products"
+            className="text-indigo-600 hover:underline text-lg"
+          >
             Continue Shopping
           </Link>
         </div>

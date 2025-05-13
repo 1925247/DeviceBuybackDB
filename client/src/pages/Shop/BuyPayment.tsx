@@ -1,7 +1,7 @@
-// /pages/buy/PaymentPage.jsx
-import React, { useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { CreditCard, Banknote, DollarSign, Smartphone } from 'lucide-react';
+// /pages/shop/PaymentPage.jsx
+import React, { useState } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { CreditCard, Banknote, DollarSign, Smartphone } from "lucide-react";
 
 const BuyPayment = () => {
   const location = useLocation();
@@ -12,7 +12,10 @@ const BuyPayment = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <p className="text-xl text-gray-600">No items in your cart.</p>
-        <Link to="/buy/products" className="mt-4 text-indigo-600 hover:underline">
+        <Link
+          to="/shop/products"
+          className="mt-4 text-indigo-600 hover:underline"
+        >
           Back to Products
         </Link>
       </div>
@@ -20,15 +23,15 @@ const BuyPayment = () => {
   }
 
   // Payment method: 'card', 'upi', 'netbanking', or 'cod'
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [cardDetails, setCardDetails] = useState({
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
-    cardholder: '',
+    cardNumber: "",
+    expiry: "",
+    cvv: "",
+    cardholder: "",
   });
-  const [upiDetails, setUpiDetails] = useState({ upiId: '' });
-  const [netbankingDetails, setNetbankingDetails] = useState({ bank: '' });
+  const [upiDetails, setUpiDetails] = useState({ upiId: "" });
+  const [netbankingDetails, setNetbankingDetails] = useState({ bank: "" });
 
   const handleCardInputChange = (e) => {
     setCardDetails({ ...cardDetails, [e.target.name]: e.target.value });
@@ -43,14 +46,17 @@ const BuyPayment = () => {
   };
 
   // Order calculations
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0,
+  );
   const shippingCost = subtotal > 0 ? 50 : 0;
   const discount = 0; // For demo, no discount applied.
   const total = subtotal + shippingCost - discount;
 
   // Create invoice data with payment details based on method
   const createInvoiceData = () => ({
-    invoiceNumber: 'INV-' + Math.floor(Math.random() * 1000000),
+    invoiceNumber: "INV-" + Math.floor(Math.random() * 1000000),
     cart,
     subtotal,
     shippingCost,
@@ -58,33 +64,33 @@ const BuyPayment = () => {
     total,
     paymentMethod,
     paymentDetails:
-      paymentMethod === 'card'
+      paymentMethod === "card"
         ? cardDetails
-        : paymentMethod === 'upi'
-        ? upiDetails
-        : paymentMethod === 'netbanking'
-        ? netbankingDetails
-        : null,
+        : paymentMethod === "upi"
+          ? upiDetails
+          : paymentMethod === "netbanking"
+            ? netbankingDetails
+            : null,
     paymentDate: new Date().toLocaleString(),
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const invoiceData = createInvoiceData();
-    navigate('/buy/invoice', { state: { invoice: invoiceData } });
+    navigate("/shop/invoice", { state: { invoice: invoiceData } });
   };
 
   const handleCODSubmit = () => {
     const invoiceData = createInvoiceData();
-    navigate('/buy/invoice', { state: { invoice: invoiceData } });
+    navigate("/shop/invoice", { state: { invoice: invoiceData } });
   };
 
   // Helper for tab styling
   const tabClasses = (method) =>
     `flex items-center space-x-2 px-4 py-2 cursor-pointer transition-colors ${
       paymentMethod === method
-        ? 'border-b-2 border-indigo-600 text-indigo-600'
-        : 'text-gray-600'
+        ? "border-b-2 border-indigo-600 text-indigo-600"
+        : "text-gray-600"
     }`;
 
   return (
@@ -93,28 +99,42 @@ const BuyPayment = () => {
         <h1 className="text-3xl font-bold mb-6 text-center">Payment</h1>
         {/* Payment Method Tabs */}
         <div className="flex justify-around border-b mb-6">
-          <div onClick={() => setPaymentMethod('card')} className={tabClasses('card')}>
+          <div
+            onClick={() => setPaymentMethod("card")}
+            className={tabClasses("card")}
+          >
             <CreditCard className="h-5 w-5" />
             <span className="hidden sm:inline">Card Payment</span>
           </div>
-          <div onClick={() => setPaymentMethod('upi')} className={tabClasses('upi')}>
+          <div
+            onClick={() => setPaymentMethod("upi")}
+            className={tabClasses("upi")}
+          >
             <Smartphone className="h-5 w-5" />
             <span className="hidden sm:inline">UPI / Net Banking</span>
           </div>
-          <div onClick={() => setPaymentMethod('netbanking')} className={tabClasses('netbanking')}>
+          <div
+            onClick={() => setPaymentMethod("netbanking")}
+            className={tabClasses("netbanking")}
+          >
             <Banknote className="h-5 w-5" />
             <span className="hidden sm:inline">Net Banking</span>
           </div>
-          <div onClick={() => setPaymentMethod('cod')} className={tabClasses('cod')}>
+          <div
+            onClick={() => setPaymentMethod("cod")}
+            className={tabClasses("cod")}
+          >
             <DollarSign className="h-5 w-5" />
             <span className="hidden sm:inline">COD</span>
           </div>
         </div>
         {/* Payment Forms */}
-        {paymentMethod === 'card' && (
+        {paymentMethod === "card" && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Card Number</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Card Number
+              </label>
               <input
                 type="text"
                 name="cardNumber"
@@ -127,7 +147,9 @@ const BuyPayment = () => {
             </div>
             <div className="flex space-x-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Expiry Date
+                </label>
                 <input
                   type="text"
                   name="expiry"
@@ -139,7 +161,9 @@ const BuyPayment = () => {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">CVV</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  CVV
+                </label>
                 <input
                   type="text"
                   name="cvv"
@@ -152,7 +176,9 @@ const BuyPayment = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Cardholder Name</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Cardholder Name
+              </label>
               <input
                 type="text"
                 name="cardholder"
@@ -171,7 +197,7 @@ const BuyPayment = () => {
             </button>
           </form>
         )}
-        {paymentMethod === 'upi' && (
+        {paymentMethod === "upi" && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -195,7 +221,7 @@ const BuyPayment = () => {
             </button>
           </form>
         )}
-        {paymentMethod === 'netbanking' && (
+        {paymentMethod === "netbanking" && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -225,13 +251,13 @@ const BuyPayment = () => {
             </button>
           </form>
         )}
-        {paymentMethod === 'cod' && (
+        {paymentMethod === "cod" && (
           <div className="text-center space-y-4">
             <p className="text-lg">You have selected Cash on Delivery.</p>
             <button
               onClick={() => {
                 const invoiceData = createInvoiceData();
-                navigate('/buy/invoice', { state: { invoice: invoiceData } });
+                navigate("/shop/invoice", { state: { invoice: invoiceData } });
               }}
               className="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-lg"
             >
@@ -246,7 +272,8 @@ const BuyPayment = () => {
           Secure & Trusted Payments
         </h2>
         <p className="text-center text-gray-600 mb-4">
-          We support a wide range of safe and secure payment options for both Indian and international transactions.
+          We support a wide range of safe and secure payment options for both
+          Indian and international transactions.
         </p>
         <div className="flex flex-wrap justify-center items-center gap-6">
           <img
@@ -291,7 +318,9 @@ const BuyPayment = () => {
             alt="SSL Secured"
             className="mb-2 h-8"
           />
-          <span className="text-sm text-gray-600">SSL Secured & ISO Certified</span>
+          <span className="text-sm text-gray-600">
+            SSL Secured & ISO Certified
+          </span>
         </div>
         <div className="mt-2 flex flex-col items-center">
           <img

@@ -1,9 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, DollarSign, Truck, Shield } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState, useRef } from "react";
+import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
+import {
+  ShoppingCart,
+  ArrowLeft,
+  DollarSign,
+  Truck,
+  Shield,
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ProductDetails = () => {
   // यह hook केवल component के अंदर कॉल हो रहा है
@@ -17,7 +23,10 @@ const ProductDetails = () => {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center">
         <h1 className="text-3xl font-bold">Product Not Found</h1>
-        <button onClick={() => navigate('/buy')} className="mt-4 text-indigo-600 hover:underline">
+        <button
+          onClick={() => navigate("/shop")}
+          className="mt-4 text-indigo-600 hover:underline"
+        >
           Back to Products
         </button>
       </div>
@@ -25,16 +34,20 @@ const ProductDetails = () => {
   }
 
   // Fetch single product from API
-  const { data: product, isLoading, error } = useQuery({
-    queryKey: ['/api/products', id],
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["/api/products", id],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/products/${id}`);
+      const response = await apiRequest("GET", `/api/products/${id}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch product details');
+        throw new Error("Failed to fetch product details");
       }
       return response.json();
     },
-    enabled: !!id
+    enabled: !!id,
   });
 
   // Loading state
@@ -68,7 +81,10 @@ const ProductDetails = () => {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center">
         <h1 className="text-3xl font-bold">Product Not Found</h1>
-        <button onClick={() => navigate('/buy')} className="mt-4 text-indigo-600 hover:underline">
+        <button
+          onClick={() => navigate("/shop")}
+          className="mt-4 text-indigo-600 hover:underline"
+        >
           Back to Products
         </button>
       </div>
@@ -78,7 +94,7 @@ const ProductDetails = () => {
   // Local state: quantity and selected image
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(
-    product.images?.[0]?.url || '/placeholder-product.png'
+    product.images?.[0]?.url || "/placeholder-product.png",
   );
 
   // Cart update और checkout navigation का function
@@ -86,14 +102,16 @@ const ProductDetails = () => {
     const updatedCart = [...cart];
     const existingItem = updatedCart.find(
       (item) =>
-        item.id && item.id.toString().toLowerCase() === product.id.toString().toLowerCase()
+        item.id &&
+        item.id.toString().toLowerCase() ===
+          product.id.toString().toLowerCase(),
     );
     if (existingItem) {
       existingItem.quantity += quantity;
     } else {
       updatedCart.push({ ...product, quantity });
     }
-    navigate('/buy/checkout', { state: { cart: updatedCart } });
+    navigate("/shop/checkout", { state: { cart: updatedCart } });
   };
 
   const handleAddToCart = updateCartAndNavigate;
@@ -101,17 +119,17 @@ const ProductDetails = () => {
 
   // Fetch similar products
   const { data: similarProducts = [] } = useQuery({
-    queryKey: ['/api/products', 'similar'],
+    queryKey: ["/api/products", "similar"],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/products?limit=5');
+      const response = await apiRequest("GET", "/api/products?limit=5");
       if (!response.ok) {
-        throw new Error('Failed to fetch similar products');
+        throw new Error("Failed to fetch similar products");
       }
       const products = await response.json();
       // Filter out current product
       return products.filter((p: any) => p.id !== product.id).slice(0, 4);
     },
-    enabled: !!product
+    enabled: !!product,
   });
 
   // Component का JSX रिटर्न करें
@@ -119,15 +137,22 @@ const ProductDetails = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white shadow py-4 px-6 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center text-indigo-600 hover:underline">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-indigo-600 hover:underline"
+        >
           <ArrowLeft className="h-5 w-5 mr-1" /> Back
         </button>
         <h1 className="text-2xl font-bold text-indigo-700">Product Details</h1>
-        <Link to="/buy/checkout" state={{ cart }} className="relative">
+        <Link to="/shop/checkout" state={{ cart }} className="relative">
           <ShoppingCart className="h-8 w-8 text-indigo-600" />
           {cart.length > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-              {cart.reduce((acc: number, item: { quantity: number }) => acc + item.quantity, 0)}
+              {cart.reduce(
+                (acc: number, item: { quantity: number }) =>
+                  acc + item.quantity,
+                0,
+              )}
             </span>
           )}
         </Link>
@@ -140,75 +165,106 @@ const ProductDetails = () => {
             {/* Product Images */}
             <div className="space-y-4">
               <div className="aspect-square w-full rounded-lg border overflow-hidden bg-white flex items-center justify-center">
-                <img 
-                  src={selectedImage} 
-                  alt={product.title} 
-                  className="w-full h-full object-contain p-4" 
+                <img
+                  src={selectedImage}
+                  alt={product.title}
+                  className="w-full h-full object-contain p-4"
                 />
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {product.images && product.images.map((image: any, index: number) => (
-                  <button
-                    key={index}
-                    className={`aspect-square rounded border overflow-hidden ${
-                      selectedImage === image.url ? 'ring-2 ring-indigo-500' : ''
-                    }`}
-                    onClick={() => setSelectedImage(image.url)}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`${product.title} - View ${index + 1}`}
-                      className="w-full h-full object-contain p-1"
-                    />
-                  </button>
-                ))}
+                {product.images &&
+                  product.images.map((image: any, index: number) => (
+                    <button
+                      key={index}
+                      className={`aspect-square rounded border overflow-hidden ${
+                        selectedImage === image.url
+                          ? "ring-2 ring-indigo-500"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedImage(image.url)}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`${product.title} - View ${index + 1}`}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    </button>
+                  ))}
               </div>
             </div>
 
             {/* Product Details */}
             <div className="space-y-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{product.title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {product.title}
+                </h1>
                 <p className="text-lg text-gray-600 mt-1">
-                  {product.condition && <span className="capitalize">{product.condition} Condition</span>}
-                  {product.sku && <span className="text-sm text-gray-500 ml-2">SKU: {product.sku}</span>}
+                  {product.condition && (
+                    <span className="capitalize">
+                      {product.condition} Condition
+                    </span>
+                  )}
+                  {product.sku && (
+                    <span className="text-sm text-gray-500 ml-2">
+                      SKU: {product.sku}
+                    </span>
+                  )}
                 </p>
               </div>
 
               {/* Price */}
               <div className="flex items-baseline">
-                <span className="text-2xl font-bold text-indigo-700">${product.price}</span>
-                {product.compare_at_price && product.compare_at_price > product.price && (
-                  <>
-                    <span className="ml-2 text-lg text-gray-500 line-through">
-                      ${product.compare_at_price}
-                    </span>
-                    <span className="ml-2 text-sm font-medium text-green-600">
-                      Save ${(product.compare_at_price - product.price).toFixed(2)} 
-                      ({Math.round((1 - product.price / product.compare_at_price) * 100)}%)
-                    </span>
-                  </>
-                )}
+                <span className="text-2xl font-bold text-indigo-700">
+                  ${product.price}
+                </span>
+                {product.compare_at_price &&
+                  product.compare_at_price > product.price && (
+                    <>
+                      <span className="ml-2 text-lg text-gray-500 line-through">
+                        ${product.compare_at_price}
+                      </span>
+                      <span className="ml-2 text-sm font-medium text-green-600">
+                        Save $
+                        {(product.compare_at_price - product.price).toFixed(2)}(
+                        {Math.round(
+                          (1 - product.price / product.compare_at_price) * 100,
+                        )}
+                        %)
+                      </span>
+                    </>
+                  )}
               </div>
 
               {/* Description */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Description</h3>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Description
+                </h3>
                 <div className="mt-2 prose prose-indigo">
-                  <p>{product.description || "No description available for this product."}</p>
+                  <p>
+                    {product.description ||
+                      "No description available for this product."}
+                  </p>
                 </div>
               </div>
 
               {/* Specifications */}
               {product.specs && (
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">Specifications</h3>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Specifications
+                  </h3>
                   <div className="mt-2 border-t border-gray-200">
                     <dl className="divide-y divide-gray-200">
                       {Object.entries(product.specs).map(([key, value]) => (
                         <div key={key} className="py-2 grid grid-cols-3">
-                          <dt className="text-sm font-medium text-gray-500 capitalize">{key.replace('_', ' ')}</dt>
-                          <dd className="text-sm text-gray-900 col-span-2">{String(value)}</dd>
+                          <dt className="text-sm font-medium text-gray-500 capitalize">
+                            {key.replace("_", " ")}
+                          </dt>
+                          <dd className="text-sm text-gray-900 col-span-2">
+                            {String(value)}
+                          </dd>
                         </div>
                       ))}
                     </dl>
@@ -219,7 +275,10 @@ const ProductDetails = () => {
               {/* Quantity and Add to Cart */}
               <div className="py-4 border-t border-b border-gray-200">
                 <div className="flex items-center space-x-2 mb-4">
-                  <label htmlFor="quantity" className="text-gray-700 font-medium">
+                  <label
+                    htmlFor="quantity"
+                    className="text-gray-700 font-medium"
+                  >
                     Quantity:
                   </label>
                   <div className="flex items-center border border-gray-300 rounded-md">
@@ -246,14 +305,14 @@ const ProductDetails = () => {
                     onClick={() => {
                       const updatedCart = [...cart];
                       const existingProduct = updatedCart.find(
-                        (item) => item.id === product.id
+                        (item) => item.id === product.id,
                       );
                       if (existingProduct) {
                         existingProduct.quantity += quantity;
                       } else {
                         updatedCart.push({ ...product, quantity });
                       }
-                      navigate("/buy", { state: { cart: updatedCart } });
+                      navigate("/shop", { state: { cart: updatedCart } });
                     }}
                     className="flex-1 py-3 px-4 border border-indigo-700 text-indigo-700 rounded-md text-center font-semibold hover:bg-indigo-50 transition"
                   >
