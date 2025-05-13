@@ -35,7 +35,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignBuybackForm } from '@/components/admin/AssignBuybackForm';
+import { ReassessDeviceForm } from '@/components/admin/ReassessDeviceForm';
 import InvoiceModal from '@/components/admin/InvoiceModal';
+import BuybackDetailsModal from '@/components/admin/BuybackDetailsModal';
 import { 
   MoreHorizontal, 
   Search, 
@@ -52,7 +54,8 @@ import {
   X,
   UserCog,
   FileText,
-  Printer
+  Printer,
+  Eye
 } from 'lucide-react';
 
 interface BuybackRequest {
@@ -61,6 +64,7 @@ interface BuybackRequest {
   device_type: string;
   manufacturer: string;
   model: string;
+  condition: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -69,6 +73,7 @@ interface BuybackRequest {
   imei?: string;
   serial_number?: string;
   estimated_value?: string;
+  offered_price?: string;
   final_price?: string;
 }
 
@@ -76,15 +81,19 @@ interface Partner {
   id: number;
   name: string;
   email: string;
+  phone?: string;
+  region_id?: number;
 }
 
 export default function AdminBuybacks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [reassessDialogOpen, setReassessDialogOpen] = useState(false);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedBuybackId, setSelectedBuybackId] = useState<number | undefined>(undefined);
-  const [selectedBuyback, setSelectedBuyback] = useState<any>(null);
+  const [selectedBuyback, setSelectedBuyback] = useState<BuybackRequest | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -127,6 +136,11 @@ export default function AdminBuybacks() {
     if (!partnerId || partners.length === 0) return "Unassigned";
     const partner = partners.find((p: Partner) => p.id === partnerId);
     return partner ? partner.name : "Unknown Partner";
+  };
+
+  const getPartnerById = (partnerId: number | null): Partner | null => {
+    if (!partnerId || partners.length === 0) return null;
+    return partners.find((p: Partner) => p.id === partnerId) || null;
   };
 
   const getStatusBadge = (status: string) => {
@@ -195,10 +209,22 @@ export default function AdminBuybacks() {
     updateStatusMutation.mutate({ id: requestId, status: 'cancelled' });
   };
 
+  // Function to view detailed buyback information
+  const viewBuybackDetails = (request: BuybackRequest) => {
+    setSelectedBuyback(request);
+    setDetailsModalOpen(true);
+  };
+
   // Function to open the assign dialog
   const openAssignDialog = (requestId: number) => {
     setSelectedBuybackId(requestId);
     setAssignDialogOpen(true);
+  };
+  
+  // Function to open the reassess device dialog
+  const openReassessDialog = (request: BuybackRequest) => {
+    setSelectedBuyback(request);
+    setReassessDialogOpen(true);
   };
   
   // Function to open the invoice modal
