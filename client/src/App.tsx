@@ -32,16 +32,18 @@ import BlogPage from "./pages/BlogPage";
 import UserLogin from "./pages/UserLogin";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
-// Import using named export
-import { default as ShopPage } from "./pages/shop";
 
 // Shop Flow Pages
 import BuyHome from "./pages/Shop/BuyHome";
 import BuyProduct from "./pages/Shop/BuyProduct";
+
 import BuyCheckout from "./pages/Shop/BuyCheckout";
 import BuyPayment from "./pages/Shop/BuyPayment";
 import BuyInvoice from "./pages/Shop/BuyInvoice";
 import ProductDetails from "./pages/Shop/ProductDetails";
+
+// Alias BuyHome as ShopPage
+const ShopPage = BuyHome;
 
 // Admin Panel Pages
 import AdminLogin from "./pages/admin/AdminLogin";
