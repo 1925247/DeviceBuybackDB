@@ -109,7 +109,7 @@ export default function AdminBuybacks() {
       (request.serial_number && request.serial_number.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = 
-      statusFilter === '' || 
+      statusFilter === 'all' || 
       request.status === statusFilter;
     
     return matchesSearch && matchesStatus;
