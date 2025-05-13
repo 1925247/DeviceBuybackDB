@@ -109,7 +109,7 @@ const AdminBuybacks: React.FC = () => {
   const { toast } = useToast();
 
   // Query hooks for fetching data
-  const { data: buybacks, isLoading: isLoadingBuybacks } = useQuery<BuybackRequest[]>({
+  const { data, isLoading: isLoadingBuybacks } = useQuery<{ requests: BuybackRequest[] }>({
     queryKey: ['/api/buyback-requests', selectedStatus],
     queryFn: async () => {
       const url = selectedStatus 
@@ -118,13 +118,19 @@ const AdminBuybacks: React.FC = () => {
       return apiRequest('GET', url).then(res => res.json());
     },
   });
+  
+  // Extract the buybacks array from the response
+  const buybacks = data?.requests || [];
 
-  const { data: recentBuybacks, isLoading: isLoadingRecent } = useQuery<BuybackRequest[]>({
+  const { data: recentData, isLoading: isLoadingRecent } = useQuery<{ requests: BuybackRequest[] }>({
     queryKey: ['/api/buyback-requests/recent'],
     queryFn: async () => {
       return apiRequest('GET', '/api/buyback-requests/recent').then(res => res.json());
     },
   });
+  
+  // Extract the recent buybacks array from the response
+  const recentBuybacks = recentData?.requests || [];
 
   const { data: partners, isLoading: isLoadingPartners } = useQuery<Partner[]>({
     queryKey: ['/api/partners'],
