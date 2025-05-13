@@ -128,44 +128,84 @@ export function ReassessDeviceForm({ open, onClose, buybackRequest }: ReassessDe
     }
   }, [buybackRequest, form]);
 
-  // Fetch condition questions for this device type
-  useQuery({
+  // Fetch condition questions for this device type from database
+  const { isLoading: isLoadingQuestions, error: questionsError } = useQuery({
     queryKey: ['/api/condition-questions', buybackRequest?.device_type],
     queryFn: async () => {
       if (!buybackRequest) return null;
-      const response = await apiRequest('GET', '/api/condition-questions');
-      const allQuestions = await response.json();
-      
-      // Filter questions for this device type
-      const deviceTypeId = parseInt(buybackRequest.device_type);
-      const relevantQuestions = allQuestions.filter(
-        (q: ConditionQuestion) => q.deviceTypeId === deviceTypeId
-      );
-      
-      setConditionQuestions(relevantQuestions);
-      return relevantQuestions;
+      try {
+        // First try to get device-specific questions
+        const response = await apiRequest('GET', '/api/condition-questions');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch condition questions: ${response.statusText}`);
+        }
+        
+        const allQuestions = await response.json();
+        
+        // Filter questions for this device type
+        const deviceTypeId = parseInt(buybackRequest.device_type);
+        const relevantQuestions = allQuestions.filter(
+          (q: ConditionQuestion) => q.deviceTypeId === deviceTypeId
+        );
+        
+        console.log(`Found ${relevantQuestions.length} condition questions for device type ${deviceTypeId}`);
+        setConditionQuestions(relevantQuestions);
+        return relevantQuestions;
+      } catch (err) {
+        console.error("Error fetching condition questions:", err);
+        toast({
+          title: "Error Loading Questions",
+          description: `Failed to load condition questions: ${(err as Error).message}`,
+          variant: "destructive"
+        });
+        throw err;
+      }
     },
     enabled: open && !!buybackRequest,
+    staleTime: 60000, // Cache for 1 minute
+    retry: 2, // Retry failed requests up to 2 times
   });
 
-  // Mutation to update the buyback request
+  // Mutation to update the buyback request with enhanced error handling and database validation
   const updateBuybackMutation = useMutation({
     mutationFn: async (data: any) => {
       if (!buybackRequest) return null;
-      const response = await apiRequest('PUT', `/api/buyback-requests/${buybackRequest.id}`, data);
-      return response.json();
+      try {
+        const response = await apiRequest('PUT', `/api/buyback-requests/${buybackRequest.id}`, data);
+        
+        // Check if the request was successful
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error occurred' }));
+          throw new Error(errorData.message || `Server responded with status: ${response.status}`);
+        }
+        
+        // Parse and return the response
+        return response.json();
+      } catch (err) {
+        console.error("Error updating buyback request:", err);
+        throw err;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Show a success toast notification
       toast({
-        title: 'Success',
-        description: 'Buyback request has been updated successfully',
+        title: 'Device Reassessed Successfully',
+        description: 'Buyback request has been updated with new condition and pricing information',
       });
+      
+      // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
+      
+      // Also invalidate any specific query for this request
+      queryClient.invalidateQueries({ queryKey: [`/api/buyback-requests/${buybackRequest?.id}`] });
+      
+      // Close the modal
       onClose();
     },
     onError: (error: any) => {
+      // Show a detailed error message
       toast({
-        title: 'Error',
+        title: 'Database Update Failed',
         description: `Failed to update buyback request: ${error.message || 'Unknown error'}`,
         variant: 'destructive',
       });
@@ -175,12 +215,25 @@ export function ReassessDeviceForm({ open, onClose, buybackRequest }: ReassessDe
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!buybackRequest) return;
     
-    // Format values for API
+    // Format values for API with proper database field types and structure
     const submitData = {
       ...values,
+      // Set required fields with proper database structure
       status: 'completed', // Mark as completed when device is reassessed
+      updated_at: new Date().toISOString(), // Update timestamp
+      
+      // Convert string values to appropriate types if needed
+      imei: values.imei?.trim() || null,
+      serial_number: values.serial_number?.trim() || null,
+      condition: values.condition.trim(),
+      offered_price: values.offered_price.trim(),
+      final_price: values.final_price.trim(),
+      
+      // Handle questionnaire answers - ensure it's a valid JSON object for the database
+      questionnaire_answers: values.questionnaire_answers || {},
     };
     
+    console.log('Sending data to database:', submitData);
     updateBuybackMutation.mutate(submitData);
   };
 
@@ -331,7 +384,36 @@ export function ReassessDeviceForm({ open, onClose, buybackRequest }: ReassessDe
             </div>
 
             {/* Condition Questionnaire */}
-            {conditionQuestions.length > 0 && (
+            {isLoadingQuestions ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Loading Device Condition Questionnaire...</CardTitle>
+                  <CardDescription>
+                    Retrieving condition questions from database
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center py-6">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </CardContent>
+              </Card>
+            ) : questionsError ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-red-500 flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                    Error Loading Questions
+                  </CardTitle>
+                  <CardDescription>
+                    There was a problem connecting to the database
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Please try again later or contact support if the problem persists.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : conditionQuestions.length > 0 ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Device Condition Questionnaire</CardTitle>
@@ -380,6 +462,23 @@ export function ReassessDeviceForm({ open, onClose, buybackRequest }: ReassessDe
                       );
                     })}
                   </Accordion>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <HelpCircle className="w-5 h-5 mr-2" />
+                    No Questionnaire Available
+                  </CardTitle>
+                  <CardDescription>
+                    No condition questions found for this device type
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    You can still assess the device condition manually and set the final price.
+                  </p>
                 </CardContent>
               </Card>
             )}
