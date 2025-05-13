@@ -137,7 +137,13 @@ const AdminPricing: React.FC = () => {
     queryKey: ['/api/device-models'],
   });
 
-  const { data: valuations, isLoading: isLoadingValuations } = useQuery<Valuation[]>({
+  // Define an interface for the valuation API response 
+  interface ValuationResponse {
+    valuations: Valuation;
+    device_models: DeviceModel;
+  }
+  
+  const { data: valuationsData, isLoading: isLoadingValuations } = useQuery<ValuationResponse[]>({
     queryKey: ['/api/valuations'],
   });
 
@@ -155,21 +161,24 @@ const AdminPricing: React.FC = () => {
 
   // Enriched valuations with model, brand, and device type names
   const enrichedValuations: ValuationWithModelInfo[] = React.useMemo(() => {
-    if (!valuations || !deviceModels || !brands || !deviceTypes) return [];
+    if (!valuationsData || !deviceModels || !brands || !deviceTypes) return [];
 
-    return valuations.map(valuation => {
-      const model = deviceModels.find(m => Number(m.id) === Number(valuation.device_model_id));
-      const brand = model ? brands.find(b => Number(b.id) === Number(model.brand_id)) : null;
-      const deviceType = model ? deviceTypes.find(dt => Number(dt.id) === Number(model.device_type_id)) : null;
-
+    return valuationsData.map((item: ValuationResponse) => {
+      const valuation = item.valuations;
+      const model = item.device_models;
+      
+      // Find brand and device type based on the model
+      const brand = brands.find(b => Number(b.id) === Number(model.brand_id));
+      const deviceType = deviceTypes.find(dt => Number(dt.id) === Number(model.device_type_id));
+      
       return {
         ...valuation,
-        model_name: model?.name || 'Unknown Model',
+        model_name: model.name || 'Unknown Model',
         brand_name: brand?.name || 'Unknown Brand',
         device_type_name: deviceType?.name || 'Unknown Type',
       };
     });
-  }, [valuations, deviceModels, brands, deviceTypes]);
+  }, [valuationsData, deviceModels, brands, deviceTypes]);
 
   // Mutation hooks for creating, updating, and deleting valuations
   const createValuationMutation = useMutation({
