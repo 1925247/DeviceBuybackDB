@@ -1,2023 +1,843 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, Settings, ShoppingBag, Truck, CreditCard, Globe, DollarSign, Percent } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { Truck, CreditCard, Tag, Mail, Globe, Settings } from 'lucide-react';
 
-// Define the marketplace settings schema
-const marketplaceSettingsSchema = z.object({
-  general: z.object({
-    enable_marketplace: z.boolean().default(true),
-    marketplace_name: z.string().min(1, 'Marketplace name is required'),
-    marketplace_tagline: z.string().optional(),
-    featured_products_count: z.coerce.number().min(0).default(8),
-    contact_email: z.string().email('Invalid email address').optional(),
-    support_phone: z.string().optional(),
-    enable_reviews: z.boolean().default(true),
-    reviews_require_approval: z.boolean().default(true),
-    default_currency: z.string().default('USD'),
-    currency_symbol: z.string().default('$'),
-  }),
-  products: z.object({
-    product_pricing_strategy: z.enum(['cost_plus_margin', 'market_based', 'dynamic']),
-    default_profit_margin: z.coerce.number().min(0).default(20),
-    show_stock_quantity: z.boolean().default(true),
-    low_stock_threshold: z.coerce.number().min(0).default(5),
-    out_of_stock_behavior: z.enum(['hide', 'show_unavailable', 'allow_backorder']),
-    enable_product_comparisons: z.boolean().default(true),
-    enable_product_ratings: z.boolean().default(true),
-    display_recently_viewed: z.boolean().default(true),
-  }),
-  shipping: z.object({
-    default_shipping_country: z.string().default('US'),
-    free_shipping_min_order: z.coerce.number().min(0).default(50),
-    enable_local_pickup: z.boolean().default(false),
-    enable_flat_rate_shipping: z.boolean().default(true),
-    flat_rate_shipping_cost: z.coerce.number().min(0).default(5.99),
-    enable_international_shipping: z.boolean().default(true),
-    international_shipping_markup: z.coerce.number().min(0).default(15),
-    shipping_calculation_method: z.enum(['flat_rate', 'weight_based', 'price_based', 'item_based']),
-    display_estimated_delivery: z.boolean().default(true),
-  }),
-  payments: z.object({
-    accepted_payment_methods: z.array(z.string()).default(['credit_card', 'paypal']),
-    enable_stripe: z.boolean().default(true),
-    enable_paypal: z.boolean().default(false),
-    enable_apple_pay: z.boolean().default(false),
-    enable_google_pay: z.boolean().default(false),
-    enable_crypto: z.boolean().default(false),
-    enable_store_credit: z.boolean().default(true),
-    payment_capture_method: z.enum(['automatic', 'manual']).default('automatic'),
-    order_minimum_amount: z.coerce.number().min(0).default(0),
-  }),
-  taxes: z.object({
-    enable_automatic_tax_calculation: z.boolean().default(true),
-    default_tax_rate: z.coerce.number().min(0).default(8.25),
-    tax_calculation_method: z.enum(['origin_based', 'destination_based']).default('destination_based'),
-    prices_include_tax: z.boolean().default(false),
-    tax_rounding_method: z.enum(['item', 'line', 'total']).default('item'),
-    display_prices_with_tax: z.boolean().default(false),
-  }),
-  checkout: z.object({
-    require_account_to_checkout: z.boolean().default(false),
-    enable_guest_checkout: z.boolean().default(true),
-    enable_coupon_codes: z.boolean().default(true),
-    enable_gift_wrapping: z.boolean().default(false),
-    gift_wrapping_fee: z.coerce.number().min(0).default(5),
-    enable_order_comments: z.boolean().default(true),
-    terms_and_conditions_required: z.boolean().default(true),
-    enable_one_page_checkout: z.boolean().default(true),
-    send_order_confirmation_email: z.boolean().default(true),
-  }),
-  inventory: z.object({
-    enable_inventory_tracking: z.boolean().default(true),
-    prevent_overselling: z.boolean().default(true),
-    enable_low_stock_notifications: z.boolean().default(true),
-    low_stock_notification_threshold: z.coerce.number().min(0).default(5),
-    enable_out_of_stock_notifications: z.boolean().default(true),
-    auto_restore_stock_on_cancel: z.boolean().default(true),
-    auto_reduce_stock_on_order: z.boolean().default(true),
-  }),
-  buyback: z.object({
-    min_buyback_amount: z.coerce.number().min(0).default(5),
-    max_processing_days: z.coerce.number().min(1).default(3),
-    payment_methods: z.array(z.string()).default(['paypal', 'bank_transfer', 'store_credit']),
-    enable_expedited_processing: z.boolean().default(false),
-    expedited_processing_fee: z.coerce.number().min(0).default(15),
-    show_buyback_estimator: z.boolean().default(true),
-    require_condition_assessment: z.boolean().default(true),
-    require_photos: z.boolean().default(true),
-  }),
-});
+interface MarketplaceSettings {
+  site_name: string;
+  site_url: string;
+  site_description: string;
+  logo_url?: string;
+  favicon_url?: string;
+  primary_color: string;
+  secondary_color: string;
+  enable_marketplace: boolean;
+  enable_reviews: boolean;
+  default_currency: string;
+  tax_rate: number;
+  shipping: {
+    enable_shipping: boolean;
+    default_shipping_fee: number;
+    free_shipping_threshold?: number;
+    shipping_providers: string[];
+    shipping_zones: {
+      id: string;
+      name: string;
+      countries: string[];
+      rate: number;
+    }[];
+  };
+  payment: {
+    providers: {
+      stripe: {
+        enabled: boolean;
+        test_mode: boolean;
+      };
+      paypal: {
+        enabled: boolean;
+        test_mode: boolean;
+      };
+      bank_transfer: {
+        enabled: boolean;
+        account_details: string;
+      };
+    };
+    order_prefix: string;
+    invoice_prefix: string;
+  };
+  email: {
+    sender_name: string;
+    sender_email: string;
+    enable_notifications: boolean;
+    notification_templates: {
+      order_confirmation: boolean;
+      order_shipped: boolean;
+      order_delivered: boolean;
+      order_cancelled: boolean;
+    };
+  };
+  seo: {
+    meta_title: string;
+    meta_description: string;
+    keywords: string;
+    enable_sitemap: boolean;
+    enable_robots: boolean;
+  };
+}
 
-type MarketplaceSettingsValues = z.infer<typeof marketplaceSettingsSchema>;
-
-const AdminMarketplaceSettings = () => {
-  const queryClient = useQueryClient();
+const AdminMarketplaceSettings: React.FC = () => {
   const { toast } = useToast();
+  const [settings, setSettings] = useState<MarketplaceSettings>({
+    site_name: '',
+    site_url: '',
+    site_description: '',
+    primary_color: '#3b82f6',
+    secondary_color: '#10b981',
+    enable_marketplace: true,
+    enable_reviews: true,
+    default_currency: 'USD',
+    tax_rate: 0,
+    shipping: {
+      enable_shipping: true,
+      default_shipping_fee: 0,
+      free_shipping_threshold: 0,
+      shipping_providers: [],
+      shipping_zones: [],
+    },
+    payment: {
+      providers: {
+        stripe: {
+          enabled: true,
+          test_mode: true,
+        },
+        paypal: {
+          enabled: false,
+          test_mode: true,
+        },
+        bank_transfer: {
+          enabled: false,
+          account_details: '',
+        },
+      },
+      order_prefix: 'ORD',
+      invoice_prefix: 'INV',
+    },
+    email: {
+      sender_name: '',
+      sender_email: '',
+      enable_notifications: true,
+      notification_templates: {
+        order_confirmation: true,
+        order_shipped: true,
+        order_delivered: true,
+        order_cancelled: true,
+      },
+    },
+    seo: {
+      meta_title: '',
+      meta_description: '',
+      keywords: '',
+      enable_sitemap: true,
+      enable_robots: true,
+    },
+  });
 
-  // Fetch settings
-  const { data: settings, isLoading } = useQuery({
+  // Query hook for fetching settings
+  const { isLoading: isLoadingSettings } = useQuery({
     queryKey: ['/api/settings'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/settings');
-      if (!response.ok) {
-        throw new Error('Failed to fetch marketplace settings');
-      }
-      return response.json();
-    }
-  });
-
-  // Update settings mutation
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (newSettings: MarketplaceSettingsValues) => {
-      const response = await apiRequest('PUT', '/api/settings', newSettings);
-      if (!response.ok) {
-        throw new Error('Failed to update marketplace settings');
-      }
-      return response.json();
+      return apiRequest('GET', '/api/settings').then(res => res.json());
     },
-    onSuccess: () => {
-      toast({
-        title: 'Settings updated',
-        description: 'Marketplace settings have been updated successfully.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+    onSuccess: (data) => {
+      setSettings(data);
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'Failed to load marketplace settings',
         variant: 'destructive',
       });
-    }
+    },
   });
 
-  // Form setup with default values
-  const form = useForm<MarketplaceSettingsValues>({
-    resolver: zodResolver(marketplaceSettingsSchema),
-    defaultValues: {
-      general: {
-        enable_marketplace: true,
-        marketplace_name: 'GadgetSwap Marketplace',
-        marketplace_tagline: 'Your Trusted Source for Refurbished Gadgets',
-        featured_products_count: 8,
-        contact_email: 'info@gadgetswap.com',
-        support_phone: '+1 (555) 123-4567',
-        enable_reviews: true,
-        reviews_require_approval: true,
-        default_currency: 'USD',
-        currency_symbol: '$',
-      },
-      products: {
-        product_pricing_strategy: 'cost_plus_margin',
-        default_profit_margin: 20,
-        show_stock_quantity: true,
-        low_stock_threshold: 5,
-        out_of_stock_behavior: 'show_unavailable',
-        enable_product_comparisons: true,
-        enable_product_ratings: true,
-        display_recently_viewed: true,
-      },
-      shipping: {
-        default_shipping_country: 'US',
-        free_shipping_min_order: 50,
-        enable_local_pickup: false,
-        enable_flat_rate_shipping: true,
-        flat_rate_shipping_cost: 5.99,
-        enable_international_shipping: true,
-        international_shipping_markup: 15,
-        shipping_calculation_method: 'flat_rate',
-        display_estimated_delivery: true,
-      },
-      payments: {
-        accepted_payment_methods: ['credit_card', 'paypal'],
-        enable_stripe: true,
-        enable_paypal: false,
-        enable_apple_pay: false,
-        enable_google_pay: false,
-        enable_crypto: false,
-        enable_store_credit: true,
-        payment_capture_method: 'automatic',
-        order_minimum_amount: 0,
-      },
-      taxes: {
-        enable_automatic_tax_calculation: true,
-        default_tax_rate: 8.25,
-        tax_calculation_method: 'destination_based',
-        prices_include_tax: false,
-        tax_rounding_method: 'item',
-        display_prices_with_tax: false,
-      },
-      checkout: {
-        require_account_to_checkout: false,
-        enable_guest_checkout: true,
-        enable_coupon_codes: true,
-        enable_gift_wrapping: false,
-        gift_wrapping_fee: 5,
-        enable_order_comments: true,
-        terms_and_conditions_required: true,
-        enable_one_page_checkout: true,
-        send_order_confirmation_email: true,
-      },
-      inventory: {
-        enable_inventory_tracking: true,
-        prevent_overselling: true,
-        enable_low_stock_notifications: true,
-        low_stock_notification_threshold: 5,
-        enable_out_of_stock_notifications: true,
-        auto_restore_stock_on_cancel: true,
-        auto_reduce_stock_on_order: true,
-      },
-      buyback: {
-        min_buyback_amount: 5,
-        max_processing_days: 3,
-        payment_methods: ['paypal', 'bank_transfer', 'store_credit'],
-        enable_expedited_processing: false,
-        expedited_processing_fee: 15,
-        show_buyback_estimator: true,
-        require_condition_assessment: true,
-        require_photos: true,
-      }
-    }
-  });
-
-  // Set form values when settings data is loaded
-  React.useEffect(() => {
-    if (settings && !isLoading) {
-      form.reset({
-        general: {
-          enable_marketplace: settings.marketplace?.enable_marketplace ?? true,
-          marketplace_name: settings.general?.site_name ?? 'GadgetSwap Marketplace',
-          marketplace_tagline: settings.general?.site_tagline ?? 'Your Trusted Source for Refurbished Gadgets',
-          featured_products_count: settings.marketplace?.featured_products_count ?? 8,
-          contact_email: settings.general?.contact_email ?? 'info@gadgetswap.com',
-          support_phone: settings.general?.support_phone ?? '+1 (555) 123-4567',
-          enable_reviews: settings.marketplace?.enable_reviews ?? true,
-          reviews_require_approval: settings.marketplace?.reviews_require_approval ?? true,
-          default_currency: settings.marketplace?.default_currency ?? 'USD',
-          currency_symbol: settings.marketplace?.currency_symbol ?? '$',
-        },
-        products: {
-          product_pricing_strategy: settings.marketplace?.product_pricing_strategy ?? 'cost_plus_margin',
-          default_profit_margin: settings.marketplace?.default_profit_margin ?? 20,
-          show_stock_quantity: settings.marketplace?.show_stock_quantity ?? true,
-          low_stock_threshold: settings.marketplace?.low_stock_threshold ?? 5,
-          out_of_stock_behavior: settings.marketplace?.out_of_stock_behavior ?? 'show_unavailable',
-          enable_product_comparisons: settings.marketplace?.enable_product_comparisons ?? true,
-          enable_product_ratings: settings.marketplace?.enable_product_ratings ?? true,
-          display_recently_viewed: settings.marketplace?.display_recently_viewed ?? true,
-        },
-        shipping: {
-          default_shipping_country: settings.shipping?.default_shipping_country ?? 'US',
-          free_shipping_min_order: settings.shipping?.free_shipping_min_order ?? 50,
-          enable_local_pickup: settings.shipping?.enable_local_pickup ?? false,
-          enable_flat_rate_shipping: settings.shipping?.enable_flat_rate_shipping ?? true,
-          flat_rate_shipping_cost: settings.shipping?.flat_rate_shipping_cost ?? 5.99,
-          enable_international_shipping: settings.shipping?.enable_international_shipping ?? true,
-          international_shipping_markup: settings.shipping?.international_shipping_markup ?? 15,
-          shipping_calculation_method: settings.shipping?.shipping_calculation_method ?? 'flat_rate',
-          display_estimated_delivery: settings.shipping?.display_estimated_delivery ?? true,
-        },
-        payments: {
-          accepted_payment_methods: settings.payments?.accepted_payment_methods ?? ['credit_card', 'paypal'],
-          enable_stripe: settings.payments?.enable_stripe ?? true,
-          enable_paypal: settings.payments?.enable_paypal ?? false,
-          enable_apple_pay: settings.payments?.enable_apple_pay ?? false,
-          enable_google_pay: settings.payments?.enable_google_pay ?? false,
-          enable_crypto: settings.payments?.enable_crypto ?? false,
-          enable_store_credit: settings.payments?.enable_store_credit ?? true,
-          payment_capture_method: settings.payments?.payment_capture_method ?? 'automatic',
-          order_minimum_amount: settings.payments?.order_minimum_amount ?? 0,
-        },
-        taxes: {
-          enable_automatic_tax_calculation: settings.taxes?.enable_automatic_tax_calculation ?? true,
-          default_tax_rate: settings.taxes?.default_tax_rate ?? 8.25,
-          tax_calculation_method: settings.taxes?.tax_calculation_method ?? 'destination_based',
-          prices_include_tax: settings.taxes?.prices_include_tax ?? false,
-          tax_rounding_method: settings.taxes?.tax_rounding_method ?? 'item',
-          display_prices_with_tax: settings.taxes?.display_prices_with_tax ?? false,
-        },
-        checkout: {
-          require_account_to_checkout: settings.checkout?.require_account_to_checkout ?? false,
-          enable_guest_checkout: settings.checkout?.enable_guest_checkout ?? true,
-          enable_coupon_codes: settings.checkout?.enable_coupon_codes ?? true,
-          enable_gift_wrapping: settings.checkout?.enable_gift_wrapping ?? false,
-          gift_wrapping_fee: settings.checkout?.gift_wrapping_fee ?? 5,
-          enable_order_comments: settings.checkout?.enable_order_comments ?? true,
-          terms_and_conditions_required: settings.checkout?.terms_and_conditions_required ?? true,
-          enable_one_page_checkout: settings.checkout?.enable_one_page_checkout ?? true,
-          send_order_confirmation_email: settings.checkout?.send_order_confirmation_email ?? true,
-        },
-        inventory: {
-          enable_inventory_tracking: settings.inventory?.enable_inventory_tracking ?? true,
-          prevent_overselling: settings.inventory?.prevent_overselling ?? true,
-          enable_low_stock_notifications: settings.inventory?.enable_low_stock_notifications ?? true,
-          low_stock_notification_threshold: settings.inventory?.low_stock_notification_threshold ?? 5,
-          enable_out_of_stock_notifications: settings.inventory?.enable_out_of_stock_notifications ?? true,
-          auto_restore_stock_on_cancel: settings.inventory?.auto_restore_stock_on_cancel ?? true,
-          auto_reduce_stock_on_order: settings.inventory?.auto_reduce_stock_on_order ?? true,
-        },
-        buyback: {
-          min_buyback_amount: settings.buyback?.min_offer_amount ?? 5,
-          max_processing_days: settings.buyback?.max_processing_days ?? 3,
-          payment_methods: settings.buyback?.payment_methods ?? ['paypal', 'bank_transfer', 'store_credit'],
-          enable_expedited_processing: settings.buyback?.enable_expedited_processing ?? false,
-          expedited_processing_fee: settings.buyback?.expedited_processing_fee ?? 15,
-          show_buyback_estimator: settings.buyback?.show_buyback_estimator ?? true,
-          require_condition_assessment: settings.buyback?.require_condition_assessment ?? true,
-          require_photos: settings.buyback?.require_photos ?? true,
-        }
+  // Mutation hook for updating settings
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (updatedSettings: MarketplaceSettings) => {
+      return apiRequest('PUT', '/api/settings', updatedSettings).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({
+        title: 'Success',
+        description: 'Settings updated successfully',
       });
-    }
-  }, [settings, isLoading, form]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update settings',
+        variant: 'destructive',
+      });
+    },
+  });
 
-  // Handle form submission
-  const onSubmit = (values: MarketplaceSettingsValues) => {
-    updateSettingsMutation.mutate(values);
+  // Handler for updating settings
+  const handleUpdateSettings = (section: string, field: string, value: any) => {
+    setSettings(prev => {
+      const newSettings = { ...prev };
+      
+      // Handle nested fields
+      if (section.includes('.')) {
+        const [mainSection, subSection, subSubSection] = section.split('.');
+        if (subSubSection) {
+          // @ts-ignore
+          newSettings[mainSection][subSection][subSubSection][field] = value;
+        } else {
+          // @ts-ignore
+          newSettings[mainSection][subSection][field] = value;
+        }
+      } else if (section) {
+        // @ts-ignore
+        newSettings[section][field] = value;
+      } else {
+        // @ts-ignore
+        newSettings[field] = value;
+      }
+      
+      return newSettings;
+    });
   };
 
+  // Handler for saving settings
+  const handleSaveSettings = () => {
+    updateSettingsMutation.mutate(settings);
+  };
+
+  // Loading state
+  if (isLoadingSettings) {
+    return (
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Marketplace Settings</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">E-Commerce Settings</h1>
-          <p className="text-gray-500">Configure your marketplace and buyback program</p>
+          <h1 className="text-2xl font-bold">Marketplace Settings</h1>
+          <p className="text-gray-500">Configure your marketplace settings</p>
         </div>
         <Button 
-          onClick={form.handleSubmit(onSubmit)} 
+          onClick={handleSaveSettings}
           disabled={updateSettingsMutation.isPending}
         >
-          {updateSettingsMutation.isPending && (
-            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
-          )}
-          <Save className="mr-2 h-4 w-4" /> Save Changes
+          {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-        </div>
-      ) : (
-        <Form {...form}>
-          <form className="space-y-6">
-            <Tabs defaultValue="general" className="w-full">
-              <div className="mb-8">
-                <TabsList className="grid grid-cols-4 md:grid-cols-8 w-full">
-                  <TabsTrigger value="general">
-                    <Settings className="h-4 w-4 mr-2" /> General
-                  </TabsTrigger>
-                  <TabsTrigger value="products">
-                    <ShoppingBag className="h-4 w-4 mr-2" /> Products
-                  </TabsTrigger>
-                  <TabsTrigger value="shipping">
-                    <Truck className="h-4 w-4 mr-2" /> Shipping
-                  </TabsTrigger>
-                  <TabsTrigger value="payments">
-                    <CreditCard className="h-4 w-4 mr-2" /> Payments
-                  </TabsTrigger>
-                  <TabsTrigger value="taxes">
-                    <DollarSign className="h-4 w-4 mr-2" /> Taxes
-                  </TabsTrigger>
-                  <TabsTrigger value="checkout">
-                    <ShoppingBag className="h-4 w-4 mr-2" /> Checkout
-                  </TabsTrigger>
-                  <TabsTrigger value="inventory">
-                    <Globe className="h-4 w-4 mr-2" /> Inventory
-                  </TabsTrigger>
-                  <TabsTrigger value="buyback">
-                    <Percent className="h-4 w-4 mr-2" /> Buyback
-                  </TabsTrigger>
-                </TabsList>
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="shipping">Shipping</TabsTrigger>
+          <TabsTrigger value="payment">Payment</TabsTrigger>
+          <TabsTrigger value="email">Email</TabsTrigger>
+          <TabsTrigger value="seo">SEO</TabsTrigger>
+        </TabsList>
+
+        {/* General Settings */}
+        <TabsContent value="general" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Store Information</CardTitle>
+              <CardDescription>
+                Basic information about your marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="site_name">Store Name</Label>
+                  <Input
+                    id="site_name"
+                    value={settings.site_name}
+                    onChange={(e) => handleUpdateSettings('', 'site_name', e.target.value)}
+                    placeholder="e.g., GadgetSwap"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="site_url">Store URL</Label>
+                  <Input
+                    id="site_url"
+                    value={settings.site_url}
+                    onChange={(e) => handleUpdateSettings('', 'site_url', e.target.value)}
+                    placeholder="e.g., https://gadgetswap.com"
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="site_description">Store Description</Label>
+                  <Textarea
+                    id="site_description"
+                    value={settings.site_description}
+                    onChange={(e) => handleUpdateSettings('', 'site_description', e.target.value)}
+                    placeholder="Brief description of your marketplace"
+                    rows={3}
+                  />
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* General Settings */}
-              <TabsContent value="general">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>General Marketplace Settings</CardTitle>
-                    <CardDescription>
-                      Configure the basic settings for your e-commerce storefront
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="general.enable_marketplace"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Enable Marketplace</FormLabel>
-                            <FormDescription>
-                              When disabled, the marketplace will not be visible to users.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+              <CardDescription>
+                Visual settings for your marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="primary_color">Primary Color</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="primary_color"
+                      type="color"
+                      className="w-12 h-9 p-1"
+                      value={settings.primary_color}
+                      onChange={(e) => handleUpdateSettings('', 'primary_color', e.target.value)}
                     />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="general.marketplace_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Marketplace Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="general.marketplace_tagline"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Marketplace Tagline</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="general.contact_email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Contact Email</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="email" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="general.support_phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Support Phone</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="general.default_currency"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Default Currency</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select currency" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                                <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                                <SelectItem value="GBP">British Pound (GBP)</SelectItem>
-                                <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
-                                <SelectItem value="AUD">Australian Dollar (AUD)</SelectItem>
-                                <SelectItem value="JPY">Japanese Yen (JPY)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="general.currency_symbol"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Currency Symbol</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="general.featured_products_count"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Featured Products Count</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" />
-                          </FormControl>
-                          <FormDescription>
-                            Number of featured products to display on the homepage.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <Input
+                      value={settings.primary_color}
+                      onChange={(e) => handleUpdateSettings('', 'primary_color', e.target.value)}
+                      placeholder="#3b82f6"
                     />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="general.enable_reviews"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Reviews</FormLabel>
-                              <FormDescription>
-                                Allow customers to leave reviews for products.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="general.reviews_require_approval"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Reviews Require Approval</FormLabel>
-                              <FormDescription>
-                                Reviews must be approved before being published.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={!form.getValues().general.enable_reviews}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Products Settings */}
-              <TabsContent value="products">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Product Settings</CardTitle>
-                    <CardDescription>
-                      Configure how products are displayed and managed
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="products.product_pricing_strategy"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Pricing Strategy</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select pricing strategy" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="cost_plus_margin">Cost Plus Margin</SelectItem>
-                              <SelectItem value="market_based">Market Based</SelectItem>
-                              <SelectItem value="dynamic">Dynamic Pricing</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            How product prices are calculated by default.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="secondary_color">Secondary Color</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="secondary_color"
+                      type="color"
+                      className="w-12 h-9 p-1"
+                      value={settings.secondary_color}
+                      onChange={(e) => handleUpdateSettings('', 'secondary_color', e.target.value)}
                     />
-
-                    <FormField
-                      control={form.control}
-                      name="products.default_profit_margin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default Profit Margin (%)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" disabled={form.getValues().products.product_pricing_strategy !== 'cost_plus_margin'} />
-                          </FormControl>
-                          <FormDescription>
-                            Default profit margin percentage for cost-plus pricing.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <Input
+                      value={settings.secondary_color}
+                      onChange={(e) => handleUpdateSettings('', 'secondary_color', e.target.value)}
+                      placeholder="#10b981"
                     />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="logo_url">Logo URL</Label>
+                  <Input
+                    id="logo_url"
+                    value={settings.logo_url || ''}
+                    onChange={(e) => handleUpdateSettings('', 'logo_url', e.target.value)}
+                    placeholder="e.g., https://example.com/logo.png"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Logo upload functionality will be implemented soon.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="favicon_url">Favicon URL</Label>
+                  <Input
+                    id="favicon_url"
+                    value={settings.favicon_url || ''}
+                    onChange={(e) => handleUpdateSettings('', 'favicon_url', e.target.value)}
+                    placeholder="e.g., https://example.com/favicon.ico"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="products.show_stock_quantity"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Show Stock Quantity</FormLabel>
-                              <FormDescription>
-                                Display available quantity on product pages.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketplace Settings</CardTitle>
+              <CardDescription>
+                General settings for your marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="default_currency">Default Currency</Label>
+                  <Select 
+                    value={settings.default_currency} 
+                    onValueChange={(value) => handleUpdateSettings('', 'default_currency', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                      <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                      <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                      <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
+                      <SelectItem value="AUD">Australian Dollar (AUD)</SelectItem>
+                      <SelectItem value="JPY">Japanese Yen (JPY)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tax_rate">Default Tax Rate (%)</Label>
+                  <Input
+                    id="tax_rate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={settings.tax_rate}
+                    onChange={(e) => handleUpdateSettings('', 'tax_rate', parseFloat(e.target.value))}
+                    placeholder="e.g., 7.5"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={settings.enable_marketplace}
+                    onCheckedChange={(checked) => handleUpdateSettings('', 'enable_marketplace', checked)}
+                    id="enable_marketplace"
+                  />
+                  <Label htmlFor="enable_marketplace">Enable Marketplace</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={settings.enable_reviews}
+                    onCheckedChange={(checked) => handleUpdateSettings('', 'enable_reviews', checked)}
+                    id="enable_reviews"
+                  />
+                  <Label htmlFor="enable_reviews">Enable Product Reviews</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                      <FormField
-                        control={form.control}
-                        name="products.low_stock_threshold"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Low Stock Threshold</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="number" />
-                            </FormControl>
-                            <FormDescription>
-                              When stock reaches this level, display "Low Stock" warning.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+        {/* Shipping Settings */}
+        <TabsContent value="shipping" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                <CardTitle>Shipping Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Configure shipping options for your marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={settings.shipping.enable_shipping}
+                  onCheckedChange={(checked) => handleUpdateSettings('shipping', 'enable_shipping', checked)}
+                  id="enable_shipping"
+                />
+                <Label htmlFor="enable_shipping">Enable Shipping</Label>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="default_shipping_fee">Default Shipping Fee ($)</Label>
+                  <Input
+                    id="default_shipping_fee"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={settings.shipping.default_shipping_fee}
+                    onChange={(e) => handleUpdateSettings('shipping', 'default_shipping_fee', parseFloat(e.target.value))}
+                    disabled={!settings.shipping.enable_shipping}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="free_shipping_threshold">Free Shipping Threshold ($)</Label>
+                  <Input
+                    id="free_shipping_threshold"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={settings.shipping.free_shipping_threshold}
+                    onChange={(e) => handleUpdateSettings('shipping', 'free_shipping_threshold', parseFloat(e.target.value))}
+                    disabled={!settings.shipping.enable_shipping}
+                    placeholder="Enter 0 to disable free shipping"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Orders above this amount qualify for free shipping
+                  </p>
+                </div>
+              </div>
+              
+              <div className="rounded-md bg-gray-50 p-4 mt-6">
+                <h3 className="font-medium text-sm mb-2">Advanced Shipping Configuration</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Shipping zones and detailed rates can be configured through the API or by contacting support.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payment Settings */}
+        <TabsContent value="payment" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                <CardTitle>Payment Providers</CardTitle>
+              </div>
+              <CardDescription>
+                Configure payment methods for your marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-6">
+                <div className="border rounded-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">Stripe</div>
+                      <div className={`px-2 py-0.5 rounded-full text-xs ${settings.payment.providers.stripe.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {settings.payment.providers.stripe.enabled ? 'Enabled' : 'Disabled'}
+                      </div>
                     </div>
-
-                    <FormField
-                      control={form.control}
-                      name="products.out_of_stock_behavior"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Out of Stock Behavior</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select behavior" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="hide">Hide product</SelectItem>
-                              <SelectItem value="show_unavailable">Show as unavailable</SelectItem>
-                              <SelectItem value="allow_backorder">Allow backorders</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            How to handle products when they're out of stock.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <Switch
+                      checked={settings.payment.providers.stripe.enabled}
+                      onCheckedChange={(checked) => handleUpdateSettings('payment.providers.stripe', 'enabled', checked)}
+                      id="enable_stripe"
                     />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="products.enable_product_comparisons"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Product Comparisons</FormLabel>
-                              <FormDescription>
-                                Allow users to compare multiple products.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="products.enable_product_ratings"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Product Ratings</FormLabel>
-                              <FormDescription>
-                                Display star ratings for products.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                  </div>
+                  
+                  {settings.payment.providers.stripe.enabled && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={settings.payment.providers.stripe.test_mode}
+                          onCheckedChange={(checked) => handleUpdateSettings('payment.providers.stripe', 'test_mode', checked)}
+                          id="stripe_test_mode"
+                        />
+                        <Label htmlFor="stripe_test_mode">Test Mode</Label>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        API keys should be configured in environment variables. Contact support for assistance.
+                      </p>
                     </div>
-
-                    <FormField
-                      control={form.control}
-                      name="products.display_recently_viewed"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Display Recently Viewed Products</FormLabel>
-                            <FormDescription>
-                              Show recently viewed products to customers.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                  )}
+                </div>
+                
+                <div className="border rounded-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">PayPal</div>
+                      <div className={`px-2 py-0.5 rounded-full text-xs ${settings.payment.providers.paypal.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {settings.payment.providers.paypal.enabled ? 'Enabled' : 'Disabled'}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payment.providers.paypal.enabled}
+                      onCheckedChange={(checked) => handleUpdateSettings('payment.providers.paypal', 'enabled', checked)}
+                      id="enable_paypal"
                     />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Shipping Settings */}
-              <TabsContent value="shipping">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Shipping Settings</CardTitle>
-                    <CardDescription>
-                      Configure shipping options and rates
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="shipping.default_shipping_country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default Shipping Country</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select country" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="US">United States</SelectItem>
-                              <SelectItem value="CA">Canada</SelectItem>
-                              <SelectItem value="UK">United Kingdom</SelectItem>
-                              <SelectItem value="AU">Australia</SelectItem>
-                              <SelectItem value="DE">Germany</SelectItem>
-                              <SelectItem value="FR">France</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                  </div>
+                  
+                  {settings.payment.providers.paypal.enabled && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={settings.payment.providers.paypal.test_mode}
+                          onCheckedChange={(checked) => handleUpdateSettings('payment.providers.paypal', 'test_mode', checked)}
+                          id="paypal_test_mode"
+                        />
+                        <Label htmlFor="paypal_test_mode">Test Mode</Label>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        API keys should be configured in environment variables. Contact support for assistance.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="border rounded-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">Bank Transfer</div>
+                      <div className={`px-2 py-0.5 rounded-full text-xs ${settings.payment.providers.bank_transfer.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {settings.payment.providers.bank_transfer.enabled ? 'Enabled' : 'Disabled'}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payment.providers.bank_transfer.enabled}
+                      onCheckedChange={(checked) => handleUpdateSettings('payment.providers.bank_transfer', 'enabled', checked)}
+                      id="enable_bank_transfer"
                     />
+                  </div>
+                  
+                  {settings.payment.providers.bank_transfer.enabled && (
+                    <div className="mt-4 space-y-2">
+                      <Label htmlFor="bank_account_details">Bank Account Details</Label>
+                      <Textarea
+                        id="bank_account_details"
+                        value={settings.payment.providers.bank_transfer.account_details}
+                        onChange={(e) => handleUpdateSettings('payment.providers.bank_transfer', 'account_details', e.target.value)}
+                        placeholder="Enter bank account details to be displayed to customers"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                    <FormField
-                      control={form.control}
-                      name="shipping.shipping_calculation_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Shipping Calculation Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="flat_rate">Flat Rate</SelectItem>
-                              <SelectItem value="weight_based">Weight Based</SelectItem>
-                              <SelectItem value="price_based">Price Based</SelectItem>
-                              <SelectItem value="item_based">Item Based</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            How shipping costs are calculated.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Settings</CardTitle>
+              <CardDescription>
+                Configure order and invoice settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="order_prefix">Order Number Prefix</Label>
+                  <Input
+                    id="order_prefix"
+                    value={settings.payment.order_prefix}
+                    onChange={(e) => handleUpdateSettings('payment', 'order_prefix', e.target.value)}
+                    placeholder="e.g., ORD"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Will be displayed as: {settings.payment.order_prefix}123456
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="invoice_prefix">Invoice Number Prefix</Label>
+                  <Input
+                    id="invoice_prefix"
+                    value={settings.payment.invoice_prefix}
+                    onChange={(e) => handleUpdateSettings('payment', 'invoice_prefix', e.target.value)}
+                    placeholder="e.g., INV"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Will be displayed as: {settings.payment.invoice_prefix}123456
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Email Settings */}
+        <TabsContent value="email" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                <CardTitle>Email Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Configure email notifications for your marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="sender_name">Sender Name</Label>
+                  <Input
+                    id="sender_name"
+                    value={settings.email.sender_name}
+                    onChange={(e) => handleUpdateSettings('email', 'sender_name', e.target.value)}
+                    placeholder="e.g., GadgetSwap Support"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="sender_email">Sender Email</Label>
+                  <Input
+                    id="sender_email"
+                    value={settings.email.sender_email}
+                    onChange={(e) => handleUpdateSettings('email', 'sender_email', e.target.value)}
+                    placeholder="e.g., support@gadgetswap.com"
+                    type="email"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-6">
+                <Switch
+                  checked={settings.email.enable_notifications}
+                  onCheckedChange={(checked) => handleUpdateSettings('email', 'enable_notifications', checked)}
+                  id="enable_notifications"
+                />
+                <Label htmlFor="enable_notifications">Enable Email Notifications</Label>
+              </div>
+              
+              <div className="bg-gray-50 rounded-md p-4 mt-4">
+                <h3 className="font-medium text-sm mb-3">Notification Templates</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="order_confirmation" className="cursor-pointer flex-grow">Order Confirmation</Label>
+                    <Switch
+                      checked={settings.email.notification_templates.order_confirmation}
+                      onCheckedChange={(checked) => handleUpdateSettings('email.notification_templates', 'order_confirmation', checked)}
+                      id="order_confirmation"
+                      disabled={!settings.email.enable_notifications}
                     />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="shipping.free_shipping_min_order"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Free Shipping Minimum Order</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                <Input {...field} type="number" step="0.01" className="pl-8" />
-                              </div>
-                            </FormControl>
-                            <FormDescription>
-                              Minimum order amount for free shipping. Set to 0 to disable.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="shipping.flat_rate_shipping_cost"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Flat Rate Shipping Cost</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                <Input {...field} type="number" step="0.01" className="pl-8" disabled={form.getValues().shipping.shipping_calculation_method !== 'flat_rate'} />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="shipping.enable_local_pickup"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Local Pickup</FormLabel>
-                              <FormDescription>
-                                Allow customers to pick up orders locally.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="shipping.enable_flat_rate_shipping"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Flat Rate Shipping</FormLabel>
-                              <FormDescription>
-                                Offer fixed-price shipping regardless of order size.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="shipping.enable_international_shipping"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable International Shipping</FormLabel>
-                              <FormDescription>
-                                Allow shipping to international destinations.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="shipping.international_shipping_markup"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>International Shipping Markup (%)</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="number" disabled={!form.getValues().shipping.enable_international_shipping} />
-                            </FormControl>
-                            <FormDescription>
-                              Additional percentage added to international shipping rates.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="shipping.display_estimated_delivery"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Display Estimated Delivery</FormLabel>
-                            <FormDescription>
-                              Show estimated delivery dates on product and checkout pages.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="order_shipped" className="cursor-pointer flex-grow">Order Shipped</Label>
+                    <Switch
+                      checked={settings.email.notification_templates.order_shipped}
+                      onCheckedChange={(checked) => handleUpdateSettings('email.notification_templates', 'order_shipped', checked)}
+                      id="order_shipped"
+                      disabled={!settings.email.enable_notifications}
                     />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Payment Settings */}
-              <TabsContent value="payments">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Payment Settings</CardTitle>
-                    <CardDescription>
-                      Configure payment methods and processing options
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="payments.accepted_payment_methods"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Accepted Payment Methods</FormLabel>
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="credit_card" 
-                                checked={field.value.includes('credit_card')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'credit_card']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'credit_card'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="credit_card">Credit Card</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="paypal" 
-                                checked={field.value.includes('paypal')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'paypal']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'paypal'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="paypal">PayPal</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="bank_transfer" 
-                                checked={field.value.includes('bank_transfer')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'bank_transfer']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'bank_transfer'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="bank_transfer">Bank Transfer</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="store_credit" 
-                                checked={field.value.includes('store_credit')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'store_credit']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'store_credit'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="store_credit">Store Credit</Label>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="order_delivered" className="cursor-pointer flex-grow">Order Delivered</Label>
+                    <Switch
+                      checked={settings.email.notification_templates.order_delivered}
+                      onCheckedChange={(checked) => handleUpdateSettings('email.notification_templates', 'order_delivered', checked)}
+                      id="order_delivered"
+                      disabled={!settings.email.enable_notifications}
                     />
-
-                    <Separator />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="payments.enable_stripe"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Stripe</FormLabel>
-                              <FormDescription>
-                                Process payments through Stripe.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="payments.enable_paypal"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable PayPal</FormLabel>
-                              <FormDescription>
-                                Process payments through PayPal.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="payments.enable_apple_pay"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Apple Pay</FormLabel>
-                              <FormDescription>
-                                Allow payments via Apple Pay.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="payments.enable_google_pay"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Google Pay</FormLabel>
-                              <FormDescription>
-                                Allow payments via Google Pay.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="payments.enable_crypto"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Cryptocurrency</FormLabel>
-                              <FormDescription>
-                                Accept payments in cryptocurrency.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="payments.enable_store_credit"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Store Credit</FormLabel>
-                              <FormDescription>
-                                Allow payments using store credit.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="payments.payment_capture_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Payment Capture Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="automatic">Automatic Capture</SelectItem>
-                              <SelectItem value="manual">Manual Capture</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            When to capture payment after authorization.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="order_cancelled" className="cursor-pointer flex-grow">Order Cancelled</Label>
+                    <Switch
+                      checked={settings.email.notification_templates.order_cancelled}
+                      onCheckedChange={(checked) => handleUpdateSettings('email.notification_templates', 'order_cancelled', checked)}
+                      id="order_cancelled"
+                      disabled={!settings.email.enable_notifications}
                     />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-md bg-blue-50 p-4 mt-6">
+                <h3 className="font-medium text-sm text-blue-800 mb-2">Email Provider Configuration</h3>
+                <p className="text-xs text-blue-700 mb-4">
+                  To set up SendGrid or other email providers, please configure the appropriate API keys in your environment variables.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                    <FormField
-                      control={form.control}
-                      name="payments.order_minimum_amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minimum Order Amount</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                              <Input {...field} type="number" step="0.01" className="pl-8" />
-                            </div>
-                          </FormControl>
-                          <FormDescription>
-                            Minimum amount required to place an order. Set to 0 for no minimum.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+        {/* SEO Settings */}
+        <TabsContent value="seo" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                <CardTitle>SEO Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Configure search engine optimization settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="meta_title">Default Meta Title</Label>
+                  <Input
+                    id="meta_title"
+                    value={settings.seo.meta_title}
+                    onChange={(e) => handleUpdateSettings('seo', 'meta_title', e.target.value)}
+                    placeholder="e.g., GadgetSwap - Buy and Sell Refurbished Devices"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="meta_description">Default Meta Description</Label>
+                  <Textarea
+                    id="meta_description"
+                    value={settings.seo.meta_description}
+                    onChange={(e) => handleUpdateSettings('seo', 'meta_description', e.target.value)}
+                    placeholder="Brief description of your marketplace for search engines"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Keep under 160 characters for optimal SEO performance
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="keywords">Meta Keywords</Label>
+                  <Input
+                    id="keywords"
+                    value={settings.seo.keywords}
+                    onChange={(e) => handleUpdateSettings('seo', 'keywords', e.target.value)}
+                    placeholder="e.g., refurbished, smartphones, electronics, sustainable"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Comma-separated list of keywords
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-6">
+                <Switch
+                  checked={settings.seo.enable_sitemap}
+                  onCheckedChange={(checked) => handleUpdateSettings('seo', 'enable_sitemap', checked)}
+                  id="enable_sitemap"
+                />
+                <Label htmlFor="enable_sitemap">Enable XML Sitemap</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={settings.seo.enable_robots}
+                  onCheckedChange={(checked) => handleUpdateSettings('seo', 'enable_robots', checked)}
+                  id="enable_robots"
+                />
+                <Label htmlFor="enable_robots">Enable robots.txt</Label>
+              </div>
+              
+              <div className="rounded-md bg-gray-50 p-4 mt-6">
+                <h3 className="font-medium text-sm mb-2">Advanced SEO Tools</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Additional SEO features like structured data and custom meta tags can be configured at the product and category level.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-              {/* Other tabs content would be similarly structured */}
-              <TabsContent value="taxes">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Tax Settings</CardTitle>
-                    <CardDescription>Configure tax calculation and display options</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="taxes.enable_automatic_tax_calculation"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Enable Automatic Tax Calculation</FormLabel>
-                            <FormDescription>
-                              Automatically calculate taxes based on location and tax rules.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="taxes.default_tax_rate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default Tax Rate (%)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" step="0.01" />
-                          </FormControl>
-                          <FormDescription>
-                            Default tax rate when no specific tax rules apply.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="taxes.tax_calculation_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tax Calculation Method</FormLabel>
-                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                            <FormControl>
-                              <div className="flex items-center space-x-3 space-y-0">
-                                <RadioGroupItem value="origin_based" id="origin_based" />
-                                <Label htmlFor="origin_based">Origin Based</Label>
-                              </div>
-                            </FormControl>
-                            <FormControl>
-                              <div className="flex items-center space-x-3 space-y-0">
-                                <RadioGroupItem value="destination_based" id="destination_based" />
-                                <Label htmlFor="destination_based">Destination Based</Label>
-                              </div>
-                            </FormControl>
-                          </RadioGroup>
-                          <FormDescription>
-                            Base tax calculations on the origin or destination address.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="taxes.prices_include_tax"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Prices Include Tax</FormLabel>
-                              <FormDescription>
-                                Product prices already include applicable taxes.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="taxes.display_prices_with_tax"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Display Prices with Tax</FormLabel>
-                              <FormDescription>
-                                Show prices including tax on product pages.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="taxes.tax_rounding_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tax Rounding Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="item">Per Item</SelectItem>
-                              <SelectItem value="line">Per Line</SelectItem>
-                              <SelectItem value="total">Per Order</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            How tax calculations are rounded.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="buyback">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Buyback Program Settings</CardTitle>
-                    <CardDescription>Configure your device buyback program</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="buyback.min_buyback_amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Minimum Buyback Amount</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                <Input {...field} type="number" step="0.01" className="pl-8" />
-                              </div>
-                            </FormControl>
-                            <FormDescription>
-                              Minimum amount to offer for device buybacks.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="buyback.max_processing_days"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Maximum Processing Days</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="number" />
-                            </FormControl>
-                            <FormDescription>
-                              Maximum number of days to process buyback requests.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="buyback.payment_methods"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Buyback Payment Methods</FormLabel>
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="paypal_buyback" 
-                                checked={field.value.includes('paypal')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'paypal']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'paypal'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="paypal_buyback">PayPal</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="bank_transfer_buyback" 
-                                checked={field.value.includes('bank_transfer')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'bank_transfer']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'bank_transfer'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="bank_transfer_buyback">Bank Transfer</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="store_credit_buyback" 
-                                checked={field.value.includes('store_credit')}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, 'store_credit']);
-                                  } else {
-                                    field.onChange(field.value.filter(method => method !== 'store_credit'));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="store_credit_buyback">Store Credit</Label>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="buyback.enable_expedited_processing"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Expedited Processing</FormLabel>
-                              <FormDescription>
-                                Offer faster processing for an additional fee.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="buyback.expedited_processing_fee"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Expedited Processing Fee</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                <Input 
-                                  {...field} 
-                                  type="number" 
-                                  step="0.01" 
-                                  className="pl-8"
-                                  disabled={!form.getValues().buyback.enable_expedited_processing} 
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="buyback.show_buyback_estimator"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Show Buyback Estimator</FormLabel>
-                              <FormDescription>
-                                Display estimated buyback value on product pages.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="buyback.require_condition_assessment"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Require Condition Assessment</FormLabel>
-                              <FormDescription>
-                                Require users to complete a condition assessment form.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="buyback.require_photos"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Require Device Photos</FormLabel>
-                            <FormDescription>
-                              Require users to upload photos of their device.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Add other tab contents with similar structure */}
-              <TabsContent value="checkout">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Checkout Settings</CardTitle>
-                    <CardDescription>Configure the checkout process and options</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Checkout settings fields would go here */}
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="checkout.require_account_to_checkout"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Require Account</FormLabel>
-                              <FormDescription>
-                                Users must be logged in to checkout.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={(value) => {
-                                  field.onChange(value);
-                                  if (value) {
-                                    // If requiring account, disable guest checkout
-                                    form.setValue('checkout.enable_guest_checkout', false);
-                                  }
-                                }}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="checkout.enable_guest_checkout"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Guest Checkout</FormLabel>
-                              <FormDescription>
-                                Allow checkout without creating an account.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={(value) => {
-                                  field.onChange(value);
-                                  if (value) {
-                                    // If enabling guest checkout, disable require account
-                                    form.setValue('checkout.require_account_to_checkout', false);
-                                  }
-                                }}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="checkout.enable_coupon_codes"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Coupon Codes</FormLabel>
-                              <FormDescription>
-                                Allow discount coupons during checkout.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="checkout.enable_order_comments"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Order Comments</FormLabel>
-                              <FormDescription>
-                                Allow customers to add notes to their orders.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="checkout.enable_gift_wrapping"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Gift Wrapping</FormLabel>
-                              <FormDescription>
-                                Offer gift wrapping option during checkout.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="checkout.gift_wrapping_fee"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Gift Wrapping Fee</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                <Input 
-                                  {...field} 
-                                  type="number" 
-                                  step="0.01" 
-                                  className="pl-8"
-                                  disabled={!form.getValues().checkout.enable_gift_wrapping}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="checkout.terms_and_conditions_required"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Require Terms Acceptance</FormLabel>
-                              <FormDescription>
-                                Require acceptance of terms and conditions.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="checkout.enable_one_page_checkout"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">One-Page Checkout</FormLabel>
-                              <FormDescription>
-                                Display all checkout steps on a single page.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="checkout.send_order_confirmation_email"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Send Order Confirmation Emails</FormLabel>
-                            <FormDescription>
-                              Send email confirmation after order placement.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="inventory">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Inventory Settings</CardTitle>
-                    <CardDescription>Configure inventory management rules</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="inventory.enable_inventory_tracking"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Enable Inventory Tracking</FormLabel>
-                            <FormDescription>
-                              Track product inventory quantities.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="inventory.prevent_overselling"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Prevent Overselling</FormLabel>
-                              <FormDescription>
-                                Don't allow orders for out-of-stock items.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={!form.getValues().inventory.enable_inventory_tracking}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="inventory.auto_reduce_stock_on_order"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Auto-Reduce Stock on Order</FormLabel>
-                              <FormDescription>
-                                Automatically decrease inventory when orders are placed.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={!form.getValues().inventory.enable_inventory_tracking}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="inventory.enable_low_stock_notifications"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Low Stock Notifications</FormLabel>
-                              <FormDescription>
-                                Receive notifications when inventory is low.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={!form.getValues().inventory.enable_inventory_tracking}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="inventory.low_stock_notification_threshold"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Low Stock Threshold</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                type="number" 
-                                disabled={!form.getValues().inventory.enable_inventory_tracking || !form.getValues().inventory.enable_low_stock_notifications}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Send notification when stock reaches this level.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="inventory.enable_out_of_stock_notifications"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Out of Stock Notifications</FormLabel>
-                              <FormDescription>
-                                Receive notifications when items go out of stock.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={!form.getValues().inventory.enable_inventory_tracking}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="inventory.auto_restore_stock_on_cancel"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Auto-Restore Stock on Cancel</FormLabel>
-                              <FormDescription>
-                                Automatically restore inventory when orders are canceled.
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={!form.getValues().inventory.enable_inventory_tracking}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-
-            <div className="flex justify-end">
-              <Button 
-                onClick={form.handleSubmit(onSubmit)} 
-                disabled={updateSettingsMutation.isPending}
-              >
-                {updateSettingsMutation.isPending && (
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
-                )}
-                <Save className="mr-2 h-4 w-4" /> Save Changes
-              </Button>
-            </div>
-          </form>
-        </Form>
-      )}
+      <div className="flex justify-end mt-8">
+        <Button 
+          onClick={handleSaveSettings}
+          disabled={updateSettingsMutation.isPending}
+          size="lg"
+        >
+          {updateSettingsMutation.isPending ? 'Saving...' : 'Save All Changes'}
+        </Button>
+      </div>
     </div>
   );
 };

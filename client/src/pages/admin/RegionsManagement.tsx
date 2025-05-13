@@ -1,23 +1,9 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -26,373 +12,740 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { apiRequest } from '@/lib/queryClient';
-import { MapPin, Plus, Edit, Trash } from 'lucide-react';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { PlusCircle, Pencil, Trash2, ChevronDown, MapPin } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
 
-// Define the Region type
 interface Region {
   id: number;
   name: string;
   code: string;
-  active: boolean;
+  is_active: boolean;
+  description?: string;
+  tax_rate?: number;
+  currency_code: string;
+  shipping_zones?: string[];
   created_at: string;
   updated_at: string;
 }
 
-// Define the form schema
-const regionFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  code: z.string().min(2, { message: "Code must be at least 2 characters" }),
-  active: z.boolean().default(true),
-});
+interface Partner {
+  id: number;
+  name: string;
+  email: string;
+  logo?: string;
+  is_active: boolean;
+  region_ids: number[];
+}
+
+interface PartnerWithRegions extends Partner {
+  regions: Region[];
+}
 
 const RegionsManagement: React.FC = () => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isPartnerAssignModalOpen, setIsPartnerAssignModalOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    code: '',
+    is_active: true,
+    description: '',
+    tax_rate: 0,
+    currency_code: 'USD',
+    shipping_zones: [],
+  });
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Query to fetch all regions
-  const { data: regions, isLoading, error } = useQuery({
+  // Query hooks for fetching data
+  const { data: regions, isLoading: isLoadingRegions } = useQuery<Region[]>({
     queryKey: ['/api/regions'],
-  });
-
-  // Form for adding a new region
-  const addForm = useForm<z.infer<typeof regionFormSchema>>({
-    resolver: zodResolver(regionFormSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      active: true,
-    },
-  });
-
-  // Form for editing a region
-  const editForm = useForm<z.infer<typeof regionFormSchema>>({
-    resolver: zodResolver(regionFormSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      active: true,
-    },
-  });
-
-  // Set edit form values when a region is selected for editing
-  React.useEffect(() => {
-    if (selectedRegion) {
-      editForm.reset({
-        name: selectedRegion.name,
-        code: selectedRegion.code,
-        active: selectedRegion.active,
+    retry: 1,
+    onError: () => {
+      toast({
+        title: 'Error loading regions',
+        description: 'There was an error loading the regions data.',
+        variant: 'destructive',
       });
     }
-  }, [selectedRegion, editForm]);
+  });
 
-  // Mutation to create a new region
+  const { data: partners, isLoading: isLoadingPartners } = useQuery<Partner[]>({
+    queryKey: ['/api/partners'],
+    retry: 1,
+    onError: () => {
+      // Silent fail for partners as they might not be set up yet
+    }
+  });
+
+  // Partner data with region info
+  const partnersWithRegions = React.useMemo(() => {
+    if (!partners || !regions) return [];
+    
+    return partners.map(partner => {
+      const partnerRegions = regions.filter(region => 
+        partner.region_ids.includes(region.id)
+      );
+      
+      return {
+        ...partner,
+        regions: partnerRegions,
+      };
+    });
+  }, [partners, regions]);
+
+  // Mutation hooks for creating, updating, and deleting regions
   const createRegionMutation = useMutation({
-    mutationFn: async (newRegion: z.infer<typeof regionFormSchema>) => {
-      return await apiRequest('POST', '/api/regions', newRegion)
-        .then(res => res.json());
+    mutationFn: async (data: typeof formData) => {
+      return await apiRequest('POST', '/api/regions', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/regions'] });
-      setIsAddDialogOpen(false);
-      addForm.reset();
+      setIsAddModalOpen(false);
+      resetForm();
       toast({
-        title: "Region created",
-        description: "The region has been created successfully.",
+        title: 'Success',
+        description: 'Region created successfully',
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create region",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to create region',
+        variant: 'destructive',
       });
     },
   });
 
-  // Mutation to update a region
   const updateRegionMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number, data: z.infer<typeof regionFormSchema> }) => {
-      return await apiRequest('PUT', `/api/regions/${id}`, data)
-        .then(res => res.json());
+    mutationFn: async (data: typeof formData & { id: number }) => {
+      return await apiRequest('PUT', `/api/regions/${data.id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/regions'] });
-      setIsEditDialogOpen(false);
+      setIsEditModalOpen(false);
+      resetForm();
+      toast({
+        title: 'Success',
+        description: 'Region updated successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update region',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteRegionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest('DELETE', `/api/regions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/regions'] });
+      setIsDeleteModalOpen(false);
       setSelectedRegion(null);
       toast({
-        title: "Region updated",
-        description: "The region has been updated successfully.",
+        title: 'Success',
+        description: 'Region deleted successfully',
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update region",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to delete region',
+        variant: 'destructive',
       });
     },
   });
 
-  // Submit handler for adding a new region
-  const onAddSubmit = (values: z.infer<typeof regionFormSchema>) => {
-    createRegionMutation.mutate(values);
+  // Helper functions
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      code: '',
+      is_active: true,
+      description: '',
+      tax_rate: 0,
+      currency_code: 'USD',
+      shipping_zones: [],
+    });
   };
 
-  // Submit handler for editing a region
-  const onEditSubmit = (values: z.infer<typeof regionFormSchema>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: parseFloat(value) }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, is_active: checked }));
+  };
+
+  const handleAddRegion = (e: React.FormEvent) => {
+    e.preventDefault();
+    createRegionMutation.mutate(formData);
+  };
+
+  const handleEditRegion = (e: React.FormEvent) => {
+    e.preventDefault();
     if (selectedRegion) {
-      updateRegionMutation.mutate({
-        id: selectedRegion.id,
-        data: values,
-      });
+      updateRegionMutation.mutate({ ...formData, id: selectedRegion.id });
     }
   };
 
-  // Handle edit button click
-  const handleEdit = (region: Region) => {
-    setSelectedRegion(region);
-    setIsEditDialogOpen(true);
+  const handleDeleteRegion = () => {
+    if (selectedRegion) {
+      deleteRegionMutation.mutate(selectedRegion.id);
+    }
   };
 
-  // Render loading state
-  if (isLoading) {
+  const openEditModal = (region: Region) => {
+    setSelectedRegion(region);
+    setFormData({
+      name: region.name,
+      code: region.code,
+      is_active: region.is_active,
+      description: region.description || '',
+      tax_rate: region.tax_rate || 0,
+      currency_code: region.currency_code,
+      shipping_zones: region.shipping_zones || [],
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openDeleteModal = (region: Region) => {
+    setSelectedRegion(region);
+    setIsDeleteModalOpen(true);
+  };
+
+  const openPartnerAssignModal = (region: Region) => {
+    setSelectedRegion(region);
+    setIsPartnerAssignModalOpen(true);
+  };
+
+  // Loading state
+  if (isLoadingRegions) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Region Management</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
       </div>
     );
   }
 
-  // Render error state
-  if (error) {
+  // Error or empty state
+  if (!regions) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
-        <p>Error loading regions. Please try again later.</p>
+      <div className="py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Region Management</h1>
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="mb-4 flex items-center gap-2">
+                <PlusCircle size={16} />
+                Add New Region
+              </Button>
+            </DialogTrigger>
+            {renderAddModal()}
+          </Dialog>
+        </div>
+        <div className="bg-amber-50 p-6 rounded-lg border border-amber-200 mb-8">
+          <h3 className="text-lg font-medium text-amber-800 mb-2">No Regions Available</h3>
+          <p className="text-amber-700 mb-4">
+            You haven't set up any geographical regions yet. Regions are essential for configuring region-specific 
+            pricing, tax rates, and partner assignments.
+          </p>
+          <Button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle size={16} />
+            Create Your First Region
+          </Button>
+        </div>
       </div>
     );
   }
+
+  const renderAddModal = () => (
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Add New Region</DialogTitle>
+        <DialogDescription>
+          Create a new geographical region for setting pricing, taxes, 
+          and partner assignments.
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleAddRegion} className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Region Name</Label>
+          <Input
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            placeholder="e.g., North America, Europe, Asia"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="code">Region Code</Label>
+          <Input
+            id="code"
+            name="code"
+            value={formData.code}
+            onChange={handleInputChange}
+            placeholder="e.g., NA, EU, AS"
+            required
+          />
+          <p className="text-xs text-gray-500">
+            A unique code to identify this region in your system.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="description">Description (Optional)</Label>
+          <Textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="Brief description of this region"
+            rows={3}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+            <Input
+              id="tax_rate"
+              name="tax_rate"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={formData.tax_rate}
+              onChange={handleNumberInputChange}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="currency_code">Currency</Label>
+            <Select 
+              value={formData.currency_code} 
+              onValueChange={(value) => handleSelectChange('currency_code', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD ($)</SelectItem>
+                <SelectItem value="EUR">EUR (€)</SelectItem>
+                <SelectItem value="GBP">GBP (£)</SelectItem>
+                <SelectItem value="JPY">JPY (¥)</SelectItem>
+                <SelectItem value="CAD">CAD ($)</SelectItem>
+                <SelectItem value="AUD">AUD ($)</SelectItem>
+                <SelectItem value="INR">INR (₹)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.is_active}
+            onCheckedChange={handleSwitchChange}
+            id="is_active"
+          />
+          <Label htmlFor="is_active">Active</Label>
+        </div>
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={createRegionMutation.isPending}>
+            {createRegionMutation.isPending ? 'Creating...' : 'Create Region'}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  );
+
+  const renderEditModal = () => (
+    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Region</DialogTitle>
+          <DialogDescription>
+            Update the region's details and settings.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleEditRegion} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">Region Name</Label>
+            <Input
+              id="edit-name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-code">Region Code</Label>
+            <Input
+              id="edit-code"
+              name="code"
+              value={formData.code}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-description">Description</Label>
+            <Textarea
+              id="edit-description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={3}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-tax_rate">Tax Rate (%)</Label>
+              <Input
+                id="edit-tax_rate"
+                name="tax_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.tax_rate}
+                onChange={handleNumberInputChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-currency_code">Currency</Label>
+              <Select 
+                value={formData.currency_code} 
+                onValueChange={(value) => handleSelectChange('currency_code', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="GBP">GBP (£)</SelectItem>
+                  <SelectItem value="JPY">JPY (¥)</SelectItem>
+                  <SelectItem value="CAD">CAD ($)</SelectItem>
+                  <SelectItem value="AUD">AUD ($)</SelectItem>
+                  <SelectItem value="INR">INR (₹)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.is_active}
+              onCheckedChange={handleSwitchChange}
+              id="edit-is_active"
+            />
+            <Label htmlFor="edit-is_active">Active</Label>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateRegionMutation.isPending}>
+              {updateRegionMutation.isPending ? 'Updating...' : 'Update Region'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDeleteModal = () => (
+    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Region</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this region? This action cannot be undone and may affect products, 
+            partners, and pricing associated with this region.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="font-medium">
+            Region: {selectedRegion?.name} ({selectedRegion?.code})
+          </p>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            onClick={handleDeleteRegion}
+            disabled={deleteRegionMutation.isPending}
+          >
+            {deleteRegionMutation.isPending ? 'Deleting...' : 'Delete Region'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderPartnerAssignModal = () => (
+    <Dialog open={isPartnerAssignModalOpen} onOpenChange={setIsPartnerAssignModalOpen}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Assign Partners to {selectedRegion?.name}</DialogTitle>
+          <DialogDescription>
+            Select which partners should operate in this region.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          {/* Partner assignment controls would go here */}
+          <p className="text-sm text-gray-600 mb-4">
+            This feature will be implemented soon. It will allow you to assign multiple partners to this region.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button type="button" onClick={() => setIsPartnerAssignModalOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Region Management</h1>
-          <p className="text-gray-500">Manage regions for product availability and partner assignment</p>
-        </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+    <div className="py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Region Management</h1>
+        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-1">
-              <Plus size={16} />
-              <span>Add Region</span>
+            <Button className="mb-4 flex items-center gap-2">
+              <PlusCircle size={16} />
+              Add New Region
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Region</DialogTitle>
-              <DialogDescription>
-                Create a new region for segmenting product availability and partner assignment.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...addForm}>
-              <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
-                <FormField
-                  control={addForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Region Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. North America" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        The display name for this region
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Region Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. NA" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        A short code for the region
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    disabled={createRegionMutation.isPending}
-                  >
-                    {createRegionMutation.isPending ? 'Creating...' : 'Create Region'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
+          {renderAddModal()}
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Regions</CardTitle>
-          <CardDescription>
-            Manage regions for specific product availability and partner assignment
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {regions && Array.isArray(regions) && regions.length > 0 ? (
-                regions.map((region: Region) => (
-                  <TableRow key={region.id}>
-                    <TableCell className="font-medium">{region.name}</TableCell>
-                    <TableCell>{region.code}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        region.active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {region.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </TableCell>
-                    <TableCell>{new Date(region.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(region)}
-                        >
-                          <Edit size={16} />
-                        </Button>
-                      </div>
-                    </TableCell>
+      <Tabs defaultValue="regions" className="mb-8">
+        <TabsList>
+          <TabsTrigger value="regions">Regions</TabsTrigger>
+          <TabsTrigger value="partners">Partners by Region</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="regions" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Geographical Regions</CardTitle>
+              <CardDescription>
+                Manage regions for region-specific pricing, tax rates, and partner assignments.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Currency</TableHead>
+                    <TableHead>Tax Rate</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))
+                </TableHeader>
+                <TableBody>
+                  {regions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        No regions found. Add your first region using the button above.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    regions.map((region) => (
+                      <TableRow key={region.id}>
+                        <TableCell className="font-medium">{region.name}</TableCell>
+                        <TableCell>{region.code}</TableCell>
+                        <TableCell>{region.currency_code}</TableCell>
+                        <TableCell>{region.tax_rate ? `${region.tax_rate}%` : 'N/A'}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${region.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                            {region.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openEditModal(region)}
+                              title="Edit"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openPartnerAssignModal(region)}
+                              title="Assign Partners"
+                            >
+                              <MapPin size={16} />
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="icon"
+                              onClick={() => openDeleteModal(region)}
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="partners" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Partners by Region</CardTitle>
+              <CardDescription>
+                View which partners are assigned to each region.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!partners || partners.length === 0 ? (
+                <div className="py-4 text-center text-gray-500">
+                  No partners have been created yet.
+                </div>
               ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <MapPin size={24} />
-                      <p>No regions found</p>
-                      <p className="text-sm">Create your first region to get started</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <Accordion type="single" collapsible className="w-full">
+                  {partnersWithRegions.map((partner) => (
+                    <AccordionItem key={partner.id} value={`partner-${partner.id}`}>
+                      <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          {partner.logo && (
+                            <img 
+                              src={partner.logo} 
+                              alt={partner.name} 
+                              className="w-6 h-6 rounded-full object-contain" 
+                            />
+                          )}
+                          <span className="font-medium">{partner.name}</span>
+                          <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${partner.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                            {partner.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Contact: {partner.email}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Assigned Regions:</h4>
+                            {partner.regions.length === 0 ? (
+                              <p className="text-sm text-gray-500">No regions assigned.</p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {partner.regions.map((region) => (
+                                  <span 
+                                    key={region.id}
+                                    className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
+                                  >
+                                    {region.name} ({region.code})
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Region</DialogTitle>
-            <DialogDescription>
-              Update the region details.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-              <FormField
-                control={editForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Region Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. North America" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Region Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. NA" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={field.onChange}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Active</FormLabel>
-                      <FormDescription>
-                        Inactive regions won't be available for product assignment
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={updateRegionMutation.isPending}
-                >
-                  {updateRegionMutation.isPending ? 'Updating...' : 'Update Region'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      {/* Render modals */}
+      {renderEditModal()}
+      {renderDeleteModal()}
+      {renderPartnerAssignModal()}
     </div>
   );
 };

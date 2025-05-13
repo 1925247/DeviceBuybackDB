@@ -2,14 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +14,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
-import { PlusCircle, Pencil, Trash2, Plus, Minus } from 'lucide-react';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import {
   Table,
   TableBody,
@@ -34,6 +35,7 @@ import {
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -43,122 +45,125 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-
-interface DeviceType {
-  id: number;
-  name: string;
-  slug: string;
-  icon: string;
-  active: boolean;
-}
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Pencil, Trash2, MoveUp, MoveDown, Copy } from 'lucide-react';
 
 interface ConditionOption {
   id: number;
   text: string;
-  value: string;
+  answer?: string;
+  value: string | number;
 }
 
 interface ConditionQuestion {
   id: number;
   question: string;
-  device_type_id: number;
-  tooltip: string;
+  deviceTypeId: number;
   order: number;
   active: boolean;
   options: ConditionOption[];
-  deviceType?: DeviceType;
+}
+
+interface DeviceType {
+  id: number;
+  name: string;
+  icon?: string;
+  slug: string;
+}
+
+interface ManufacturerBrand {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
 }
 
 const ConditionQuestionsAdmin: React.FC = () => {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedDeviceType, setSelectedDeviceType] = useState<number | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<ConditionQuestion | null>(null);
+  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
+  const [isEditQuestionOpen, setIsEditQuestionOpen] = useState(false);
+  const [isDeleteQuestionOpen, setIsDeleteQuestionOpen] = useState(false);
   const [formData, setFormData] = useState({
     question: '',
-    device_type_id: '',
-    tooltip: '',
-    order: '1',
+    deviceTypeId: '',
     active: true,
-    options: [{ text: '', value: '' }]
+    options: [{ text: '', value: '', answer: '' }],
   });
   const { toast } = useToast();
 
   // Query hooks for fetching data
-  const { data: questions, isLoading: isLoadingQuestions } = useQuery<ConditionQuestion[]>({
-    queryKey: ['/api/condition-questions'],
-  });
-
   const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
     queryKey: ['/api/device-types'],
+    retry: 1,
   });
 
-  // Mutation hooks for creating, updating, and deleting condition questions
+  const { data: questions, isLoading: isLoadingQuestions } = useQuery<ConditionQuestion[]>({
+    queryKey: ['/api/condition-questions', selectedDeviceType],
+    queryFn: async () => {
+      const url = selectedDeviceType
+        ? `/api/condition-questions?deviceTypeId=${selectedDeviceType}`
+        : '/api/condition-questions';
+      return apiRequest('GET', url).then(res => res.json());
+    },
+    enabled: true,
+  });
+
+  // Mutation hooks for question operations
   const createQuestionMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch('/api/condition-questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create condition question');
-      }
-      
-      return response.json();
+    mutationFn: async (data: typeof formData) => {
+      return apiRequest('POST', '/api/condition-questions', {
+        ...data,
+        deviceTypeId: parseInt(data.deviceTypeId),
+        options: data.options.map(option => ({
+          ...option,
+          value: option.value === '' ? 0 : parseFloat(option.value)
+        })),
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/condition-questions'] });
-      setIsAddModalOpen(false);
+      setIsAddQuestionOpen(false);
       resetForm();
       toast({
         title: 'Success',
-        description: 'Condition question created successfully',
+        description: 'Question created successfully',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to create question',
         variant: 'destructive',
       });
     },
   });
 
   const updateQuestionMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch(`/api/condition-questions/${data.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update condition question');
-      }
-      
-      return response.json();
+    mutationFn: async (data: typeof formData & { id: number }) => {
+      return apiRequest('PUT', `/api/condition-questions/${data.id}`, {
+        ...data,
+        deviceTypeId: parseInt(data.deviceTypeId),
+        options: data.options.map(option => ({
+          ...option,
+          value: option.value === '' ? 0 : parseFloat(option.value)
+        })),
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/condition-questions'] });
-      setIsEditModalOpen(false);
+      setIsEditQuestionOpen(false);
+      setSelectedQuestion(null);
       resetForm();
       toast({
         title: 'Success',
-        description: 'Condition question updated successfully',
+        description: 'Question updated successfully',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to update question',
         variant: 'destructive',
       });
     },
@@ -166,30 +171,41 @@ const ConditionQuestionsAdmin: React.FC = () => {
 
   const deleteQuestionMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/condition-questions/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete condition question');
-      }
-      
-      return response.json();
+      return apiRequest('DELETE', `/api/condition-questions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/condition-questions'] });
-      setIsDeleteModalOpen(false);
+      setIsDeleteQuestionOpen(false);
       setSelectedQuestion(null);
       toast({
         title: 'Success',
-        description: 'Condition question deleted successfully',
+        description: 'Question deleted successfully',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to delete question',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const changeQuestionOrderMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: number, direction: 'up' | 'down' }) => {
+      return apiRequest('POST', `/api/condition-questions/${id}/order`, { direction }).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/condition-questions'] });
+      toast({
+        title: 'Success',
+        description: 'Question order updated',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update question order',
         variant: 'destructive',
       });
     },
@@ -199,75 +215,130 @@ const ConditionQuestionsAdmin: React.FC = () => {
   const resetForm = () => {
     setFormData({
       question: '',
-      device_type_id: '',
-      tooltip: '',
-      order: '1',
+      deviceTypeId: '',
       active: true,
-      options: [{ text: '', value: '' }]
+      options: [{ text: '', value: '', answer: '' }],
     });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, active: checked }));
   };
 
-  const handleOptionChange = (index: number, field: 'text' | 'value', value: string) => {
-    const updatedOptions = [...formData.options];
-    updatedOptions[index] = { ...updatedOptions[index], [field]: value };
-    setFormData((prev) => ({ ...prev, options: updatedOptions }));
+  const handleOptionChange = (index: number, field: keyof ConditionOption, value: string) => {
+    setFormData(prev => {
+      const newOptions = [...prev.options];
+      newOptions[index] = { ...newOptions[index], [field]: value };
+      return { ...prev, options: newOptions };
+    });
   };
 
   const addOption = () => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      options: [...prev.options, { text: '', value: '' }]
+      options: [...prev.options, { text: '', value: '', answer: '' }],
     }));
   };
 
   const removeOption = (index: number) => {
-    if (formData.options.length > 1) {
-      const updatedOptions = formData.options.filter((_, i) => i !== index);
-      setFormData((prev) => ({ ...prev, options: updatedOptions }));
+    if (formData.options.length <= 1) {
+      toast({
+        title: 'Error',
+        description: 'At least one option is required',
+        variant: 'destructive',
+      });
+      return;
     }
+    
+    setFormData(prev => {
+      const newOptions = [...prev.options];
+      newOptions.splice(index, 1);
+      return { ...prev, options: newOptions };
+    });
   };
 
   const handleAddQuestion = (e: React.FormEvent) => {
     e.preventDefault();
-    const data = {
-      question: formData.question,
-      device_type_id: parseInt(formData.device_type_id),
-      tooltip: formData.tooltip,
-      order: parseInt(formData.order),
-      active: formData.active,
-      options: formData.options
-    };
-    createQuestionMutation.mutate(data);
+    
+    // Validate form
+    if (!formData.question) {
+      toast({
+        title: 'Validation Error',
+        description: 'Question text is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.deviceTypeId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Device type is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const invalidOptions = formData.options.some(option => !option.text || option.value === '');
+    if (invalidOptions) {
+      toast({
+        title: 'Validation Error',
+        description: 'All options must have text and value',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    createQuestionMutation.mutate(formData);
   };
 
   const handleEditQuestion = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedQuestion) {
-      const data = {
-        id: selectedQuestion.id,
-        question: formData.question,
-        device_type_id: parseInt(formData.device_type_id),
-        tooltip: formData.tooltip,
-        order: parseInt(formData.order),
-        active: formData.active,
-        options: formData.options
-      };
-      updateQuestionMutation.mutate(data);
+    
+    if (!selectedQuestion) return;
+    
+    // Validate form
+    if (!formData.question) {
+      toast({
+        title: 'Validation Error',
+        description: 'Question text is required',
+        variant: 'destructive',
+      });
+      return;
     }
+    
+    if (!formData.deviceTypeId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Device type is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const invalidOptions = formData.options.some(option => !option.text || option.value === '');
+    if (invalidOptions) {
+      toast({
+        title: 'Validation Error',
+        description: 'All options must have text and value',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    updateQuestionMutation.mutate({
+      ...formData,
+      id: selectedQuestion.id,
+    });
   };
 
   const handleDeleteQuestion = () => {
@@ -276,440 +347,651 @@ const ConditionQuestionsAdmin: React.FC = () => {
     }
   };
 
-  const openEditModal = (question: ConditionQuestion) => {
+  const handleChangeOrder = (id: number, direction: 'up' | 'down') => {
+    changeQuestionOrderMutation.mutate({ id, direction });
+  };
+
+  const openEditQuestionModal = (question: ConditionQuestion) => {
     setSelectedQuestion(question);
     setFormData({
       question: question.question,
-      device_type_id: question.device_type_id.toString(),
-      tooltip: question.tooltip || '',
-      order: question.order.toString(),
+      deviceTypeId: question.deviceTypeId.toString(),
       active: question.active,
       options: question.options.map(option => ({
         text: option.text,
-        value: option.value
-      }))
+        value: option.value.toString(),
+        answer: option.answer || '',
+      })),
     });
-    setIsEditModalOpen(true);
+    setIsEditQuestionOpen(true);
   };
 
-  const openDeleteModal = (question: ConditionQuestion) => {
+  const openDeleteQuestionModal = (question: ConditionQuestion) => {
     setSelectedQuestion(question);
-    setIsDeleteModalOpen(true);
+    setIsDeleteQuestionOpen(true);
   };
 
-  if (isLoadingQuestions || isLoadingDeviceTypes) {
+  const getDeviceTypeName = (id: number) => {
+    if (!deviceTypes) return 'Unknown';
+    const deviceType = deviceTypes.find(dt => dt.id === id);
+    return deviceType ? deviceType.name : 'Unknown';
+  };
+
+  // Loading state
+  if (isLoadingDeviceTypes) {
     return (
-      <div className="p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Condition Questions</h1>
-        </div>
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading condition questions...</p>
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Condition Questions</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Condition Questions</h1>
-        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="mb-4 flex items-center gap-2">
-              <PlusCircle size={16} />
-              Add New Question
+  const renderAddQuestionModal = () => (
+    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Add New Question</DialogTitle>
+        <DialogDescription>
+          Create a new condition assessment question for device valuation.
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleAddQuestion} className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label htmlFor="question">Question Text</Label>
+          <Textarea
+            id="question"
+            name="question"
+            value={formData.question}
+            onChange={handleInputChange}
+            placeholder="e.g., What is the condition of the screen?"
+            className="min-h-[80px]"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="deviceTypeId">Device Type</Label>
+          <Select 
+            value={formData.deviceTypeId} 
+            onValueChange={(value) => handleSelectChange('deviceTypeId', value)}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select device type" />
+            </SelectTrigger>
+            <SelectContent>
+              {deviceTypes?.map((deviceType) => (
+                <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
+                  {deviceType.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.active}
+            onCheckedChange={handleSwitchChange}
+            id="active"
+          />
+          <Label htmlFor="active">Active</Label>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Options</Label>
+            <Button type="button" variant="outline" size="sm" onClick={addOption}>
+              <Plus className="mr-1 h-4 w-4" /> Add Option
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Add New Condition Question</DialogTitle>
-              <DialogDescription>
-                Create a new assessment question for device condition evaluation.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAddQuestion} className="space-y-4 py-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="question">Question Text</Label>
+          </div>
+          
+          {formData.options.map((option, index) => (
+            <div key={index} className="border p-4 rounded-md space-y-3">
+              <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium">Option {index + 1}</h4>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => removeOption(index)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor={`option-text-${index}`}>Option Text</Label>
+                <Input
+                  id={`option-text-${index}`}
+                  value={option.text}
+                  onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
+                  placeholder="e.g., Excellent, Good, Fair, Poor"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor={`option-value-${index}`}>Value Impact</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500">%</span>
+                  </div>
                   <Input
-                    id="question"
-                    name="question"
-                    value={formData.question}
-                    onChange={handleInputChange}
+                    id={`option-value-${index}`}
+                    value={option.value}
+                    onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                    placeholder="e.g., 100, 80, 60, 40"
+                    type="number"
+                    min="-100"
+                    max="100"
+                    className="pl-8"
                     required
-                    placeholder="E.g., Is the device in working condition?"
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="device_type_id">Device Type</Label>
-                  <Select
-                    value={formData.device_type_id}
-                    onValueChange={(value) => handleSelectChange('device_type_id', value)}
-                    required
+                <p className="text-xs text-gray-500">
+                  Percentage value used to calculate device condition. Use positive for increasing value, negative for reducing.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor={`option-answer-${index}`}>Answer Description (Optional)</Label>
+                <Input
+                  id={`option-answer-${index}`}
+                  value={option.answer || ''}
+                  onChange={(e) => handleOptionChange(index, 'answer', e.target.value)}
+                  placeholder="Additional description for this option"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsAddQuestionOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={createQuestionMutation.isPending}>
+            {createQuestionMutation.isPending ? 'Creating...' : 'Create Question'}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  );
+
+  const renderEditQuestionModal = () => (
+    <Dialog open={isEditQuestionOpen} onOpenChange={setIsEditQuestionOpen}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Question</DialogTitle>
+          <DialogDescription>
+            Update this condition assessment question.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleEditQuestion} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-question">Question Text</Label>
+            <Textarea
+              id="edit-question"
+              name="question"
+              value={formData.question}
+              onChange={handleInputChange}
+              className="min-h-[80px]"
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-deviceTypeId">Device Type</Label>
+            <Select 
+              value={formData.deviceTypeId} 
+              onValueChange={(value) => handleSelectChange('deviceTypeId', value)}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select device type" />
+              </SelectTrigger>
+              <SelectContent>
+                {deviceTypes?.map((deviceType) => (
+                  <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
+                    {deviceType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.active}
+              onCheckedChange={handleSwitchChange}
+              id="edit-active"
+            />
+            <Label htmlFor="edit-active">Active</Label>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Options</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addOption}>
+                <Plus className="mr-1 h-4 w-4" /> Add Option
+              </Button>
+            </div>
+            
+            {formData.options.map((option, index) => (
+              <div key={index} className="border p-4 rounded-md space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-medium">Option {index + 1}</h4>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => removeOption(index)}
+                    className="h-8 w-8 p-0"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Device Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {deviceTypes?.map((type) => (
-                        <SelectItem key={type.id} value={type.id.toString()}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="tooltip">Tooltip Text (Optional)</Label>
+                  <Label htmlFor={`edit-option-text-${index}`}>Option Text</Label>
                   <Input
-                    id="tooltip"
-                    name="tooltip"
-                    value={formData.tooltip}
-                    onChange={handleInputChange}
-                    placeholder="Helpful explanation text"
+                    id={`edit-option-text-${index}`}
+                    value={option.text}
+                    onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
+                    required
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="order">Display Order</Label>
+                <div className="space-y-2">
+                  <Label htmlFor={`edit-option-value-${index}`}>Value Impact</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500">%</span>
+                    </div>
                     <Input
-                      id="order"
-                      name="order"
+                      id={`edit-option-value-${index}`}
+                      value={option.value}
+                      onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
                       type="number"
-                      min="1"
-                      value={formData.order}
-                      onChange={handleInputChange}
+                      min="-100"
+                      max="100"
+                      className="pl-8"
                       required
                     />
                   </div>
-                  
-                  <div className="flex items-center space-x-2 pt-8">
-                    <input
-                      type="checkbox"
-                      id="active"
-                      name="active"
-                      checked={formData.active}
-                      onChange={handleCheckboxChange}
-                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
-                    />
-                    <Label htmlFor="active" className="cursor-pointer">Active</Label>
-                  </div>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Answer Options</Label>
-                    <Button 
-                      type="button" 
-                      onClick={addOption}
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add Option
-                    </Button>
-                  </div>
-                  
-                  {formData.options.map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Option text (e.g., Yes, it's working perfectly)"
-                          value={option.text}
-                          onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          placeholder="Value (e.g., 1.0)"
-                          value={option.value}
-                          onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeOption(index)}
-                        disabled={formData.options.length <= 1}
-                        className="h-8 w-8"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <Label htmlFor={`edit-option-answer-${index}`}>Answer Description (Optional)</Label>
+                  <Input
+                    id={`edit-option-answer-${index}`}
+                    value={option.answer || ''}
+                    onChange={(e) => handleOptionChange(index, 'answer', e.target.value)}
+                  />
                 </div>
               </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createQuestionMutation.isPending}>
-                  {createQuestionMutation.isPending ? 'Creating...' : 'Create Question'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
+            ))}
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsEditQuestionOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateQuestionMutation.isPending}>
+              {updateQuestionMutation.isPending ? 'Updating...' : 'Update Question'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDeleteQuestionModal = () => (
+    <Dialog open={isDeleteQuestionOpen} onOpenChange={setIsDeleteQuestionOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Question</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this question? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="font-medium">
+            {selectedQuestion?.question}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Device Type: {selectedQuestion ? getDeviceTypeName(selectedQuestion.deviceTypeId) : ''}
+          </p>
+          <p className="text-sm text-gray-500">
+            Options: {selectedQuestion?.options.length || 0}
+          </p>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsDeleteQuestionOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            onClick={handleDeleteQuestion}
+            disabled={deleteQuestionMutation.isPending}
+          >
+            {deleteQuestionMutation.isPending ? 'Deleting...' : 'Delete Question'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <div className="py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Condition Assessment Questions</h1>
+        <Dialog open={isAddQuestionOpen} onOpenChange={setIsAddQuestionOpen}>
+          <DialogTrigger asChild>
+            <Button className="mb-4">
+              <Plus className="mr-2 h-4 w-4" /> Add New Question
+            </Button>
+          </DialogTrigger>
+          {renderAddQuestionModal()}
         </Dialog>
       </div>
 
-      {questions && questions.length > 0 ? (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <Accordion type="single" collapsible className="w-full">
-            {questions.map((question) => {
-              const deviceType = deviceTypes?.find(dt => dt.id === question.device_type_id);
-              return (
-                <AccordionItem key={question.id} value={question.id.toString()}>
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
-                    <div className="flex justify-between items-center w-full pr-4">
-                      <div className="flex items-center">
-                        <span className={`h-2 w-2 rounded-full mr-2 ${question.active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                        <span className="font-medium">{question.question}</span>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {deviceType?.name} (Order: {question.order})
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          {question.tooltip && (
-                            <div className="mt-1 text-sm text-gray-500">
-                              <span className="font-medium">Tooltip:</span> {question.tooltip}
-                            </div>
-                          )}
-                          <div className="mt-4">
-                            <h4 className="text-sm font-medium mb-2">Answer Options:</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {question.options.map((option, index) => (
-                                <div key={index} className="bg-gray-50 px-3 py-2 rounded-md flex justify-between">
-                                  <span>{option.text}</span>
-                                  <span className="text-gray-500">Value: {option.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEditModal(question)}
-                          >
-                            <Pencil className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openDeleteModal(question)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-600">No condition questions found.</p>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Edit Condition Question</DialogTitle>
-            <DialogDescription>
-              Update the assessment question for device condition evaluation.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEditQuestion} className="space-y-4 py-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-question">Question Text</Label>
-                  <Input
-                    id="edit-question"
-                    name="question"
-                    value={formData.question}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="E.g., Is the device in working condition?"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-device_type_id">Device Type</Label>
-                  <Select
-                    value={formData.device_type_id}
-                    onValueChange={(value) => handleSelectChange('device_type_id', value)}
-                    required
+      <Tabs defaultValue="questions" className="mb-6">
+        <TabsList>
+          <TabsTrigger value="questions">Questions</TabsTrigger>
+          <TabsTrigger value="preview">Question Flow Preview</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="questions">
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle>Filter by Device Type</CardTitle>
+              <CardDescription>
+                Select a device type to view specific questions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedDeviceType === null ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedDeviceType(null)}
+                >
+                  All Types
+                </Button>
+                {deviceTypes?.map((deviceType) => (
+                  <Button
+                    key={deviceType.id}
+                    variant={selectedDeviceType === deviceType.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedDeviceType(deviceType.id)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Device Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {deviceTypes?.map((type) => (
-                        <SelectItem key={type.id} value={type.id.toString()}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    {deviceType.name}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {isLoadingQuestions ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : !questions || questions.length === 0 ? (
+            <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
+              <h3 className="text-lg font-medium text-amber-800 mb-2">No Questions Found</h3>
+              <p className="text-amber-700 mb-4">
+                {selectedDeviceType 
+                  ? `No questions found for the selected device type.` 
+                  : `No condition questions have been created yet. Questions are used to assess device condition and calculate buyback value.`}
+              </p>
+              <Button onClick={() => setIsAddQuestionOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Create Your First Question
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {deviceTypes?.map((deviceType) => {
+                const deviceQuestions = questions.filter(q => q.deviceTypeId === deviceType.id);
                 
-                <div className="space-y-2">
-                  <Label htmlFor="edit-tooltip">Tooltip Text (Optional)</Label>
-                  <Input
-                    id="edit-tooltip"
-                    name="tooltip"
-                    value={formData.tooltip}
-                    onChange={handleInputChange}
-                    placeholder="Helpful explanation text"
-                  />
-                </div>
+                // Skip device types with no questions if filtering
+                if (selectedDeviceType !== null && deviceType.id !== selectedDeviceType) {
+                  return null;
+                }
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-order">Display Order</Label>
-                    <Input
-                      id="edit-order"
-                      name="order"
-                      type="number"
-                      min="1"
-                      value={formData.order}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 pt-8">
-                    <input
-                      type="checkbox"
-                      id="edit-active"
-                      name="active"
-                      checked={formData.active}
-                      onChange={handleCheckboxChange}
-                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
-                    />
-                    <Label htmlFor="edit-active" className="cursor-pointer">Active</Label>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Answer Options</Label>
-                    <Button 
-                      type="button" 
-                      onClick={addOption}
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add Option
-                    </Button>
-                  </div>
-                  
-                  {formData.options.map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Option text (e.g., Yes, it's working perfectly)"
-                          value={option.text}
-                          onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          placeholder="Value (e.g., 1.0)"
-                          value={option.value}
-                          onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-                          required
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeOption(index)}
-                        disabled={formData.options.length <= 1}
-                        className="h-8 w-8"
-                      >
-                        <Minus className="h-4 w-4" />
+                if (deviceQuestions.length === 0 && selectedDeviceType === deviceType.id) {
+                  return (
+                    <div key={deviceType.id} className="bg-amber-50 p-6 rounded-lg border border-amber-200">
+                      <h3 className="text-lg font-medium text-amber-800 mb-2">No Questions for {deviceType.name}</h3>
+                      <p className="text-amber-700 mb-4">
+                        No condition questions have been created for this device type yet.
+                      </p>
+                      <Button onClick={() => {
+                        handleSelectChange('deviceTypeId', deviceType.id.toString());
+                        setIsAddQuestionOpen(true);
+                      }}>
+                        <Plus className="mr-2 h-4 w-4" /> Add Question for {deviceType.name}
                       </Button>
                     </div>
-                  ))}
+                  );
+                }
+                
+                if (deviceQuestions.length === 0) {
+                  return null;
+                }
+                
+                return (
+                  <Card key={deviceType.id}>
+                    <CardHeader>
+                      <CardTitle>{deviceType.name} Questions</CardTitle>
+                      <CardDescription>
+                        Condition questions for {deviceType.name} devices
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-14">Order</TableHead>
+                            <TableHead>Question</TableHead>
+                            <TableHead>Options</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {deviceQuestions
+                            .sort((a, b) => a.order - b.order)
+                            .map((question) => (
+                            <TableRow key={question.id}>
+                              <TableCell>
+                                <div className="flex flex-col space-y-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-5 w-5"
+                                    onClick={() => handleChangeOrder(question.id, 'up')}
+                                  >
+                                    <MoveUp size={14} />
+                                  </Button>
+                                  <span className="text-center">{question.order}</span>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-5 w-5"
+                                    onClick={() => handleChangeOrder(question.id, 'down')}
+                                  >
+                                    <MoveDown size={14} />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <p className="font-medium">{question.question}</p>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1 max-w-md">
+                                  {question.options.map((option, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="text-xs px-2 py-1 bg-gray-100 rounded-full whitespace-nowrap"
+                                      title={`Value impact: ${option.value}%`}
+                                    >
+                                      {option.text}
+                                    </div>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${question.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                  {question.active ? 'Active' : 'Inactive'}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => {
+                                      // Set up for duplication but open add dialog
+                                      setFormData({
+                                        question: `${question.question} (Copy)`,
+                                        deviceTypeId: question.deviceTypeId.toString(),
+                                        active: question.active,
+                                        options: question.options.map(option => ({
+                                          text: option.text,
+                                          value: option.value.toString(),
+                                          answer: option.answer || '',
+                                        })),
+                                      });
+                                      setIsAddQuestionOpen(true);
+                                    }}
+                                    title="Duplicate"
+                                  >
+                                    <Copy size={14} className="mr-1" />
+                                    Duplicate
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openEditQuestionModal(question)}
+                                    title="Edit"
+                                  >
+                                    <Pencil size={14} className="mr-1" />
+                                    Edit
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => openDeleteQuestionModal(question)}
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={14} className="mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="preview">
+          <Card>
+            <CardHeader>
+              <CardTitle>Question Flow Preview</CardTitle>
+              <CardDescription>
+                Preview how the condition questions will appear to users
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-gray-50 border p-4 rounded-md">
+                  <div className="mb-4">
+                    <Label className="mb-2 block">Select Device Type to Preview</Label>
+                    <Select onValueChange={(value) => setSelectedDeviceType(parseInt(value))}>
+                      <SelectTrigger className="w-full md:w-1/2">
+                        <SelectValue placeholder="Select device type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deviceTypes?.map((deviceType) => (
+                          <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
+                            {deviceType.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedDeviceType && questions && (
+                    <div className="border rounded-md p-6 bg-white">
+                      <h3 className="text-lg font-medium mb-6">
+                        {getDeviceTypeName(selectedDeviceType)} Condition Assessment
+                      </h3>
+                      
+                      {questions
+                        .filter(q => q.deviceTypeId === selectedDeviceType && q.active)
+                        .sort((a, b) => a.order - b.order)
+                        .length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <p>No active questions for this device type.</p>
+                        </div>
+                      ) : (
+                        <Accordion type="single" collapsible className="w-full">
+                          {questions
+                            .filter(q => q.deviceTypeId === selectedDeviceType && q.active)
+                            .sort((a, b) => a.order - b.order)
+                            .map((question, idx) => (
+                              <AccordionItem key={question.id} value={`question-${question.id}`}>
+                                <AccordionTrigger className="text-left">
+                                  <span className="font-medium flex">
+                                    <span className="w-8 flex-shrink-0">{idx + 1}.</span>
+                                    <span>{question.question}</span>
+                                  </span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pl-8">
+                                  <div className="py-2 space-y-4">
+                                    {question.options.map((option, optIdx) => (
+                                      <div key={optIdx} className="flex items-start space-x-2">
+                                        <div className="border-2 rounded-full w-5 h-5 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                          <p className="font-medium">{option.text}</p>
+                                          {option.answer && (
+                                            <p className="text-sm text-gray-600 mt-1">{option.answer}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))
+                          }
+                        </Accordion>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateQuestionMutation.isPending}>
-                  {updateQuestionMutation.isPending ? 'Updating...' : 'Update Question'}
-                </Button>
-              </DialogFooter>
-            </form>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Delete Confirmation Modal */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Condition Question</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this condition question? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedQuestion && (
-              <div className="p-4 bg-gray-50 rounded-md">
-                <p><span className="font-medium">Question:</span> {selectedQuestion.question}</p>
-                <p><span className="font-medium">Device Type:</span> {deviceTypes?.find(dt => dt.id === selectedQuestion.device_type_id)?.name}</p>
-                <p><span className="font-medium">Options:</span> {selectedQuestion.options.length}</p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="button" 
-              variant="destructive"
-              onClick={handleDeleteQuestion}
-              disabled={deleteQuestionMutation.isPending}
-            >
-              {deleteQuestionMutation.isPending ? 'Deleting...' : 'Delete Question'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Render modals */}
+      {renderEditQuestionModal()}
+      {renderDeleteQuestionModal()}
     </div>
   );
 };

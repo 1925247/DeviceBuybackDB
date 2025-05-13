@@ -2,14 +2,6 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
-import { Edit, Trash2, Eye, Phone, Mail, MapPin, Calendar, Clock, UserPlus } from 'lucide-react';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { PlusCircle, Pencil, Trash2, CheckCircle, ExternalLink } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -35,678 +34,866 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Badge,
-} from '@/components/ui/badge';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 interface BuybackRequest {
   id: number;
   user_id: number;
-  device_model_id: number;
   device_type: string;
   manufacturer: string;
   model: string;
   condition: string;
-  offered_price: string;
-  variant: string | null;
+  estimated_value: string;
+  final_value?: string;
   status: string;
-  notes: string | null;
-  pickup_address: string;
-  pickup_date: string;
-  pickup_time: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  assigned_to?: string;
-  pickup_notes?: string;
-  created_at?: string;
-  updated_at?: string;
+  partner_id?: number;
+  region_id?: number;
+  created_at: string;
+  updated_at: string;
+  questionnaire_answers?: any;
+  contact_info?: {
+    name: string;
+    email: string;
+    phone: string;
+    address?: string;
+  };
 }
 
-const statusOptions = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'assigned', label: 'Assigned to Staff' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'processing', label: 'Processing' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-];
+interface Partner {
+  id: number;
+  name: string;
+  email: string;
+  logo?: string;
+}
 
-const getStatusColor = (status: string) => {
-  switch(status) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'approved':
-      return 'bg-green-100 text-green-800';
-    case 'assigned':
-      return 'bg-indigo-100 text-indigo-800';
-    case 'rejected':
-      return 'bg-red-100 text-red-800';
-    case 'processing':
-      return 'bg-blue-100 text-blue-800';
-    case 'completed':
-      return 'bg-purple-100 text-purple-800';
-    case 'cancelled':
-      return 'bg-gray-100 text-gray-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
+interface Region {
+  id: number;
+  name: string;
+  code: string;
+}
+
+const statusColors: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
+  processing: 'bg-blue-100 text-blue-800',
+  completed: 'bg-purple-100 text-purple-800',
+  cancelled: 'bg-gray-100 text-gray-800',
 };
 
 const AdminBuybacks: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState('all');
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
-  const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<BuybackRequest | null>(null);
-  const [newStatus, setNewStatus] = useState('');
-  const [assignedStaff, setAssignedStaff] = useState('');
-  const [pickupNotes, setPickupNotes] = useState('');
+  const [selectedTab, setSelectedTab] = useState('recent');
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedBuyback, setSelectedBuyback] = useState<BuybackRequest | null>(null);
+  const [formData, setFormData] = useState({
+    status: '',
+    final_value: '',
+    partner_id: '',
+    region_id: '',
+    notes: '',
+  });
   const { toast } = useToast();
 
-  // Query to fetch buyback requests
-  const { data: buybackRequests, isLoading, refetch } = useQuery<{ requests: BuybackRequest[], total: number }>({
-    queryKey: ['/api/buyback-requests'],
+  // Query hooks for fetching data
+  const { data: buybacks, isLoading: isLoadingBuybacks } = useQuery<BuybackRequest[]>({
+    queryKey: ['/api/buyback-requests', selectedStatus],
+    queryFn: async () => {
+      const url = selectedStatus 
+        ? `/api/buyback-requests?status=${selectedStatus}` 
+        : '/api/buyback-requests';
+      return apiRequest('GET', url).then(res => res.json());
+    },
   });
 
-  // Mutation to update buyback request status
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number, status: string }) => {
-      const response = await fetch(`/api/buyback-requests/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update status');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-      setStatusUpdateModalOpen(false);
-      toast({
-        title: 'Status Updated',
-        description: 'The buyback request status has been updated successfully.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+  const { data: recentBuybacks, isLoading: isLoadingRecent } = useQuery<BuybackRequest[]>({
+    queryKey: ['/api/buyback-requests/recent'],
+    queryFn: async () => {
+      return apiRequest('GET', '/api/buyback-requests/recent').then(res => res.json());
     },
   });
-  
-  // Mutation to assign buyback request to staff
-  const assignRequestMutation = useMutation({
-    mutationFn: async ({ id, assignedTo, pickupNotes }: { id: number, assignedTo: string, pickupNotes: string }) => {
-      const response = await fetch(`/api/buyback-requests/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          assigned_to: assignedTo, 
-          pickup_notes: pickupNotes,
-          status: 'assigned' 
-        }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to assign request');
-      }
-      
-      return response.json();
+
+  const { data: partners, isLoading: isLoadingPartners } = useQuery<Partner[]>({
+    queryKey: ['/api/partners'],
+    queryFn: async () => {
+      return apiRequest('GET', '/api/partners').then(res => res.json());
+    },
+    retry: 1,
+  });
+
+  const { data: regions, isLoading: isLoadingRegions } = useQuery<Region[]>({
+    queryKey: ['/api/regions'],
+    queryFn: async () => {
+      return apiRequest('GET', '/api/regions').then(res => res.json());
+    },
+    retry: 1,
+  });
+
+  // Mutation hooks for updating and deleting buyback requests
+  const updateBuybackMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: any }) => {
+      return apiRequest('PUT', `/api/buyback-requests/${id}`, data).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-      setAssignModalOpen(false);
-      setAssignedStaff('');
-      setPickupNotes('');
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests/recent'] });
+      setIsEditModalOpen(false);
+      setIsAssignModalOpen(false);
+      setSelectedBuyback(null);
+      resetForm();
       toast({
-        title: 'Request Assigned',
-        description: 'The buyback request has been assigned successfully.',
+        title: 'Success',
+        description: 'Buyback request updated successfully',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to update buyback request',
         variant: 'destructive',
       });
     },
   });
 
-  // Mutation to delete buyback request
-  const deleteMutation = useMutation({
+  const deleteBuybackMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/buyback-requests/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete buyback request');
-      }
-      
-      return response.json();
+      return apiRequest('DELETE', `/api/buyback-requests/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-      setDeleteModalOpen(false);
-      setSelectedRequest(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests/recent'] });
+      setIsDeleteModalOpen(false);
+      setSelectedBuyback(null);
       toast({
-        title: 'Request Deleted',
-        description: 'The buyback request has been deleted successfully.',
+        title: 'Success',
+        description: 'Buyback request deleted successfully',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to delete buyback request',
         variant: 'destructive',
       });
     },
   });
 
-  const handleViewRequest = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setViewModalOpen(true);
+  const assignPartnerMutation = useMutation({
+    mutationFn: async (data: { buybackRequestId: number, partnerId: number }) => {
+      return apiRequest('POST', '/api/partners/assign-buyback', data).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests/recent'] });
+      setIsAssignModalOpen(false);
+      setSelectedBuyback(null);
+      resetForm();
+      toast({
+        title: 'Success',
+        description: 'Partner assigned successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to assign partner',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Helper functions
+  const resetForm = () => {
+    setFormData({
+      status: '',
+      final_value: '',
+      partner_id: '',
+      region_id: '',
+      notes: '',
+    });
   };
 
-  const handleDeleteRequest = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setDeleteModalOpen(true);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleUpdateStatus = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setNewStatus(request.status);
-    setStatusUpdateModalOpen(true);
-  };
-  
-  const handleAssignRequest = (request: BuybackRequest) => {
-    setSelectedRequest(request);
-    setAssignedStaff(request.assigned_to || '');
-    setPickupNotes(request.pickup_notes || '');
-    setAssignModalOpen(true);
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const confirmDeleteRequest = () => {
-    if (selectedRequest) {
-      deleteMutation.mutate(selectedRequest.id);
+  const handleStatusFilter = (status: string | null) => {
+    setSelectedStatus(status);
+  };
+
+  const handleEditBuyback = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedBuyback) {
+      const data: any = {};
+      
+      if (formData.status) data.status = formData.status;
+      if (formData.final_value) data.final_value = formData.final_value;
+      if (formData.partner_id) data.partner_id = parseInt(formData.partner_id);
+      if (formData.region_id) data.region_id = parseInt(formData.region_id);
+      if (formData.notes) data.notes = formData.notes;
+      
+      updateBuybackMutation.mutate({ id: selectedBuyback.id, data });
     }
   };
 
-  const confirmUpdateStatus = () => {
-    if (selectedRequest && newStatus) {
-      updateStatusMutation.mutate({ id: selectedRequest.id, status: newStatus });
+  const handleDeleteBuyback = () => {
+    if (selectedBuyback) {
+      deleteBuybackMutation.mutate(selectedBuyback.id);
     }
   };
-  
-  const confirmAssignRequest = () => {
-    if (selectedRequest && assignedStaff) {
-      assignRequestMutation.mutate({ 
-        id: selectedRequest.id, 
-        assignedTo: assignedStaff, 
-        pickupNotes: pickupNotes 
+
+  const handleAssignPartner = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedBuyback && formData.partner_id) {
+      assignPartnerMutation.mutate({
+        buybackRequestId: selectedBuyback.id,
+        partnerId: parseInt(formData.partner_id),
       });
     }
   };
 
-  const filteredRequests = buybackRequests?.requests.filter(request => {
-    if (currentTab === 'all') return true;
-    return request.status === currentTab;
-  }) || [];
+  const openEditModal = (buyback: BuybackRequest) => {
+    setSelectedBuyback(buyback);
+    setFormData({
+      status: buyback.status,
+      final_value: buyback.final_value || buyback.estimated_value,
+      partner_id: buyback.partner_id ? buyback.partner_id.toString() : '',
+      region_id: buyback.region_id ? buyback.region_id.toString() : '',
+      notes: '',
+    });
+    setIsEditModalOpen(true);
+  };
 
-  if (isLoading) {
+  const openAssignModal = (buyback: BuybackRequest) => {
+    setSelectedBuyback(buyback);
+    setFormData({
+      ...formData,
+      partner_id: buyback.partner_id ? buyback.partner_id.toString() : '',
+    });
+    setIsAssignModalOpen(true);
+  };
+
+  const openDeleteModal = (buyback: BuybackRequest) => {
+    setSelectedBuyback(buyback);
+    setIsDeleteModalOpen(true);
+  };
+
+  const openDetailsModal = (buyback: BuybackRequest) => {
+    setSelectedBuyback(buyback);
+    setIsDetailsModalOpen(true);
+  };
+
+  const getPartnerName = (partnerId?: number) => {
+    if (!partnerId || !partners) return 'Unassigned';
+    const partner = partners.find(p => p.id === partnerId);
+    return partner ? partner.name : 'Unknown Partner';
+  };
+
+  const getRegionName = (regionId?: number) => {
+    if (!regionId || !regions) return 'Global';
+    const region = regions.find(r => r.id === regionId);
+    return region ? region.name : 'Unknown Region';
+  };
+
+  // Loading state
+  if ((isLoadingBuybacks && selectedTab === 'all') || (isLoadingRecent && selectedTab === 'recent')) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-6">Buyback Requests</h1>
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading buyback requests...</p>
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Buyback Management</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </div>
     );
   }
 
+  const renderEditModal = () => (
+    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Update Buyback Request</DialogTitle>
+          <DialogDescription>
+            Update the status and details of this buyback request.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleEditBuyback} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Current Status</label>
+              <div className={`px-3 py-2 rounded-md text-sm font-medium ${statusColors[selectedBuyback?.status || 'pending']}`}>
+                {selectedBuyback?.status.toUpperCase()}
+              </div>
+            </div>
+            
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Update Status</label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Estimated Value</label>
+              <div className="px-3 py-2 rounded-md border border-gray-200 text-sm">
+                ${selectedBuyback?.estimated_value}
+              </div>
+            </div>
+            
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Final Value</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+                <Input
+                  name="final_value"
+                  type="text"
+                  value={formData.final_value}
+                  onChange={handleInputChange}
+                  className="pl-7"
+                  placeholder="Enter final value"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Assigned Partner</label>
+              <Select 
+                value={formData.partner_id} 
+                onValueChange={(value) => handleSelectChange('partner_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select partner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {partners?.map((partner) => (
+                    <SelectItem key={partner.id} value={partner.id.toString()}>
+                      {partner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Region</label>
+              <Select 
+                value={formData.region_id} 
+                onValueChange={(value) => handleSelectChange('region_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Global</SelectItem>
+                  {regions?.map((region) => (
+                    <SelectItem key={region.id} value={region.id.toString()}>
+                      {region.name} ({region.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Notes</label>
+              <Input
+                name="notes"
+                value={formData.notes}
+                onChange={handleInputChange}
+                placeholder="Add optional notes"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateBuybackMutation.isPending}>
+              {updateBuybackMutation.isPending ? 'Updating...' : 'Update Request'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderAssignModal = () => (
+    <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign to Partner</DialogTitle>
+          <DialogDescription>
+            Assign this buyback request to a partner for processing.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleAssignPartner} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Buyback Request</label>
+            <div className="px-3 py-2 rounded-md border border-gray-200 text-sm">
+              {selectedBuyback?.manufacturer} {selectedBuyback?.model} - ${selectedBuyback?.estimated_value}
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Partner</label>
+            <Select 
+              value={formData.partner_id} 
+              onValueChange={(value) => handleSelectChange('partner_id', value)}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select partner" />
+              </SelectTrigger>
+              <SelectContent>
+                {partners?.map((partner) => (
+                  <SelectItem key={partner.id} value={partner.id.toString()}>
+                    {partner.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsAssignModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={assignPartnerMutation.isPending || !formData.partner_id}>
+              {assignPartnerMutation.isPending ? 'Assigning...' : 'Assign Partner'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDeleteModal = () => (
+    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Buyback Request</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this buyback request? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="font-medium">
+            {selectedBuyback?.manufacturer} {selectedBuyback?.model} - ${selectedBuyback?.estimated_value}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Status: {selectedBuyback?.status.toUpperCase()}
+          </p>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            onClick={handleDeleteBuyback}
+            disabled={deleteBuybackMutation.isPending}
+          >
+            {deleteBuybackMutation.isPending ? 'Deleting...' : 'Delete Request'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDetailsModal = () => (
+    <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Buyback Request Details</DialogTitle>
+          <DialogDescription>
+            Detailed information about this buyback request.
+          </DialogDescription>
+        </DialogHeader>
+        {selectedBuyback && (
+          <div className="py-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Request ID</h3>
+                <p className="mt-1">{selectedBuyback.id}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                <span className={`mt-1 inline-block px-2 py-1 rounded-full text-xs font-medium ${statusColors[selectedBuyback.status]}`}>
+                  {selectedBuyback.status.toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Created</h3>
+                <p className="mt-1">{format(new Date(selectedBuyback.created_at), 'MMM d, yyyy')}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
+                <p className="mt-1">{format(new Date(selectedBuyback.updated_at), 'MMM d, yyyy')}</p>
+              </div>
+            </div>
+            
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-base font-medium">Device Information</h3>
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Device Type</h4>
+                  <p className="mt-1">{selectedBuyback.device_type}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Manufacturer</h4>
+                  <p className="mt-1">{selectedBuyback.manufacturer}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Model</h4>
+                  <p className="mt-1">{selectedBuyback.model}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Condition</h4>
+                  <p className="mt-1">{selectedBuyback.condition}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-base font-medium">Valuation</h3>
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Estimated Value</h4>
+                  <p className="mt-1 text-lg font-semibold">${selectedBuyback.estimated_value}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Final Value</h4>
+                  <p className="mt-1 text-lg font-semibold">
+                    {selectedBuyback.final_value ? `$${selectedBuyback.final_value}` : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {selectedBuyback.contact_info && (
+              <div className="pt-4 border-t border-gray-200">
+                <h3 className="text-base font-medium">Contact Information</h3>
+                <div className="mt-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Name</h4>
+                    <p className="mt-1">{selectedBuyback.contact_info.name}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Email</h4>
+                    <p className="mt-1">{selectedBuyback.contact_info.email}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Phone</h4>
+                    <p className="mt-1">{selectedBuyback.contact_info.phone}</p>
+                  </div>
+                  {selectedBuyback.contact_info.address && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500">Address</h4>
+                      <p className="mt-1">{selectedBuyback.contact_info.address}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {selectedBuyback.questionnaire_answers && (
+              <div className="pt-4 border-t border-gray-200">
+                <h3 className="text-base font-medium">Questionnaire Answers</h3>
+                <div className="mt-2 space-y-3">
+                  {Object.entries(selectedBuyback.questionnaire_answers).map(([question, answer], index) => (
+                    <div key={index} className="bg-gray-50 p-3 rounded-md">
+                      <h4 className="text-sm font-medium">{question}</h4>
+                      <p className="mt-1 text-sm">{String(answer)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-base font-medium">Assignment</h3>
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Partner</h4>
+                  <p className="mt-1">{getPartnerName(selectedBuyback.partner_id)}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Region</h4>
+                  <p className="mt-1">{getRegionName(selectedBuyback.region_id)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button type="button" onClick={() => setIsDetailsModalOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
-    <div className="p-8">
+    <div className="py-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Buyback Requests</h1>
-        <Button onClick={() => refetch()} className="flex items-center gap-2">
-          Refresh
-        </Button>
+        <h1 className="text-2xl font-bold">Buyback Management</h1>
       </div>
 
-      <Tabs defaultValue="all" className="mb-6" onValueChange={setCurrentTab}>
-        <TabsList className="mb-2">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="assigned">Assigned</TabsTrigger>
-          <TabsTrigger value="processing">Processing</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+      <Tabs defaultValue="recent" value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="recent">Recent Requests</TabsTrigger>
+          <TabsTrigger value="all">All Requests</TabsTrigger>
         </TabsList>
-
-        <TabsContent value={currentTab}>
+        
+        <TabsContent value="recent">
           <Card>
             <CardHeader>
-              <CardTitle>
-                {currentTab === 'all' ? 'All' : currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} Buyback Requests
-              </CardTitle>
+              <CardTitle>Recent Buyback Requests</CardTitle>
               <CardDescription>
-                {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'} found
+                Recent buyback requests from users
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {filteredRequests.length > 0 ? (
-                <div className="rounded-md border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Device</TableHead>
-                        <TableHead>Condition</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Assigned To</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Actions</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Device</TableHead>
+                    <TableHead>Est. Value</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Partner</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(!recentBuybacks || recentBuybacks.length === 0) ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        No recent buyback requests found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    recentBuybacks.map((buyback) => (
+                      <TableRow key={buyback.id}>
+                        <TableCell>{buyback.id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{buyback.manufacturer} {buyback.model}</p>
+                            <p className="text-xs text-gray-500">{buyback.device_type}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>${buyback.estimated_value}</TableCell>
+                        <TableCell>
+                          <Badge className={statusColors[buyback.status]}>
+                            {buyback.status.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{format(new Date(buyback.created_at), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>{getPartnerName(buyback.partner_id)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openDetailsModal(buyback)}
+                              title="View Details"
+                            >
+                              <ExternalLink size={16} />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openEditModal(buyback)}
+                              title="Edit"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openAssignModal(buyback)}
+                              title="Assign to Partner"
+                            >
+                              <CheckCircle size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRequests.map((request) => (
-                        <TableRow key={request.id}>
-                          <TableCell className="font-medium">#{request.id}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span>{request.customer_name}</span>
-                              <span className="text-sm text-gray-500">{request.customer_email}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{request.manufacturer} {request.model}</span>
-                              {request.variant && <span className="text-sm text-gray-500">{request.variant}</span>}
-                            </div>
-                          </TableCell>
-                          <TableCell>{request.condition}</TableCell>
-                          <TableCell className="font-medium">${request.offered_price}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(request.status)}>
-                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {request.assigned_to ? (
-                              <div className="flex items-center text-sm">
-                                <UserPlus className="h-3.5 w-3.5 mr-1 text-blue-500" />
-                                <span>{request.assigned_to}</span>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">Not assigned</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm text-gray-500">
-                            {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleViewRequest(request)}
-                                title="View Details"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleUpdateStatus(request)}
-                                title="Update Status"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleAssignRequest(request)}
-                                title="Assign to Staff"
-                                className="text-blue-600 hover:text-blue-800"
-                              >
-                                <UserPlus className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteRequest(request)}
-                                title="Delete Request"
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="all">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <CardTitle>All Buyback Requests</CardTitle>
+                  <CardDescription>
+                    View and manage all buyback requests in the system
+                  </CardDescription>
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-gray-500">No buyback requests found.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={selectedStatus === null ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleStatusFilter(null)}
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant={selectedStatus === 'pending' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleStatusFilter('pending')}
+                  >
+                    Pending
+                  </Button>
+                  <Button
+                    variant={selectedStatus === 'approved' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleStatusFilter('approved')}
+                  >
+                    Approved
+                  </Button>
+                  <Button
+                    variant={selectedStatus === 'processing' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleStatusFilter('processing')}
+                  >
+                    Processing
+                  </Button>
+                  <Button
+                    variant={selectedStatus === 'completed' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleStatusFilter('completed')}
+                  >
+                    Completed
+                  </Button>
                 </div>
-              )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Device</TableHead>
+                    <TableHead>Est. Value</TableHead>
+                    <TableHead>Final Value</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Partner</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(!buybacks || buybacks.length === 0) ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        No buyback requests found matching the selected filter.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    buybacks.map((buyback) => (
+                      <TableRow key={buyback.id}>
+                        <TableCell>{buyback.id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{buyback.manufacturer} {buyback.model}</p>
+                            <p className="text-xs text-gray-500">{buyback.device_type}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>${buyback.estimated_value}</TableCell>
+                        <TableCell>{buyback.final_value ? `$${buyback.final_value}` : '—'}</TableCell>
+                        <TableCell>
+                          <Badge className={statusColors[buyback.status]}>
+                            {buyback.status.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{getPartnerName(buyback.partner_id)}</TableCell>
+                        <TableCell>{getRegionName(buyback.region_id)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openDetailsModal(buyback)}
+                              title="View Details"
+                            >
+                              <ExternalLink size={16} />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => openEditModal(buyback)}
+                              title="Edit"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="icon"
+                              onClick={() => openDeleteModal(buyback)}
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* View Request Modal */}
-      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Buyback Request Details</DialogTitle>
-            <DialogDescription>
-              Complete information about this buyback request
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedRequest && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Customer Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-start">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
-                        <span className="font-semibold text-lg">
-                          {selectedRequest.customer_name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{selectedRequest.customer_name}</h3>
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <Mail className="h-3.5 w-3.5 mr-1" />
-                          <span>{selectedRequest.customer_email}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <Phone className="h-3.5 w-3.5 mr-1" />
-                          <span>{selectedRequest.customer_phone}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2">
-                      <h3 className="text-sm font-medium mb-2">Pickup Information</h3>
-                      <div className="rounded-md bg-gray-50 p-3 space-y-2">
-                        <div className="flex items-start text-sm">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
-                          <span className="flex-1">{selectedRequest.pickup_address}</span>
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                          <span>{selectedRequest.pickup_date}</span>
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                          <span>{selectedRequest.pickup_time}</span>
-                        </div>
-                        
-                        {selectedRequest.assigned_to && (
-                        <div className="border-t border-gray-200 pt-2 mt-2">
-                          <div className="flex items-center text-sm">
-                            <UserPlus className="h-4 w-4 mr-2 text-gray-500" />
-                            <span>Assigned to: <span className="font-medium">{selectedRequest.assigned_to}</span></span>
-                          </div>
-                          {selectedRequest.pickup_notes && (
-                            <div className="text-sm mt-2 pl-6">
-                              <p className="text-gray-500">Notes: {selectedRequest.pickup_notes}</p>
-                            </div>
-                          )}
-                        </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Device Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h3 className="font-medium text-lg">
-                        {selectedRequest.manufacturer} {selectedRequest.model}
-                        {selectedRequest.variant && ` (${selectedRequest.variant})`}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {selectedRequest.device_type.charAt(0).toUpperCase() + selectedRequest.device_type.slice(1)}
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm font-medium">Condition</h4>
-                        <p className="mt-1">{selectedRequest.condition}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium">Offered Price</h4>
-                        <p className="mt-1 text-xl font-bold">${selectedRequest.offered_price}</p>
-                      </div>
-                    </div>
-                    
-                    {selectedRequest.notes && (
-                      <div className="pt-2">
-                        <h4 className="text-sm font-medium mb-2">Additional Notes</h4>
-                        <div className="rounded-md bg-gray-50 p-3 text-sm">
-                          {selectedRequest.notes}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="flex items-center justify-between border-t pt-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Current Status</p>
-                  <Badge className={`${getStatusColor(selectedRequest.status)} text-sm px-3 py-1`}>
-                    {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
-                  </Badge>
-                </div>
-                <div className="space-x-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleUpdateStatus(selectedRequest)}
-                  >
-                    Update Status
-                  </Button>
-                  <Button onClick={() => setViewModalOpen(false)}>Close</Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Update Status Modal */}
-      <Dialog open={statusUpdateModalOpen} onOpenChange={setStatusUpdateModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Update Status</DialogTitle>
-            <DialogDescription>
-              Change the status of this buyback request
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedRequest && (
-            <div className="py-4">
-              <div className="mb-4">
-                <p className="text-sm mb-1">Request #{selectedRequest.id}: {selectedRequest.manufacturer} {selectedRequest.model}</p>
-                <p className="text-sm text-gray-500">Current Status: <span className="font-medium">{selectedRequest.status}</span></p>
-              </div>
-              
-              <div className="space-y-3">
-                <Label htmlFor="status">New Status</Label>
-                <Select
-                  value={newStatus}
-                  onValueChange={setNewStatus}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <DialogFooter className="mt-6">
-                <Button variant="outline" onClick={() => setStatusUpdateModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={confirmUpdateStatus} disabled={updateStatusMutation.isPending}>
-                  {updateStatusMutation.isPending ? 'Updating...' : 'Update Status'}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Buyback Request</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this buyback request? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedRequest && (
-            <div className="py-4">
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p><span className="font-medium">Request ID:</span> #{selectedRequest.id}</p>
-                <p><span className="font-medium">Customer:</span> {selectedRequest.customer_name}</p>
-                <p><span className="font-medium">Device:</span> {selectedRequest.manufacturer} {selectedRequest.model}</p>
-                <p><span className="font-medium">Offered Price:</span> ${selectedRequest.offered_price}</p>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={confirmDeleteRequest}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Request'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Staff Assignment Dialog */}
-      <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Request to Staff</DialogTitle>
-            <DialogDescription>
-              Assign this buyback request to a staff member for processing and pickup.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="deviceInfo">Device Information</Label>
-              <div id="deviceInfo" className="text-sm p-2 bg-gray-50 rounded-md">
-                {selectedRequest && (
-                  <>
-                    <p><span className="font-medium">{selectedRequest.manufacturer}</span> {selectedRequest.model}</p>
-                    <p className="text-gray-500">{selectedRequest.condition} condition</p>
-                    {selectedRequest.variant && <p className="text-gray-500">Variant: {selectedRequest.variant}</p>}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="assignedStaff">Assign To</Label>
-              <Select
-                value={assignedStaff}
-                onValueChange={setAssignedStaff}
-              >
-                <SelectTrigger id="assignedStaff">
-                  <SelectValue placeholder="Select staff member" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="john.doe">John Doe</SelectItem>
-                  <SelectItem value="jane.smith">Jane Smith</SelectItem>
-                  <SelectItem value="robert.johnson">Robert Johnson</SelectItem>
-                  <SelectItem value="emily.williams">Emily Williams</SelectItem>
-                  <SelectItem value="michael.brown">Michael Brown</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="pickupNotes">Pickup Notes</Label>
-              <Input
-                id="pickupNotes"
-                value={pickupNotes}
-                onChange={(e) => setPickupNotes(e.target.value)}
-                placeholder="Add any special instructions for pickup"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={confirmAssignRequest}
-              disabled={!assignedStaff}
-            >
-              Assign Request
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Render modals */}
+      {renderEditModal()}
+      {renderAssignModal()}
+      {renderDeleteModal()}
+      {renderDetailsModal()}
     </div>
   );
 };

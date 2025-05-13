@@ -1,35 +1,10 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { FormProvider, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { 
-  FolderTree, 
-  PlusCircle, 
-  Pencil, 
-  Trash2, 
-  ImageIcon,
-  Save,
-  Eye,
-  EyeOff,
-  ChevronUp,
-  ChevronDown,
-  Search
-} from 'lucide-react';
-
-// UI Components
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -40,736 +15,648 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { PlusCircle, Pencil, Trash2, ChevronRight, FolderTree } from 'lucide-react';
 import {
   Table,
   TableBody,
   TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
-import { slugify } from '@/lib/utils';
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent_id: number | null;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+  seo_title: string | null;
+  seo_description: string | null;
+  image: string | null;
+}
 
-// Form schema for category
-const categoryFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Category name must be at least 2 characters.",
-  }),
-  slug: z.string().min(2, {
-    message: "Slug must be at least 2 characters.",
-  }).optional(),
-  description: z.string().optional().nullable(),
-  parent_id: z.number().optional().nullable(),
-  image: z.string().optional().nullable(),
-  is_visible: z.boolean().default(true),
-  seo_title: z.string().optional().nullable(),
-  seo_description: z.string().optional().nullable()
-});
-
-type CategoryFormValues = z.infer<typeof categoryFormSchema>;
-
-// Component for each category row in the table
-const CategoryRow = ({ category, categories, onEdit, onDelete, onToggleVisibility }: { 
-  category: any, 
-  categories: any[], 
-  onEdit: (category: any) => void, 
-  onDelete: (id: number) => void,
-  onToggleVisibility: (id: number, isVisible: boolean) => void
-}) => {
-  const getParentName = (parentId: number | null) => {
-    if (!parentId) return "None";
-    const parent = categories.find((c: any) => c.id === parentId);
-    return parent ? parent.name : "Unknown";
-  };
-
-  return (
-    <TableRow>
-      <TableCell>
-        <div className="flex items-center">
-          {category.image ? (
-            <div className="w-10 h-10 rounded mr-2 bg-gray-100 overflow-hidden">
-              <img 
-                src={category.image} 
-                alt={category.name} 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-          ) : (
-            <div className="w-10 h-10 rounded mr-2 bg-gray-100 flex items-center justify-center">
-              <FolderTree size={16} className="text-gray-400" />
-            </div>
-          )}
-          <div>
-            <div className="font-medium">{category.name}</div>
-            <div className="text-xs text-gray-500">{category.slug}</div>
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>{getParentName(category.parent_id)}</TableCell>
-      <TableCell>
-        {category.is_visible ? (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            Visible
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-            Hidden
-          </Badge>
-        )}
-      </TableCell>
-      <TableCell className="hidden md:table-cell">{new Date(category.created_at).toLocaleDateString()}</TableCell>
-      <TableCell>
-        <div className="flex space-x-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => onToggleVisibility(category.id, !category.is_visible)}
-            title={category.is_visible ? "Hide category" : "Show category"}
-          >
-            {category.is_visible ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onEdit(category)}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(category.id)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-};
-
-// Main Categories Page Component
-const AdminCategories = () => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState<any>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  
-  const queryClient = useQueryClient();
+const AdminCategories: React.FC = () => {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    parent_id: '',
+    is_visible: true,
+    seo_title: '',
+    seo_description: '',
+    image: '',
+  });
   const { toast } = useToast();
 
-  // Fetch categories
-  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+  // Query hooks for fetching data
+  const { data: categories, isLoading: isLoadingCategories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/categories');
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-      return response.json();
-    }
-  });
-
-  // Sort and filter categories
-  const filteredCategories = React.useMemo(() => {
-    let sorted = [...categories];
-    
-    // Sort by name
-    sorted.sort((a, b) => {
-      if (sortOrder === 'asc') {
-        return a.name.localeCompare(b.name);
-      } else {
-        return b.name.localeCompare(a.name);
-      }
-    });
-
-    // Filter by search term
-    return sorted.filter(category => 
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(category.id).includes(searchTerm)
-    );
-  }, [categories, searchTerm, sortOrder]);
-
-  // Add category mutation
-  const addCategoryMutation = useMutation({
-    mutationFn: async (category: CategoryFormValues) => {
-      const response = await apiRequest('POST', '/api/categories', category);
-      if (!response.ok) {
-        throw new Error('Failed to add category');
-      }
-      return response.json();
+      return apiRequest('GET', '/api/categories').then(res => res.json());
     },
-    onSuccess: () => {
-      toast({
-        title: 'Category added',
-        description: 'Category has been successfully added',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      setIsAddDialogOpen(false);
-    },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'Failed to load categories',
         variant: 'destructive',
       });
-    }
+    },
   });
 
-  // Update category mutation
+  // Mutation hooks for category operations
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      return apiRequest('POST', '/api/categories', {
+        ...data,
+        parent_id: data.parent_id ? parseInt(data.parent_id) : null,
+      }).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      setIsAddModalOpen(false);
+      resetForm();
+      toast({
+        title: 'Success',
+        description: 'Category created successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create category',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, category }: { id: number, category: CategoryFormValues }) => {
-      const response = await apiRequest('PUT', `/api/categories/${id}`, category);
-      if (!response.ok) {
-        throw new Error('Failed to update category');
-      }
-      return response.json();
+    mutationFn: async (data: typeof formData & { id: number }) => {
+      return apiRequest('PUT', `/api/categories/${data.id}`, {
+        ...data,
+        parent_id: data.parent_id ? parseInt(data.parent_id) : null,
+      }).then(res => res.json());
     },
     onSuccess: () => {
-      toast({
-        title: 'Category updated',
-        description: 'Category has been successfully updated',
-      });
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      setIsAddDialogOpen(false);
-      setCurrentCategory(null);
+      setIsEditModalOpen(false);
+      setSelectedCategory(null);
+      resetForm();
+      toast({
+        title: 'Success',
+        description: 'Category updated successfully',
+      });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to update category',
         variant: 'destructive',
       });
-    }
+    },
   });
 
-  // Delete category mutation
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/categories/${id}`);
-      if (!response.ok) {
-        throw new Error('Failed to delete category');
-      }
-      return response.json();
+      return apiRequest('DELETE', `/api/categories/${id}`);
     },
     onSuccess: () => {
-      toast({
-        title: 'Category deleted',
-        description: 'Category has been successfully deleted',
-      });
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-      setIsDeleteDialogOpen(false);
+      setIsDeleteModalOpen(false);
+      setSelectedCategory(null);
+      toast({
+        title: 'Success',
+        description: 'Category deleted successfully',
+      });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to delete category',
         variant: 'destructive',
       });
-    }
+    },
   });
 
-  // Toggle category visibility mutation
-  const toggleVisibilityMutation = useMutation({
-    mutationFn: async ({ id, isVisible }: { id: number, isVisible: boolean }) => {
-      const response = await apiRequest('PUT', `/api/categories/${id}`, { is_visible: isVisible });
-      if (!response.ok) {
-        throw new Error('Failed to update category visibility');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Visibility updated',
-        description: 'Category visibility has been updated',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  });
-
-  // Form setup
-  const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(categoryFormSchema),
-    defaultValues: {
+  // Helper functions
+  const resetForm = () => {
+    setFormData({
       name: '',
       slug: '',
       description: '',
-      parent_id: null,
-      image: '',
+      parent_id: '',
       is_visible: true,
       seo_title: '',
-      seo_description: ''
-    }
-  });
+      seo_description: '',
+      image: '',
+    });
+  };
 
-  // Handle form submission
-  const onSubmit = (values: CategoryFormValues) => {
-    if (!values.slug) {
-      values.slug = slugify(values.name);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, is_visible: checked }));
+  };
+
+  const handleGenerateSlug = () => {
+    if (!formData.name) return;
+    const slug = formData.name
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    setFormData(prev => ({ ...prev, slug }));
+  };
+
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!formData.name || !formData.slug) {
+      toast({
+        title: 'Validation Error',
+        description: 'Name and slug are required fields',
+        variant: 'destructive',
+      });
+      return;
     }
     
-    if (currentCategory) {
-      updateCategoryMutation.mutate({ id: currentCategory.id, category: values });
-    } else {
-      addCategoryMutation.mutate(values);
+    createCategoryMutation.mutate(formData);
+  };
+
+  const handleEditCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedCategory) return;
+    
+    // Basic validation
+    if (!formData.name || !formData.slug) {
+      toast({
+        title: 'Validation Error',
+        description: 'Name and slug are required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    updateCategoryMutation.mutate({
+      ...formData,
+      id: selectedCategory.id,
+    });
+  };
+
+  const handleDeleteCategory = () => {
+    if (selectedCategory) {
+      deleteCategoryMutation.mutate(selectedCategory.id);
     }
   };
 
-  // Handle edit button click
-  const handleEdit = (category: any) => {
-    setCurrentCategory(category);
-    form.reset({
+  const openEditModal = (category: Category) => {
+    setSelectedCategory(category);
+    setFormData({
       name: category.name,
       slug: category.slug,
-      description: category.description,
-      parent_id: category.parent_id,
-      image: category.image,
+      description: category.description || '',
+      parent_id: category.parent_id ? category.parent_id.toString() : '',
       is_visible: category.is_visible,
-      seo_title: category.seo_title,
-      seo_description: category.seo_description
+      seo_title: category.seo_title || '',
+      seo_description: category.seo_description || '',
+      image: category.image || '',
     });
-    setIsAddDialogOpen(true);
+    setIsEditModalOpen(true);
   };
 
-  // Handle delete button click
-  const handleDelete = (id: number) => {
-    setCategoryToDelete(id);
-    setIsDeleteDialogOpen(true);
+  const openDeleteModal = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDeleteModalOpen(true);
   };
 
-  // Handle visibility toggle
-  const handleToggleVisibility = (id: number, isVisible: boolean) => {
-    toggleVisibilityMutation.mutate({ id, isVisible });
+  const getParentCategoryName = (parentId: number | null) => {
+    if (!parentId || !categories) return 'None';
+    const parentCategory = categories.find(c => c.id === parentId);
+    return parentCategory ? parentCategory.name : 'Unknown';
   };
 
-  // Confirm deletion
-  const confirmDelete = () => {
-    if (categoryToDelete) {
-      deleteCategoryMutation.mutate(categoryToDelete);
-    }
-  };
-
-  // Handle title change to update slug
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue('name', name);
+  // Organize categories into parent/child hierarchy
+  const organizeCategories = (cats: Category[] | undefined) => {
+    if (!cats) return [];
     
-    // Only auto-update slug if it's a new category or slug is empty
-    if (!currentCategory || !form.getValues().slug) {
-      form.setValue('slug', slugify(name));
-    }
-  };
-
-  // Sort toggle handler
-  const toggleSortOrder = () => {
-    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-  };
-
-  // Handle dialog open/close
-  const openAddDialog = () => {
-    form.reset({
-      name: '',
-      slug: '',
-      description: '',
-      parent_id: null,
-      image: '',
-      is_visible: true,
-      seo_title: '',
-      seo_description: ''
+    const parentCategories = cats.filter(c => !c.parent_id);
+    const childCategoriesByParentId: Record<number, Category[]> = {};
+    
+    cats.filter(c => c.parent_id).forEach(childCat => {
+      if (!childCat.parent_id) return;
+      
+      if (!childCategoriesByParentId[childCat.parent_id]) {
+        childCategoriesByParentId[childCat.parent_id] = [];
+      }
+      
+      childCategoriesByParentId[childCat.parent_id].push(childCat);
     });
-    setCurrentCategory(null);
-    setIsAddDialogOpen(true);
+    
+    return { parentCategories, childCategoriesByParentId };
   };
 
-  const closeAddDialog = () => {
-    setIsAddDialogOpen(false);
-    setCurrentCategory(null);
-  };
+  const { parentCategories, childCategoriesByParentId } = organizeCategories(categories);
 
-  // Check if any category has children
-  const hasChildren = (categoryId: number) => {
-    return categories.some((c: any) => c.parent_id === categoryId);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-          <p className="text-gray-500">Manage your product categories</p>
+  // Loading state
+  if (isLoadingCategories) {
+    return (
+      <div className="py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">Category Management</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-        <Button onClick={openAddDialog}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Category
-        </Button>
       </div>
+    );
+  }
 
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative w-full sm:w-1/3">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input 
-            placeholder="Search categories..." 
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+  const renderAddEditForm = (isEdit: boolean = false) => (
+    <form onSubmit={isEdit ? handleEditCategory : handleAddCategory} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">Category Name</Label>
+          <Input
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            placeholder="e.g., Smartphones, Laptops"
+            required
           />
         </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="slug">Slug</Label>
+          <div className="flex gap-2">
+            <Input
+              id="slug"
+              name="slug"
+              value={formData.slug}
+              onChange={handleInputChange}
+              placeholder="e.g., smartphones, laptops"
+              required
+            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleGenerateSlug}
+              className="whitespace-nowrap"
+            >
+              Generate
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500">
+            Used in URLs: /category/{formData.slug || 'example-slug'}
+          </p>
+        </div>
+        
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="Optional description of this category"
+            rows={3}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="parent_id">Parent Category</Label>
+          <Select 
+            value={formData.parent_id} 
+            onValueChange={(value) => handleSelectChange('parent_id', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="None (Top Level)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None (Top Level)</SelectItem>
+              {categories?.filter(c => 
+                // Don't show the current category as a parent option
+                (!isEdit || c.id !== selectedCategory?.id) && 
+                // Don't show any children of the current category as parent options
+                (!isEdit || !childCategoriesByParentId[selectedCategory?.id || 0] || 
+                 !childCategoriesByParentId[selectedCategory?.id || 0].find(child => child.id === c.id))
+              ).map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={formData.is_visible}
+            onCheckedChange={handleSwitchChange}
+            id="is_visible"
+          />
+          <Label htmlFor="is_visible">Visible on Storefront</Label>
+        </div>
+        
+        <div className="space-y-2 md:col-span-2">
+          <h3 className="text-base font-medium mb-2">SEO Settings</h3>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="seo_title">SEO Title</Label>
+              <Input
+                id="seo_title"
+                name="seo_title"
+                value={formData.seo_title}
+                onChange={handleInputChange}
+                placeholder="Optional SEO title (leave blank to use category name)"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="seo_description">SEO Description</Label>
+              <Textarea
+                id="seo_description"
+                name="seo_description"
+                value={formData.seo_description}
+                onChange={handleInputChange}
+                placeholder="Optional SEO description"
+                rows={2}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="image">Category Image URL</Label>
+          <Input
+            id="image"
+            name="image"
+            value={formData.image}
+            onChange={handleInputChange}
+            placeholder="Optional image URL for this category"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Image upload functionality will be implemented soon.
+          </p>
+        </div>
+      </div>
+      
+      <DialogFooter>
         <Button 
+          type="button" 
           variant="outline" 
-          onClick={toggleSortOrder}
-          className="flex items-center"
+          onClick={() => isEdit ? setIsEditModalOpen(false) : setIsAddModalOpen(false)}
         >
-          Sort by Name {sortOrder === 'asc' ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+          Cancel
         </Button>
+        <Button 
+          type="submit" 
+          disabled={isEdit ? updateCategoryMutation.isPending : createCategoryMutation.isPending}
+        >
+          {isEdit 
+            ? (updateCategoryMutation.isPending ? 'Updating...' : 'Update Category') 
+            : (createCategoryMutation.isPending ? 'Creating...' : 'Create Category')
+          }
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
+  const renderAddModal = () => (
+    <DialogContent className="max-w-3xl">
+      <DialogHeader>
+        <DialogTitle>Add New Category</DialogTitle>
+        <DialogDescription>
+          Create a new product category for your marketplace.
+        </DialogDescription>
+      </DialogHeader>
+      {renderAddEditForm(false)}
+    </DialogContent>
+  );
+
+  const renderEditModal = () => (
+    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Edit Category</DialogTitle>
+          <DialogDescription>
+            Update the category information.
+          </DialogDescription>
+        </DialogHeader>
+        {renderAddEditForm(true)}
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDeleteModal = () => (
+    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Category</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this category? This action cannot be undone and may affect products associated with this category.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="font-medium">
+            {selectedCategory?.name}
+          </p>
+          {selectedCategory?.description && (
+            <p className="text-sm text-gray-500 mt-1">
+              {selectedCategory.description}
+            </p>
+          )}
+          
+          {childCategoriesByParentId[selectedCategory?.id || 0]?.length > 0 && (
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-amber-800 text-sm font-medium">
+                Warning: This category has {childCategoriesByParentId[selectedCategory?.id || 0].length} subcategories that will become top-level categories.
+              </p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            onClick={handleDeleteCategory}
+            disabled={deleteCategoryMutation.isPending}
+          >
+            {deleteCategoryMutation.isPending ? 'Deleting...' : 'Delete Category'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <div className="py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Category Management</h1>
+          <p className="text-gray-500">Manage product categories for your marketplace</p>
+        </div>
+        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <PlusCircle size={16} />
+              Add New Category
+            </Button>
+          </DialogTrigger>
+          {renderAddModal()}
+        </Dialog>
       </div>
 
-      {/* Categories Table */}
       <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Parent</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingCategories ? (
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FolderTree size={18} />
+            <CardTitle>Categories</CardTitle>
+          </div>
+          <CardDescription>
+            Organize your products with categories and subcategories
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(!categories || categories.length === 0) ? (
+            <div className="bg-gray-50 p-8 rounded-md text-center">
+              <FolderTree className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+              <h3 className="text-lg font-medium text-gray-700 mb-2">No Categories Found</h3>
+              <p className="text-gray-500 mb-4">
+                You haven't created any product categories yet. Categories help organize your products and improve navigation.
+              </p>
+              <Button onClick={() => setIsAddModalOpen(true)}>
+                Create Your First Category
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-                    </div>
-                    <div className="mt-2">Loading categories...</div>
-                  </TableCell>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Parent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : filteredCategories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
-                    <div className="flex justify-center">
-                      <FolderTree className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <div className="mt-2">No categories found</div>
-                    <div className="mt-1 text-sm text-gray-500">
-                      {searchTerm 
-                        ? 'Try adjusting your search query'
-                        : 'Add your first category to get started'
-                      }
-                    </div>
-                    {!searchTerm && (
-                      <Button variant="outline" className="mt-4" onClick={openAddDialog}>
-                        Add Category
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredCategories.map((category: any) => (
-                  <CategoryRow 
-                    key={category.id} 
-                    category={category}
-                    categories={categories}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onToggleVisibility={handleToggleVisibility}
-                  />
-                ))
-              )}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={5} className="text-right">
-                  {filteredCategories.length} of {categories.length} categories
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {/* Render parent categories first */}
+                {parentCategories.map((category) => (
+                  <React.Fragment key={category.id}>
+                    <TableRow className="bg-gray-50">
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell className="text-sm text-gray-500">{category.slug}</TableCell>
+                      <TableCell>—</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${category.is_visible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {category.is_visible ? 'Visible' : 'Hidden'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditModal(category)}
+                          >
+                            <Pencil size={14} className="mr-1" />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => openDeleteModal(category)}
+                          >
+                            <Trash2 size={14} className="mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Render child categories indented */}
+                    {childCategoriesByParentId[category.id]?.map((childCategory) => (
+                      <TableRow key={childCategory.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <ChevronRight size={14} className="mr-2 text-gray-400" />
+                            {childCategory.name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-500">{childCategory.slug}</TableCell>
+                        <TableCell>{category.name}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${childCategory.is_visible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {childCategory.is_visible ? 'Visible' : 'Hidden'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openEditModal(childCategory)}
+                            >
+                              <Pencil size={14} className="mr-1" />
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => openDeleteModal(childCategory)}
+                            >
+                              <Trash2 size={14} className="mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
-      {/* Add/Edit Category Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[650px]">
-          <DialogHeader>
-            <DialogTitle>{currentCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
-            <DialogDescription>
-              {currentCategory ? 'Update the category details below.' : 'Fill in the details to add a new category.'}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter category name" 
-                            {...field} 
-                            onChange={handleNameChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Slug</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="category-url-slug" 
-                            {...field} 
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          URL-friendly name (auto-generated from title)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="parent_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Category</FormLabel>
-                        <FormControl>
-                          <select 
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={field.value?.toString() || ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                          >
-                            <option value="">None (Top Level)</option>
-                            {categories
-                              .filter((c: any) => !currentCategory || c.id !== currentCategory.id)
-                              .map((category: any) => (
-                                <option 
-                                  key={category.id} 
-                                  value={category.id}
-                                  disabled={currentCategory && hasChildren(currentCategory.id) && category.parent_id === currentCategory.id}
-                                >
-                                  {category.name}
-                                </option>
-                              ))
-                            }
-                          </select>
-                        </FormControl>
-                        <FormDescription>
-                          Select a parent category (optional)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="image"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="https://example.com/image.jpg" 
-                            {...field} 
-                            value={field.value || ''}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          URL to category image (optional)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="is_visible"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            Visible
-                          </FormLabel>
-                          <FormDescription>
-                            Show this category on the website
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Enter category description" 
-                        className="min-h-20" 
-                        {...field} 
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">SEO Information</h3>
-                
-                <FormField
-                  control={form.control}
-                  name="seo_title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SEO Title</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="SEO title (if different from category name)" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Recommended: 50-60 characters
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="seo_description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SEO Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="SEO meta description" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Recommended: 150-160 characters
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={closeAddDialog}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={addCategoryMutation.isPending || updateCategoryMutation.isPending}
-                >
-                  {(addCategoryMutation.isPending || updateCategoryMutation.isPending) && (
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
-                  )}
-                  {currentCategory ? 'Update Category' : 'Add Category'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this category? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {categories.some((c: any) => c.parent_id === categoryToDelete) && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTitle>Warning</AlertTitle>
-              <AlertDescription>
-                This category has subcategories. Deleting it will make them top-level categories.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={confirmDelete} 
-              disabled={deleteCategoryMutation.isPending}
-            >
-              {deleteCategoryMutation.isPending && (
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
-              )}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Render modals */}
+      {renderEditModal()}
+      {renderDeleteModal()}
     </div>
   );
 };
