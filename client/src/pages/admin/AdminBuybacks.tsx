@@ -499,12 +499,51 @@ export default function AdminBuybacks() {
         buybackRequestId={selectedBuybackId}
       />
 
+      {/* Reassess Device Dialog */}
+      {selectedBuyback && (
+        <ReassessDeviceForm
+          open={reassessDialogOpen}
+          onClose={() => setReassessDialogOpen(false)}
+          buybackRequest={selectedBuyback}
+        />
+      )}
+
       {/* Invoice Modal */}
       {selectedBuyback && (
         <InvoiceModal
           open={invoiceModalOpen}
           onClose={() => setInvoiceModalOpen(false)}
           buybackRequest={selectedBuyback}
+        />
+      )}
+
+      {/* Buyback Details Modal */}
+      {selectedBuyback && (
+        <BuybackDetailsModal
+          open={detailsModalOpen}
+          onClose={() => setDetailsModalOpen(false)}
+          buybackRequest={selectedBuyback}
+          partner={getPartnerById(selectedBuyback.partner_id)}
+          onAssignPartner={() => {
+            setDetailsModalOpen(false);
+            openAssignDialog(selectedBuyback.id);
+          }}
+          onReassessDevice={() => {
+            setDetailsModalOpen(false);
+            openReassessDialog(selectedBuyback);
+          }}
+          onMarkComplete={() => {
+            setDetailsModalOpen(false);
+            markAsComplete(selectedBuyback.id);
+          }}
+          onViewInvoice={() => {
+            setDetailsModalOpen(false);
+            openInvoiceModal(selectedBuyback);
+          }}
+          onCancel={() => {
+            setDetailsModalOpen(false);
+            cancelRequest(selectedBuyback.id);
+          }}
         />
       )}
     </div>
