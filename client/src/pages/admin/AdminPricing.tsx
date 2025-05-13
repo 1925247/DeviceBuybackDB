@@ -700,14 +700,14 @@ const AdminPricing: React.FC = () => {
             <div>
               <Label htmlFor="deviceTypeFilter">Device Type</Label>
               <Select
-                value={selectedDeviceType?.toString() || ''}
-                onValueChange={(value) => setSelectedDeviceType(value ? parseInt(value) : null)}
+                value={selectedDeviceType?.toString() || 'all'}
+                onValueChange={(value) => setSelectedDeviceType(value === 'all' ? null : parseInt(value))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Device Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Device Types</SelectItem>
+                  <SelectItem value="all">All Device Types</SelectItem>
                   {deviceTypes?.map((type) => (
                     <SelectItem key={type.id} value={type.id.toString()}>
                       {type.name}
@@ -719,14 +719,14 @@ const AdminPricing: React.FC = () => {
             <div>
               <Label htmlFor="brandFilter">Brand</Label>
               <Select
-                value={selectedBrand?.toString() || ''}
-                onValueChange={(value) => setSelectedBrand(value ? parseInt(value) : null)}
+                value={selectedBrand?.toString() || 'all'}
+                onValueChange={(value) => setSelectedBrand(value === 'all' ? null : parseInt(value))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Brands" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Brands</SelectItem>
+                  <SelectItem value="all">All Brands</SelectItem>
                   {brands?.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id.toString()}>
                       {brand.name}
