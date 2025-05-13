@@ -557,10 +557,18 @@ export const invoiceTemplates = pgTable("invoice_templates", {
   is_default: boolean("is_default").default(false),
   html_template: text("html_template").notNull(),
   css_styles: text("css_styles"),
-  configuration: json("configuration").$type<any>(),
+  configuration: json("configuration").$type<Record<string, any>>(),
+  partner_id: integer("partner_id").references(() => partners.id),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const invoiceTemplatesRelations = relations(invoiceTemplates, ({ one }) => ({
+  partner: one(partners, {
+    fields: [invoiceTemplates.partner_id],
+    references: [partners.id],
+  }),
+}));
 
 export const insertInvoiceTemplateSchema = createInsertSchema(invoiceTemplates).omit({ id: true, created_at: true, updated_at: true });
 export type InsertInvoiceTemplate = z.infer<typeof insertInvoiceTemplateSchema>;
