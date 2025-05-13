@@ -65,6 +65,7 @@ import ConditionQuestionsAdmin from "./pages/admin/ConditionQuestionsAdmin";
 import RegionsManagement from "./pages/admin/RegionsManagement";
 import UserRoleManagement from "./pages/admin/UserRoleManagement";
 import RouteManagement from "./pages/admin/RouteManagement";
+import ManageRouteRules from "./pages/admin/ManageRouteRules";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import AdminLayout from "./components/admin/AdminLayout";
 
@@ -505,6 +506,7 @@ function App() {
 
                   {/* Routes & Templates */}
                   <Route path="routes" element={<RouteManagement />} />
+                  <Route path="route-rules" element={<ManageRouteRules />} />
                   <Route path="store-templates" element={<AdminDashboard />} />
                   <Route path="store-themes" element={<AdminDashboard />} />
                   <Route
