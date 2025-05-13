@@ -66,9 +66,10 @@ export default function QuestionForm({
   onCancel,
   isSubmitting
 }: QuestionFormProps) {
+  // Initialize the form with the first device type ID if available, otherwise 0
   const [formData, setFormData] = useState<ConditionQuestion>({
     question: '',
-    deviceTypeId: 0,
+    deviceTypeId: deviceTypes && deviceTypes.length > 0 ? deviceTypes[0].id : 0,
     brandId: null,
     order: 0,
     active: true,
@@ -161,7 +162,7 @@ export default function QuestionForm({
       <div className="space-y-2">
         <Label htmlFor="brandId">Brand (Optional)</Label>
         <Select 
-          value={formData.brandId?.toString() || "none"} 
+          value={formData.brandId === null || formData.brandId === undefined ? "none" : formData.brandId.toString()} 
           onValueChange={(value) => {
             const brandId = value === "none" ? null : parseInt(value, 10);
             setFormData(prev => ({ ...prev, brandId }));
