@@ -753,6 +753,44 @@ export const tagsRelations = relations(tags, ({ many }) => ({
   products: many(productTags),
 }));
 
+// Route Rules Table for PIN code-based lead assignment
+export const routeRules = pgTable("route_rules", {
+  id: serial("id").primaryKey(),
+  path: text("path").notNull(),
+  pin_code: text("pin_code"),
+  partner_id: integer("partner_id").references(() => partners.id),
+  region_id: integer("region_id").references(() => regions.id),
+  priority: integer("priority").default(0).notNull(),
+  is_active: boolean("is_active").default(true).notNull(),
+  description: text("description"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const routeRulesRelations = relations(routeRules, ({ one }) => ({
+  partner: one(partners, {
+    fields: [routeRules.partner_id],
+    references: [partners.id],
+  }),
+  region: one(regions, {
+    fields: [routeRules.region_id],
+    references: [regions.id],
+  }),
+}));
+
+export const insertRouteRuleSchema = createInsertSchema(routeRules, {
+  path: z.string().min(1),
+  pin_code: z.string().optional(),
+  partner_id: z.number().optional(),
+  region_id: z.number().optional(),
+  priority: z.number().default(0),
+  is_active: z.boolean().default(true),
+  description: z.string().optional(),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type InsertRouteRule = z.infer<typeof insertRouteRuleSchema>;
+export type RouteRule = typeof routeRules.$inferSelect;
+
 // Product-Tag Relationship Table
 export const productTags = pgTable("product_tags", {
   id: serial("id").primaryKey(),
