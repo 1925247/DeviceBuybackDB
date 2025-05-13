@@ -331,6 +331,18 @@ function App() {
 
               {/* Shop Route - Database connected marketplace */}
               <Route
+                path="/shop"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ShopPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              <Route
                 path="/shop/buyhome"
                 element={
                   <>
