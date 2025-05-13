@@ -101,7 +101,9 @@ export default function QuestionForm({
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...formData.options];
-    newOptions[index] = { ...newOptions[index], text: value, value: value };
+    // Ensure neither text nor value is empty
+    const safeValue = value.trim() || 'Option';
+    newOptions[index] = { ...newOptions[index], text: safeValue, value: safeValue };
     setFormData(prev => ({ ...prev, options: newOptions }));
   };
 
@@ -113,9 +115,11 @@ export default function QuestionForm({
       return;
     }
     
+    const safeValue = newOption.trim() || 'Option';
+    
     setFormData(prev => ({
       ...prev,
-      options: [...prev.options, { text: newOption.trim(), value: newOption.trim() }]
+      options: [...prev.options, { text: safeValue, value: safeValue }]
     }));
     setNewOption('');
   };

@@ -439,8 +439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const option of options) {
           await storage.createConditionAnswer({
             question_id: question.id,
-            text: option.text,
-            value: option.value
+            text: option.text || option.value || 'Option', // Ensure text is not null
+            value: option.value || '0' // Ensure value is not null
           });
         }
       }
@@ -499,8 +499,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const option of options) {
           await storage.createConditionAnswer({
             question_id: id,
-            text: option.text,
-            value: option.value
+            text: option.text || option.value || 'Option', // Ensure text is not null
+            value: option.value || '0' // Ensure value is not null
           });
         }
       }
