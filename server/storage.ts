@@ -552,9 +552,8 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Check if there are any brand_device_types relations
-      const brandDeviceTypeTable = db.dynamic.ref('brand_device_types');
       const brandDeviceTypes = await db.execute(
-        sql`SELECT * FROM ${brandDeviceTypeTable} WHERE brand_id = ${id}`
+        sql`SELECT * FROM brand_device_types WHERE brand_id = ${id}`
       );
       
       if (brandDeviceTypes.rowCount && brandDeviceTypes.rowCount > 0) {

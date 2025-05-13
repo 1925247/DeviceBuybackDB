@@ -135,7 +135,13 @@ const AdminBrands: React.FC = () => {
       if (!response.ok) {
         // Handle specific error cases
         if (response.status === 409) {
-          throw new Error(data.message || 'Cannot delete brand that has associated models. Please delete the models first.');
+          if (data.message && data.message.includes('device type associations')) {
+            throw new Error(data.message || 'Cannot delete brand that has device type associations. Please remove these associations first.');
+          } else if (data.message && data.message.includes('associated models')) {
+            throw new Error(data.message || 'Cannot delete brand that has associated models. Please delete the models first.');
+          } else {
+            throw new Error(data.message || 'Cannot delete brand due to dependencies. Please delete related items first.');
+          }
         } else {
           throw new Error(data.message || 'Failed to delete brand');
         }
@@ -431,6 +437,13 @@ const AdminBrands: React.FC = () => {
                 <div className="mt-2 text-xs">
                   <p className="font-medium">Recommendation:</p>
                   <p>Please delete all device models associated with this brand first, then try again.</p>
+                </div>
+              )}
+              
+              {deleteBrandMutation.error.message.includes('device type associations') && (
+                <div className="mt-2 text-xs">
+                  <p className="font-medium">Recommendation:</p>
+                  <p>This brand is associated with one or more device types. Please remove these associations in the Device Types section first, then try again.</p>
                 </div>
               )}
             </div>
