@@ -122,6 +122,25 @@ export default function AdminBuybacks() {
     refetchOnWindowFocus: true // Refetch when window gets focus
   });
   
+  // Fetch regions for displaying region names in export and filtering
+  const { data: regions = [], isLoading: isLoadingRegions, error: regionsError } = useQuery({
+    queryKey: ['/api/regions'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/regions');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch regions: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+        throw err;
+      }
+    },
+    staleTime: 300000, // Cache data for 5 minutes
+    refetchOnWindowFocus: false // No need to continuously refetch regions
+  });
+  
   // Show error toast if data fetching fails
   useEffect(() => {
     if (buybackError) {
@@ -139,7 +158,15 @@ export default function AdminBuybacks() {
         variant: 'destructive'
       });
     }
-  }, [buybackError, partnersError, toast]);
+    
+    if (regionsError) {
+      toast({
+        title: 'Error Fetching Data',
+        description: `Failed to fetch regions: ${(regionsError as Error).message}`,
+        variant: 'destructive'
+      });
+    }
+  }, [buybackError, partnersError, regionsError, toast]);
 
   // Generate filtered buybacks based on active tab, search, and status filter
   const getFilteredBuybacks = () => {
@@ -183,6 +210,12 @@ export default function AdminBuybacks() {
   const getPartnerById = (partnerId: number | null): Partner | null => {
     if (!partnerId || partners.length === 0) return null;
     return partners.find((p: Partner) => p.id === partnerId) || null;
+  };
+  
+  const getRegionName = (regionId: number | null): string => {
+    if (!regionId || regions.length === 0) return "";
+    const region = regions.find((r: any) => r.id === regionId);
+    return region ? region.name : "";
   };
 
   const formatDate = (dateString: string) => {
@@ -321,12 +354,6 @@ export default function AdminBuybacks() {
       const csvData = buybackData.map((request: BuybackRequest) => {
         // Get partner details
         const partner = partners.find(p => p.id === request.partner_id);
-        
-        // Get region name
-        const getRegionName = (regionId: number) => {
-          const region = regions?.find(r => r.id === regionId);
-          return region ? region.name : '';
-        };
         
         // Base request data
         const baseData = [
