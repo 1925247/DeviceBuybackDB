@@ -1743,6 +1743,141 @@ export class DatabaseStorage implements IStorage {
     
     await query;
   }
+
+  // Partner operations
+  async getPartners(): Promise<Partner[]> {
+    return await db.select().from(partners).orderBy(asc(partners.name));
+  }
+
+  async getPartner(id: number): Promise<Partner | undefined> {
+    const [partner] = await db.select().from(partners).where(eq(partners.id, id));
+    return partner;
+  }
+  
+  // Region operations
+  async getRegions(): Promise<Region[]> {
+    return await db.select().from(regions).orderBy(asc(regions.name));
+  }
+
+  async getRegion(id: number): Promise<Region | undefined> {
+    const [region] = await db.select().from(regions).where(eq(regions.id, id));
+    return region;
+  }
+  
+  // Route Rules operations
+  async getRouteRules(): Promise<RouteRule[]> {
+    return await db
+      .select()
+      .from(routeRules)
+      .orderBy(desc(routeRules.priority), asc(routeRules.created_at));
+  }
+
+  async getRouteRule(id: number): Promise<RouteRule | undefined> {
+    const [rule] = await db.select().from(routeRules).where(eq(routeRules.id, id));
+    return rule;
+  }
+
+  async createRouteRule(rule: InsertRouteRule): Promise<RouteRule> {
+    const [newRule] = await db.insert(routeRules).values(rule).returning();
+    return newRule;
+  }
+
+  async updateRouteRule(id: number, rule: Partial<InsertRouteRule>): Promise<RouteRule | undefined> {
+    const [updatedRule] = await db
+      .update(routeRules)
+      .set({
+        ...rule,
+        updated_at: new Date(),
+      })
+      .where(eq(routeRules.id, id))
+      .returning();
+    return updatedRule;
+  }
+
+  async deleteRouteRule(id: number): Promise<boolean> {
+    const result = await db.delete(routeRules).where(eq(routeRules.id, id));
+    return true;
+  }
+
+  async changeRoutePriority(id: number, direction: 'up' | 'down'): Promise<RouteRule | undefined> {
+    // First get the current rule
+    const [currentRule] = await db.select().from(routeRules).where(eq(routeRules.id, id));
+    if (!currentRule) return undefined;
+
+    // Get adjacent rule based on direction
+    let adjacentRule;
+    if (direction === 'up') {
+      // Find the rule with the next higher priority
+      const [higher] = await db
+        .select()
+        .from(routeRules)
+        .where(routeRules.priority > currentRule.priority)
+        .orderBy(asc(routeRules.priority))
+        .limit(1);
+      adjacentRule = higher;
+    } else {
+      // Find the rule with the next lower priority
+      const [lower] = await db
+        .select()
+        .from(routeRules)
+        .where(routeRules.priority < currentRule.priority)
+        .orderBy(desc(routeRules.priority))
+        .limit(1);
+      adjacentRule = lower;
+    }
+
+    if (!adjacentRule) return currentRule; // No adjacent rule, no change needed
+
+    // Swap priorities
+    const tempPriority = adjacentRule.priority;
+    
+    await db
+      .update(routeRules)
+      .set({ priority: tempPriority, updated_at: new Date() })
+      .where(eq(routeRules.id, currentRule.id));
+      
+    await db
+      .update(routeRules)
+      .set({ priority: currentRule.priority, updated_at: new Date() })
+      .where(eq(routeRules.id, adjacentRule.id));
+
+    // Return the updated current rule
+    const [updatedRule] = await db.select().from(routeRules).where(eq(routeRules.id, id));
+    return updatedRule;
+  }
+  
+  // PIN code-based lead assignment
+  async getPartnerByPinCode(pinCode: string): Promise<Partner | undefined> {
+    // Find partner with matching PIN code in their pin_codes array
+    const allPartners = await this.getPartners();
+    
+    // Search for a partner that has the PIN code in their pin_codes array
+    for (const partner of allPartners) {
+      if (partner.pin_codes && Array.isArray(partner.pin_codes)) {
+        const pinCodes = partner.pin_codes as string[];
+        if (pinCodes.includes(pinCode)) {
+          return partner;
+        }
+      }
+    }
+    
+    return undefined;
+  }
+
+  async assignLeadToPartner(leadId: number, partnerId: number): Promise<BuybackRequest | undefined> {
+    // Update the buyback request with the partner ID
+    const [updatedRequest] = await db
+      .update(buybackRequests)
+      .set({
+        partner_id: partnerId,
+        status: 'assigned',
+        updated_at: new Date(),
+      })
+      .where(eq(buybackRequests.id, leadId))
+      .returning();
+      
+    return updatedRequest;
+  }
 }
 
 export const storage = new DatabaseStorage();

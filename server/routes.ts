@@ -4,8 +4,10 @@ import { storage } from "./storage";
 import { 
   insertDeviceSchema, insertUserSchema, insertBuybackRequestSchema, insertMarketplaceListingSchema, insertOrderSchema,
   insertProductSchema, insertProductVariantSchema, insertProductImageSchema, insertCategorySchema, insertDiscountSchema,
+  insertRouteRuleSchema,
   type InsertUser, type InsertDevice, type InsertBuybackRequest, type InsertMarketplaceListing, type InsertOrder,
-  type InsertProduct, type InsertProductVariant, type InsertProductImage, type InsertCategory, type InsertDiscount
+  type InsertProduct, type InsertProductVariant, type InsertProductImage, type InsertCategory, type InsertDiscount,
+  type InsertRouteRule
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -154,6 +156,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting device type:", error);
       res.status(500).json({ message: error.message || "Failed to delete device type" });
+    }
+  });
+
+  // Partners API endpoints
+  app.get(apiRouter("/partners"), async (_req: Request, res: Response) => {
+    try {
+      const partnersData = await storage.getPartners();
+      res.json(partnersData);
+    } catch (error: any) {
+      console.error("Error fetching partners:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch partners" });
+    }
+  });
+  
+  app.get(apiRouter("/partners/:id"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = parseInt(req.params.id);
+      const partner = await storage.getPartner(partnerId);
+      
+      if (!partner) {
+        return res.status(404).json({ message: "Partner not found" });
+      }
+      
+      res.json(partner);
+    } catch (error: any) {
+      console.error("Error fetching partner:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch partner" });
+    }
+  });
+  
+  // Regions API endpoints
+  app.get(apiRouter("/regions"), async (_req: Request, res: Response) => {
+    try {
+      const regionsData = await storage.getRegions();
+      res.json(regionsData);
+    } catch (error: any) {
+      console.error("Error fetching regions:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch regions" });
+    }
+  });
+  
+  // Routes API endpoints
+  app.get(apiRouter("/routes"), async (_req: Request, res: Response) => {
+    try {
+      const routeRules = await storage.getRouteRules();
+      res.json(routeRules);
+    } catch (error: any) {
+      console.error("Error fetching route rules:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch route rules" });
+    }
+  });
+  
+  app.get(apiRouter("/routes/:id"), async (req: Request, res: Response) => {
+    try {
+      const routeId = parseInt(req.params.id);
+      const route = await storage.getRouteRule(routeId);
+      
+      if (!route) {
+        return res.status(404).json({ message: "Route rule not found" });
+      }
+      
+      res.json(route);
+    } catch (error: any) {
+      console.error("Error fetching route rule:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch route rule" });
+    }
+  });
+  
+  app.post(apiRouter("/routes"), async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertRouteRuleSchema.parse(req.body);
+      const newRoute = await storage.createRouteRule(validatedData);
+      res.status(201).json(newRoute);
+    } catch (error: any) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      console.error("Error creating route rule:", error);
+      res.status(500).json({ message: error.message || "Failed to create route rule" });
+    }
+  });
+  
+  app.put(apiRouter("/routes/:id"), async (req: Request, res: Response) => {
+    try {
+      const routeId = parseInt(req.params.id);
+      const route = await storage.getRouteRule(routeId);
+      
+      if (!route) {
+        return res.status(404).json({ message: "Route rule not found" });
+      }
+      
+      const validatedData = insertRouteRuleSchema.partial().parse(req.body);
+      const updatedRoute = await storage.updateRouteRule(routeId, validatedData);
+      res.json(updatedRoute);
+    } catch (error: any) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      console.error("Error updating route rule:", error);
+      res.status(500).json({ message: error.message || "Failed to update route rule" });
+    }
+  });
+  
+  app.delete(apiRouter("/routes/:id"), async (req: Request, res: Response) => {
+    try {
+      const routeId = parseInt(req.params.id);
+      const route = await storage.getRouteRule(routeId);
+      
+      if (!route) {
+        return res.status(404).json({ message: "Route rule not found" });
+      }
+      
+      await storage.deleteRouteRule(routeId);
+      res.json({ message: "Route rule deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting route rule:", error);
+      res.status(500).json({ message: error.message || "Failed to delete route rule" });
+    }
+  });
+  
+  app.post(apiRouter("/routes/:id/priority"), async (req: Request, res: Response) => {
+    try {
+      const routeId = parseInt(req.params.id);
+      const { direction } = req.body;
+      
+      if (direction !== 'up' && direction !== 'down') {
+        return res.status(400).json({ message: "Direction must be 'up' or 'down'" });
+      }
+      
+      const route = await storage.getRouteRule(routeId);
+      
+      if (!route) {
+        return res.status(404).json({ message: "Route rule not found" });
+      }
+      
+      const updatedRoute = await storage.changeRoutePriority(routeId, direction);
+      res.json(updatedRoute);
+    } catch (error: any) {
+      console.error("Error changing route priority:", error);
+      res.status(500).json({ message: error.message || "Failed to change route priority" });
+    }
+  });
+  
+  // PIN code-based lead assignment
+  app.post(apiRouter("/assign-lead"), async (req: Request, res: Response) => {
+    try {
+      const { pin_code, lead_id } = req.body;
+      
+      if (!pin_code || !lead_id) {
+        return res.status(400).json({ message: "PIN code and lead ID are required" });
+      }
+      
+      // Find partner by PIN code
+      const partner = await storage.getPartnerByPinCode(pin_code);
+      
+      if (!partner) {
+        return res.status(404).json({ message: "No partner found for the given PIN code" });
+      }
+      
+      // Assign lead to partner
+      const updatedLead = await storage.assignLeadToPartner(lead_id, partner.id);
+      
+      if (!updatedLead) {
+        return res.status(404).json({ message: "Lead not found" });
+      }
+      
+      res.json({ 
+        message: "Lead assigned successfully", 
+        lead: updatedLead,
+        partner_name: partner.name
+      });
+    } catch (error: any) {
+      console.error("Error assigning lead:", error);
+      res.status(500).json({ message: error.message || "Failed to assign lead" });
     }
   });
 
