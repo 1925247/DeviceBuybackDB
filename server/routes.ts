@@ -1061,76 +1061,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       
-      // Mock recent buyback requests data
-      const mockRequests = [
-        {
-          id: 1,
-          user_id: 1,
-          device_type: "Phone",
-          manufacturer: "Apple",
-          model: "iPhone 13 Pro",
-          condition: "Good",
-          status: "pending",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          partner_id: null
-        },
-        {
-          id: 2,
-          user_id: 2,
-          device_type: "Laptop",
-          manufacturer: "Dell",
-          model: "XPS 15",
-          condition: "Like New",
-          status: "approved",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-          partner_id: 1
-        },
-        {
-          id: 3,
-          user_id: 3,
-          device_type: "Tablet",
-          manufacturer: "Samsung",
-          model: "Galaxy Tab S7",
-          condition: "Fair",
-          status: "completed",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-          partner_id: 2
-        },
-        {
-          id: 4,
-          user_id: 1,
-          device_type: "Watch",
-          manufacturer: "Apple",
-          model: "Watch Series 7",
-          condition: "Excellent",
-          status: "pending",
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          partner_id: null
-        },
-        {
-          id: 5,
-          user_id: 4,
-          device_type: "Phone",
-          manufacturer: "Google",
-          model: "Pixel 6",
-          condition: "Good",
-          status: "assigned",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-          partner_id: 1
-        }
-      ];
+      // Get recent buyback requests from database
+      const recentRequests = await storage.getRecentBuybackRequests(limit);
       
-      // Return limited number of requests sorted by most recent
-      const limitedRequests = mockRequests
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, limit);
-      
-      res.json(limitedRequests);
+      res.json(recentRequests);
     } catch (error: any) {
       console.error("Error getting recent buyback requests:", error);
       res.status(500).json({ message: "Failed to get recent buyback requests" });
@@ -1296,86 +1230,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       
-      // Mock recent orders data
-      const mockOrders = [
-        {
-          id: 1001,
-          buyer_id: 1,
-          seller_id: 3,
-          device_id: 4,
-          amount: 499.99,
-          status: "completed",
-          payment_status: "paid",
-          shipping_status: "delivered",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-          device_name: "iPhone 13 Pro",
-          buyer_name: "John Smith"
-        },
-        {
-          id: 1002,
-          buyer_id: 2,
-          seller_id: 1,
-          device_id: 7,
-          amount: 879.99,
-          status: "processing",
-          payment_status: "paid",
-          shipping_status: "in_transit",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-          device_name: "MacBook Air M1",
-          buyer_name: "Jane Doe"
-        },
-        {
-          id: 1003,
-          buyer_id: 3,
-          seller_id: 2,
-          device_id: 12,
-          amount: 129.99,
-          status: "pending",
-          payment_status: "pending",
-          shipping_status: "pending",
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          device_name: "Samsung Galaxy Watch 4",
-          buyer_name: "Robert Johnson"
-        },
-        {
-          id: 1004,
-          buyer_id: 4,
-          seller_id: 1,
-          device_id: 9,
-          amount: 349.99,
-          status: "completed",
-          payment_status: "paid",
-          shipping_status: "delivered",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 23).toISOString(),
-          device_name: "iPad Mini",
-          buyer_name: "Sarah Williams"
-        },
-        {
-          id: 1005,
-          buyer_id: 5,
-          seller_id: 3,
-          device_id: 15,
-          amount: 229.99,
-          status: "completed",
-          payment_status: "paid",
-          shipping_status: "delivered",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 7).toISOString(),
-          device_name: "Google Pixel 6",
-          buyer_name: "Michael Brown"
-        }
-      ];
+      // Get recent orders from database
+      const recentOrders = await storage.getRecentOrders(limit);
       
-      // Return limited number of orders sorted by most recent
-      const limitedOrders = mockOrders
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, limit);
-      
-      res.json(limitedOrders);
+      res.json(recentOrders);
     } catch (error: any) {
       console.error("Error getting recent orders:", error);
       res.status(500).json({ message: "Failed to get recent orders" });
