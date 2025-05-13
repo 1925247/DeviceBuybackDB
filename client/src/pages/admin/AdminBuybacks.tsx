@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Card, 
   CardContent, 
@@ -79,6 +80,8 @@ export default function AdminBuybacks() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedBuybackId, setSelectedBuybackId] = useState<number | undefined>(undefined);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch buyback requests
   const { data: buybackData = [], isLoading: isLoadingBuybacks } = useQuery({
@@ -155,6 +158,39 @@ export default function AdminBuybacks() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Mutation to update buyback request status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number, status: string }) => {
+      const response = await apiRequest('PUT', `/api/buyback-requests/${id}`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Buyback request status updated successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: `Failed to update status: ${error.message || 'Unknown error'}`,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Function to mark a buyback request as complete
+  const markAsComplete = (requestId: number) => {
+    updateStatusMutation.mutate({ id: requestId, status: 'completed' });
+  };
+
+  // Function to cancel a buyback request
+  const cancelRequest = (requestId: number) => {
+    updateStatusMutation.mutate({ id: requestId, status: 'cancelled' });
+  };
+
+  // Function to open the assign dialog
   const openAssignDialog = (requestId: number) => {
     setSelectedBuybackId(requestId);
     setAssignDialogOpen(true);
@@ -336,15 +372,11 @@ export default function AdminBuybacks() {
                                     <UserCheck className="mr-2 h-4 w-4" />
                                     Assign Partner
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => markAsComplete(request.id)}>
                                     <CheckCircle2 className="mr-2 h-4 w-4" />
                                     Mark as Complete
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <DollarSign className="mr-2 h-4 w-4" />
-                                    Update Value
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => cancelRequest(request.id)}>
                                     <X className="mr-2 h-4 w-4" />
                                     Cancel Request
                                   </DropdownMenuItem>
