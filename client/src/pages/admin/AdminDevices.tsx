@@ -103,7 +103,22 @@ const AdminDevices: React.FC = () => {
 
   const deleteDeviceTypeMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest('DELETE', `/api/device-types/${id}`);
+      const response = await fetch(`/api/device-types/${id}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 409) {
+          throw new Error(data.message || 'Cannot delete device type that has associated models. Please delete the models first.');
+        } else {
+          throw new Error(data.message || 'Failed to delete device type');
+        }
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/device-types'] });
@@ -120,6 +135,7 @@ const AdminDevices: React.FC = () => {
         description: error.message,
         variant: 'destructive',
       });
+      // Don't close the modal on error so user can try again
     },
   });
 
@@ -394,7 +410,12 @@ const AdminDevices: React.FC = () => {
   );
 
   const renderDeleteModal = () => (
-    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+    <Dialog open={isDeleteModalOpen} onOpenChange={(open) => {
+      // Only allow closing if we're not in the middle of deletion
+      if (!deleteDeviceTypeMutation.isPending) {
+        setIsDeleteModalOpen(open);
+      }
+    }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Device Type</DialogTitle>
@@ -403,12 +424,38 @@ const AdminDevices: React.FC = () => {
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <p className="font-medium">
-            {selectedDeviceType?.name}
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-medium text-lg">{selectedDeviceType?.name}</span>
+            {selectedDeviceType?.icon && (
+              <img 
+                src={selectedDeviceType.icon} 
+                alt={`${selectedDeviceType.name} icon`} 
+                className="h-6 w-auto"
+              />
+            )}
+          </div>
+          
+          {deleteDeviceTypeMutation.error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+              <p className="font-medium mb-1">Error:</p>
+              <p>{deleteDeviceTypeMutation.error.message}</p>
+              
+              {deleteDeviceTypeMutation.error.message.includes('models associated') && (
+                <div className="mt-2 text-xs">
+                  <p className="font-medium">Recommendation:</p>
+                  <p>Please delete all device models associated with this device type first, then try again.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setIsDeleteModalOpen(false)}
+            disabled={deleteDeviceTypeMutation.isPending}
+          >
             Cancel
           </Button>
           <Button 

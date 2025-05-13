@@ -80,7 +80,7 @@ export interface IStorage {
   getDeviceType(id: number): Promise<DeviceType | undefined>;
   createDeviceType(data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType>;
   updateDeviceType(id: number, data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType | undefined>;
-  deleteDeviceType(id: number): Promise<boolean>;
+  deleteDeviceType(id: number): Promise<{ success: boolean; error?: string }>;
   
   // Brand operations
   getBrands(): Promise<Brand[]>;
@@ -486,7 +486,7 @@ export class DatabaseStorage implements IStorage {
     return updatedDeviceType;
   }
   
-  async deleteDeviceType(id: number): Promise<boolean> {
+  async deleteDeviceType(id: number): Promise<{ success: boolean; error?: string }> {
     try {
       // Check if there are any device models using this device type
       const [modelCount] = await db
@@ -495,14 +495,21 @@ export class DatabaseStorage implements IStorage {
         .where(eq(deviceModels.device_type_id, id));
       
       if (Number(modelCount?.count || 0) > 0) {
-        throw new Error('Cannot delete device type because there are device models associated with it');
+        return { 
+          success: false, 
+          error: 'Cannot delete device type because there are device models associated with it' 
+        };
       }
       
-      await db.delete(deviceTypes).where(eq(deviceTypes.id, id));
-      return true;
+      const result = await db.delete(deviceTypes).where(eq(deviceTypes.id, id));
+      if (!result.length) {
+        return { success: false, error: 'Device type not found' };
+      }
+      
+      return { success: true };
     } catch (error) {
       console.error('Error deleting device type:', error);
-      return false;
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 

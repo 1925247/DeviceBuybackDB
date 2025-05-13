@@ -137,10 +137,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid device type ID" });
       }
       
-      const success = await storage.deleteDeviceType(deviceTypeId);
+      const result = await storage.deleteDeviceType(deviceTypeId);
       
-      if (!success) {
-        return res.status(404).json({ message: "Device type not found or could not be deleted" });
+      if (!result.success) {
+        // Different status codes based on the error
+        if (result.error?.includes('not found')) {
+          return res.status(404).json({ message: result.error });
+        } else if (result.error?.includes('associated with it')) {
+          return res.status(409).json({ message: result.error });
+        } else {
+          return res.status(400).json({ message: result.error || "Could not delete device type" });
+        }
       }
       
       res.status(200).json({ message: "Device type deleted successfully" });
