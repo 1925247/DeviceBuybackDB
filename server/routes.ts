@@ -1284,6 +1284,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update a specific valuation by ID
+  app.put(apiRouter("/valuations/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const valuationData = req.body;
+      
+      const updatedValuation = await storage.updateValuation(id, valuationData);
+      
+      if (!updatedValuation) {
+        return res.status(404).json({ message: "Valuation not found" });
+      }
+      
+      res.json(updatedValuation);
+    } catch (error: any) {
+      console.error("Error updating valuation:", error);
+      res.status(500).json({ message: error.message || "Failed to update valuation" });
+    }
+  });
+  
+  // Delete a specific valuation by ID
+  app.delete(apiRouter("/valuations/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const success = await storage.deleteValuation(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Valuation not found" });
+      }
+      
+      res.json({ success });
+    } catch (error: any) {
+      console.error("Error deleting valuation:", error);
+      res.status(500).json({ message: error.message || "Failed to delete valuation" });
+    }
+  });
+  
+  // Delete all valuations for a specific model
   app.delete(apiRouter("/valuations/model/:modelId"), async (req: Request, res: Response) => {
     try {
       const modelId = parseInt(req.params.modelId);
