@@ -12,6 +12,9 @@ import {
   Recycle,
   ChevronRight,
   CheckCircle,
+  Clock,
+  CreditCard,
+  Shield,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +42,14 @@ interface HomeData {
 const initialHomeData: HomeData = {
   deviceTypes: [],
   brands: [],
+};
+
+// Environmental impact data
+const environmentalImpact = {
+  impactDescription: "By selling your old devices to us, you're contributing to reducing electronic waste and preserving our environment for future generations.",
+  devicesRecycled: "50,000+",
+  eWasteReduced: "500 tons",
+  certification: "Certified E-Waste Management Partner"
 };
 
 const HomePage = () => {
