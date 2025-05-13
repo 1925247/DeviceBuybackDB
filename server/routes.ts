@@ -1252,19 +1252,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put(apiRouter("/settings"), async (req: Request, res: Response) => {
     try {
-      const { category, settings } = req.body;
+      const settingsData = req.body;
       
-      // In a real implementation, this would update the settings in the database
-      console.log(`Updating ${category} settings:`, settings);
+      // Update settings in the database
+      const updatedSettings = await storage.updateSettings(settingsData);
       
       // Return success response with the updated settings
       res.json({ 
         success: true, 
-        message: `${category} settings updated successfully`,
-        data: settings
+        message: "Settings updated successfully",
+        data: updatedSettings
       });
     } catch (error: any) {
-      res.status(500).json({ message: "Failed to update settings" });
+      console.error("Error updating settings:", error);
+      res.status(500).json({ message: "Failed to update settings: " + error.message });
     }
   });
   
