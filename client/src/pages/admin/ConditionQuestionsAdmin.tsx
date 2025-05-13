@@ -375,7 +375,7 @@ export default function ConditionQuestionsAdmin() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
+                      <TableCell colSpan={9} className="text-center py-6">
                         No condition questions found
                         {selectedDeviceType && selectedDeviceType !== 'all' && " for the selected device type"}
                       </TableCell>
@@ -399,6 +399,7 @@ export default function ConditionQuestionsAdmin() {
             {deviceTypes && (
               <QuestionForm
                 deviceTypes={deviceTypes}
+                brands={brands}
                 onSubmit={handleAddQuestion}
                 onCancel={() => setShowAddDialog(false)}
                 isSubmitting={createQuestionMutation.isPending}
@@ -420,6 +421,7 @@ export default function ConditionQuestionsAdmin() {
               <QuestionForm
                 initialData={editingQuestion}
                 deviceTypes={deviceTypes}
+                brands={brands}
                 onSubmit={handleEditQuestion}
                 onCancel={() => setEditingQuestion(null)}
                 isSubmitting={updateQuestionMutation.isPending}

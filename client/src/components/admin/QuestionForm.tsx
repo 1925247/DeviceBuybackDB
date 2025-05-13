@@ -157,6 +157,50 @@ export default function QuestionForm({
           </SelectContent>
         </Select>
       </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="brandId">Brand (Optional)</Label>
+        <Select 
+          value={formData.brandId?.toString() || "none"} 
+          onValueChange={(value) => {
+            const brandId = value === "none" ? null : parseInt(value, 10);
+            setFormData(prev => ({ ...prev, brandId }));
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select brand (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Any Brand</SelectItem>
+            {brands?.map(brand => (
+              <SelectItem key={brand.id} value={brand.id.toString()}>
+                {brand.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="questionType">Question Type</Label>
+        <Select 
+          value={formData.questionType} 
+          onValueChange={(value) => {
+            setFormData(prev => ({ ...prev, questionType: value }))
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select question type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+            <SelectItem value="single_choice">Single Choice</SelectItem>
+            <SelectItem value="yes_no">Yes/No</SelectItem>
+            <SelectItem value="text">Text Input</SelectItem>
+            <SelectItem value="numeric">Numeric Input</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="question">Question</Label>
@@ -222,13 +266,37 @@ export default function QuestionForm({
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="active"
-          checked={formData.active} 
-          onCheckedChange={handleActiveChange}
+      <div className="space-y-2">
+        <Label htmlFor="helpText">Help Text (Optional)</Label>
+        <Input 
+          id="helpText"
+          name="helpText"
+          value={formData.helpText || ''}
+          onChange={handleInputChange}
+          placeholder="Additional instructions for this question"
         />
-        <Label htmlFor="active">Active</Label>
+      </div>
+
+      <div className="flex space-x-6">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="active"
+            checked={formData.active} 
+            onCheckedChange={handleActiveChange}
+          />
+          <Label htmlFor="active">Active</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="required"
+            checked={formData.required} 
+            onCheckedChange={(checked) => {
+              setFormData(prev => ({ ...prev, required: !!checked }));
+            }}
+          />
+          <Label htmlFor="required">Required</Label>
+        </div>
       </div>
 
       <DialogFooter className="mt-6">
