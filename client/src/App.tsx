@@ -63,6 +63,7 @@ import ConditionQuestionsAdmin from "./pages/admin/ConditionQuestionsAdmin";
 import RegionsManagement from "./pages/admin/RegionsManagement";
 import UserRoleManagement from "./pages/admin/UserRoleManagement";
 import RouteManagement from "./pages/admin/RouteManagement";
+import PartnersManagement from "./pages/admin/PartnersManagement";
 import AdminLayout from "./components/admin/AdminLayout";
 
 // E-commerce Admin Pages
@@ -493,7 +494,7 @@ function App() {
 
                   {/* Region & Partner Management */}
                   <Route path="regions" element={<RegionsManagement />} />
-                  <Route path="partners" element={<AdminDashboard />} />
+                  <Route path="partners" element={<PartnersManagement />} />
                   <Route path="partner-staff" element={<AdminUsers />} />
                   <Route path="pin-codes" element={<AdminDashboard />} />
 
