@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiRequest } from '@/lib/queryClient';
 
+// Type definitions for data entities
 interface DeviceType {
   id: number;
   name: string;
@@ -71,13 +72,21 @@ interface Valuation {
   updated_at: string;
 }
 
+// Extended valuation type with model info
 interface ValuationWithModelInfo extends Valuation {
   model_name: string;
   brand_name: string;
   device_type_name: string;
 }
 
+// Response format from the API
+interface ValuationResponseItem {
+  valuations: Valuation;
+  device_models: DeviceModel;
+}
+
 const AdminPricing: React.FC = () => {
+  // State management
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -96,35 +105,7 @@ const AdminPricing: React.FC = () => {
   const [variantKeys, setVariantKeys] = useState<string[]>([]);
   const { toast } = useToast();
 
-  // Handler functions for edit and delete actions
-  const handleEditClick = (valuation: ValuationWithModelInfo) => {
-    const model = deviceModels?.find(m => m.id === valuation.device_model_id);
-    setSelectedValuation(valuation);
-    setFormData({
-      device_model_id: valuation.device_model_id.toString(),
-      base_price: valuation.base_price,
-      condition_excellent: valuation.condition_excellent,
-      condition_good: valuation.condition_good,
-      condition_fair: valuation.condition_fair,
-      condition_poor: valuation.condition_poor,
-      variant_multipliers: valuation.variant_multipliers || {},
-    });
-    
-    if (model?.variants) {
-      setVariantKeys(model.variants);
-    } else {
-      setVariantKeys([]);
-    }
-    
-    setIsEditModalOpen(true);
-  };
-  
-  const handleDeleteClick = (valuation: ValuationWithModelInfo) => {
-    setSelectedValuation(valuation);
-    setIsDeleteModalOpen(true);
-  };
-
-  // Query hooks for fetching data
+  // Data fetching with React Query
   const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
     queryKey: ['/api/device-types'],
   });
@@ -137,17 +118,11 @@ const AdminPricing: React.FC = () => {
     queryKey: ['/api/device-models'],
   });
 
-  // Define an interface for the valuation API response 
-  interface ValuationResponse {
-    valuations: Valuation;
-    device_models: DeviceModel;
-  }
-  
-  const { data: valuationsData, isLoading: isLoadingValuations } = useQuery<ValuationResponse[]>({
+  const { data: valuationData, isLoading: isLoadingValuations } = useQuery<ValuationResponseItem[]>({
     queryKey: ['/api/valuations'],
   });
 
-  // Filtered models based on selected device type and brand
+  // Filtered models based on selected filters
   const filteredModels = deviceModels?.filter(model => {
     let matches = true;
     if (selectedDeviceType !== null) {
@@ -159,15 +134,15 @@ const AdminPricing: React.FC = () => {
     return matches;
   });
 
-  // Enriched valuations with model, brand, and device type names
+  // Data transformation - enrich valuations with model info
   const enrichedValuations: ValuationWithModelInfo[] = React.useMemo(() => {
-    if (!valuationsData || !deviceModels || !brands || !deviceTypes) return [];
+    if (!valuationData || !deviceModels || !brands || !deviceTypes) return [];
 
-    return valuationsData.map((item: ValuationResponse) => {
+    return valuationData.map((item) => {
       const valuation = item.valuations;
       const model = item.device_models;
       
-      // Find brand and device type based on the model
+      // Get related data
       const brand = brands.find(b => Number(b.id) === Number(model.brand_id));
       const deviceType = deviceTypes.find(dt => Number(dt.id) === Number(model.device_type_id));
       
@@ -178,9 +153,9 @@ const AdminPricing: React.FC = () => {
         device_type_name: deviceType?.name || 'Unknown Type',
       };
     });
-  }, [valuationsData, deviceModels, brands, deviceTypes]);
+  }, [valuationData, deviceModels, brands, deviceTypes]);
 
-  // Mutation hooks for creating, updating, and deleting valuations
+  // Mutations for CRUD operations
   const createValuationMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       return await apiRequest('POST', '/api/valuations', data);
@@ -269,11 +244,11 @@ const AdminPricing: React.FC = () => {
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // If this is a device model change, update variant options
+    // Update variant options when selecting a model
     if (name === 'device_model_id') {
       const modelId = Number(value);
       const model = deviceModels?.find(m => Number(m.id) === modelId);
-      if (model && model.variants && model.variants.length > 0) {
+      if (model?.variants?.length) {
         const newVariantMultipliers = { ...formData.variant_multipliers };
         model.variants.forEach(variant => {
           if (!newVariantMultipliers[variant]) {
@@ -300,6 +275,7 @@ const AdminPricing: React.FC = () => {
     }));
   };
 
+  // Form submit handlers
   const handleAddValuation = (e: React.FormEvent) => {
     e.preventDefault();
     const processedData = {
@@ -339,16 +315,17 @@ const AdminPricing: React.FC = () => {
     }
   };
 
+  // Modal opener functions
   const openEditModal = (valuation: ValuationWithModelInfo) => {
     setSelectedValuation(valuation);
     
-    // Find model to get variants
+    // Populate form with valuation data
     const model = deviceModels?.find(m => m.id === valuation.device_model_id);
     const variants = model?.variants || [];
     setVariantKeys(variants);
     
     setFormData({
-      device_model_id: valuation.device_model_id ? valuation.device_model_id.toString() : '',
+      device_model_id: valuation.device_model_id.toString(),
       base_price: valuation.base_price,
       condition_excellent: valuation.condition_excellent,
       condition_good: valuation.condition_good,
@@ -365,6 +342,15 @@ const AdminPricing: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  // Formatting functions
+  const formatPrice = (price: string) => {
+    return `$${parseFloat(price).toFixed(2)}`;
+  };
+
+  const formatPercentage = (value: string) => {
+    return `${parseFloat(value)}%`;
+  };
+
   // Loading state
   if (isLoadingDeviceTypes || isLoadingBrands || isLoadingDeviceModels || isLoadingValuations) {
     return (
@@ -377,7 +363,7 @@ const AdminPricing: React.FC = () => {
     );
   }
 
-  // Render functions
+  // Modal component definitions
   const renderAddModal = () => (
     <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
       <DialogTrigger asChild>
@@ -497,26 +483,27 @@ const AdminPricing: React.FC = () => {
                     <Label className="w-1/2">{variant}</Label>
                     <Input
                       type="number"
-                      min="0.1"
-                      step="0.1"
+                      step="0.01"
+                      min="0.5"
+                      max="2"
                       value={formData.variant_multipliers[variant] || 1}
                       onChange={(e) => handleVariantInputChange(variant, e.target.value)}
-                      className="w-1/2"
                     />
                   </div>
                 ))}
+                <p className="text-xs text-gray-500 mt-2">
+                  These multipliers adjust the base price for each variant (e.g., storage capacity).
+                  A value of 1 means the base price, 1.5 means 150% of the base price.
+                </p>
               </div>
-              <p className="text-xs text-gray-500">
-                Multipliers applied to the base price for each variant.
-              </p>
             </div>
           )}
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createValuationMutation.isPending}>
+            <Button 
+              type="submit" 
+              disabled={createValuationMutation.isPending}
+            >
               {createValuationMutation.isPending ? 'Creating...' : 'Create Valuation'}
             </Button>
           </DialogFooter>
@@ -531,12 +518,12 @@ const AdminPricing: React.FC = () => {
         <DialogHeader>
           <DialogTitle>Edit Valuation</DialogTitle>
           <DialogDescription>
-            Update the valuation details.
+            Update the valuation for {selectedValuation?.model_name}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleEditValuation} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-device_model_id">Device Model</Label>
+            <Label htmlFor="device_model_id">Device Model</Label>
             <Select 
               value={formData.device_model_id} 
               onValueChange={(value) => handleSelectChange('device_model_id', value)}
@@ -545,7 +532,7 @@ const AdminPricing: React.FC = () => {
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                {deviceModels?.map((model) => (
+                {filteredModels?.map((model) => (
                   <SelectItem key={model.id} value={model.id.toString()}>
                     {model.name}
                   </SelectItem>
@@ -555,9 +542,9 @@ const AdminPricing: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit-base_price">Base Price ($)</Label>
+            <Label htmlFor="base_price">Base Price ($)</Label>
             <Input
-              id="edit-base_price"
+              id="base_price"
               name="base_price"
               type="number"
               step="0.01"
@@ -570,9 +557,9 @@ const AdminPricing: React.FC = () => {
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-condition_excellent">Excellent (%)</Label>
+              <Label htmlFor="condition_excellent">Excellent (%)</Label>
               <Input
-                id="edit-condition_excellent"
+                id="condition_excellent"
                 name="condition_excellent"
                 type="number"
                 min="0"
@@ -584,9 +571,9 @@ const AdminPricing: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="edit-condition_good">Good (%)</Label>
+              <Label htmlFor="condition_good">Good (%)</Label>
               <Input
-                id="edit-condition_good"
+                id="condition_good"
                 name="condition_good"
                 type="number"
                 min="0"
@@ -598,9 +585,9 @@ const AdminPricing: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="edit-condition_fair">Fair (%)</Label>
+              <Label htmlFor="condition_fair">Fair (%)</Label>
               <Input
-                id="edit-condition_fair"
+                id="condition_fair"
                 name="condition_fair"
                 type="number"
                 min="0"
@@ -612,9 +599,9 @@ const AdminPricing: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="edit-condition_poor">Poor (%)</Label>
+              <Label htmlFor="condition_poor">Poor (%)</Label>
               <Input
-                id="edit-condition_poor"
+                id="condition_poor"
                 name="condition_poor"
                 type="number"
                 min="0"
@@ -635,11 +622,11 @@ const AdminPricing: React.FC = () => {
                     <Label className="w-1/2">{variant}</Label>
                     <Input
                       type="number"
-                      min="0.1"
-                      step="0.1"
+                      step="0.01"
+                      min="0.5"
+                      max="2"
                       value={formData.variant_multipliers[variant] || 1}
                       onChange={(e) => handleVariantInputChange(variant, e.target.value)}
-                      className="w-1/2"
                     />
                   </div>
                 ))}
@@ -648,10 +635,10 @@ const AdminPricing: React.FC = () => {
           )}
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateValuationMutation.isPending}>
+            <Button 
+              type="submit" 
+              disabled={updateValuationMutation.isPending}
+            >
               {updateValuationMutation.isPending ? 'Updating...' : 'Update Valuation'}
             </Button>
           </DialogFooter>
@@ -682,7 +669,6 @@ const AdminPricing: React.FC = () => {
             Cancel
           </Button>
           <Button 
-            type="button" 
             variant="destructive" 
             onClick={handleDeleteValuation}
             disabled={deleteValuationMutation.isPending}
@@ -694,216 +680,78 @@ const AdminPricing: React.FC = () => {
     </Dialog>
   );
 
-  const formatPrice = (price: string) => {
-    return `$${parseFloat(price).toFixed(2)}`;
-  };
-
-  const formatPercentage = (value: string) => {
-    return `${parseFloat(value)}%`;
-  };
-
+  // Main component render
   return (
-    <div className="py-4 px-6 h-full">
-      <div className="flex flex-col space-y-4">
-        {/* Search and filters row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="w-full lg:w-auto">
-            <Input 
-              type="text" 
-              placeholder="Search models..." 
-              className="w-full lg:w-[300px]" 
-              onChange={(e) => {
-                // Implement search functionality
-                console.log(e.target.value);
-              }}
-            />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Select 
-              value={selectedDeviceType?.toString() || 'all'} 
-              onValueChange={(value) => setSelectedDeviceType(value === 'all' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="All Models" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Models</SelectItem>
-                {deviceTypes?.map((deviceType) => (
-                  <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
-                    {deviceType.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select 
-              value={selectedBrand?.toString() || 'all'} 
-              onValueChange={(value) => setSelectedBrand(value === 'all' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="All Variants" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Variants</SelectItem>
-                {brands?.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id.toString()}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <div className="flex gap-3">
-              <Input 
-                type="text" 
-                placeholder="Min Price" 
-                className="w-full sm:w-[130px]" 
-              />
-              
-              <Input 
-                type="text" 
-                placeholder="Max Price" 
-                className="w-full sm:w-[130px]" 
-              />
-            </div>
-            
-            <Button 
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              + Add Pricing
-            </Button>
-          </div>
-        </div>
-      
-        {/* Show models without pricing button */}
-        <div className="flex justify-end">
-          <Button 
-            variant="outline" 
-            className="ml-auto bg-orange-500 text-white hover:bg-orange-600 border-none"
-          >
-            Show Models Without Pricing (70)
-          </Button>
-        </div>
-
-        {/* Pricing Table */}
-        <div className="rounded-lg overflow-hidden border border-gray-200 mt-2">
-          <Table>
-            <TableHeader className="bg-gray-50">
-              <TableRow>
-                <TableHead className="w-1/3">Model</TableHead>
-                <TableHead className="w-1/3">Variant</TableHead>
-                <TableHead className="w-1/6 text-right">Price</TableHead>
-                <TableHead className="w-1/6 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredModels && enrichedValuations.length > 0 ? (
-                enrichedValuations.map((valuation) => {
-                  const model = deviceModels?.find(m => m.id === valuation.device_model_id);
-                  return model?.variants && model.variants.length > 0 ? (
-                    // Render model with variants
-                    model.variants.map((variant, idx) => (
-                      <TableRow key={`${valuation.id}-${variant}`}>
-                        <TableCell className="font-medium">
-                          {idx === 0 ? model.name : ''}
-                        </TableCell>
-                        <TableCell>{variant}</TableCell>
-                        <TableCell className="text-right text-blue-600 font-semibold">
-                          {formatPrice(valuation.base_price)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditClick(valuation)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteClick(valuation)}
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    // Render model without variants
-                    <TableRow key={valuation.id}>
-                      <TableCell className="font-medium">
-                        {model?.name || `Unknown Model (ID: ${valuation.device_model_id})`}
-                      </TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell className="text-right text-blue-600 font-semibold">
-                        {formatPrice(valuation.base_price)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditClick(valuation)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteClick(valuation)}
-                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4">
-                    {isLoadingValuations ? (
-                      <div className="flex justify-center">
-                        <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                      </div>
-                    ) : (
-                      <div className="text-gray-500">
-                        No pricing data available. Click "Add Pricing" to add your first device valuation.
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {/* Display will be populated from real database data only */}
-            </TableBody>
-          </Table>
+    <div className="py-8 px-4">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Device Valuations</h1>
+        <div className="space-x-2">
+          {renderAddModal()}
         </div>
       </div>
-
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+          <CardDescription>Filter valuations by device type and brand.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="deviceTypeFilter">Device Type</Label>
+              <Select
+                value={selectedDeviceType?.toString() || ''}
+                onValueChange={(value) => setSelectedDeviceType(value ? parseInt(value) : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Device Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Device Types</SelectItem>
+                  {deviceTypes?.map((type) => (
+                    <SelectItem key={type.id} value={type.id.toString()}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="brandFilter">Brand</Label>
+              <Select
+                value={selectedBrand?.toString() || ''}
+                onValueChange={(value) => setSelectedBrand(value ? parseInt(value) : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Brands" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Brands</SelectItem>
+                  {brands?.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id.toString()}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <Table>
           <TableCaption>List of device valuations</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>Device Model</TableHead>
+              <TableHead>Model</TableHead>
               <TableHead>Brand</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead>Device Type</TableHead>
               <TableHead>Base Price</TableHead>
               <TableHead>Excellent</TableHead>
               <TableHead>Good</TableHead>
               <TableHead>Fair</TableHead>
               <TableHead>Poor</TableHead>
-              <TableHead>Variants</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -925,13 +773,8 @@ const AdminPricing: React.FC = () => {
                   <TableCell>{formatPercentage(valuation.condition_good)}</TableCell>
                   <TableCell>{formatPercentage(valuation.condition_fair)}</TableCell>
                   <TableCell>{formatPercentage(valuation.condition_poor)}</TableCell>
-                  <TableCell>
-                    {valuation.variant_multipliers ? 
-                      Object.keys(valuation.variant_multipliers).length : 
-                      0}
-                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex justify-end gap-2">
                       <Button 
                         variant="outline" 
                         size="icon" 
