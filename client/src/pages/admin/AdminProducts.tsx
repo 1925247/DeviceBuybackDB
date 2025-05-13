@@ -136,7 +136,11 @@ const AdminProducts: React.FC = () => {
       const params: string[] = [];
       
       if (selectedCategory && selectedCategory !== 'all') {
-        params.push(`category_id=${selectedCategory}`);
+        // Convert to string if it's a number to ensure correct parameter type
+        const categoryId = typeof selectedCategory === 'number' 
+          ? selectedCategory.toString() 
+          : selectedCategory;
+        params.push(`category_id=${categoryId}`);
       }
       
       if (selectedTab !== 'all') {

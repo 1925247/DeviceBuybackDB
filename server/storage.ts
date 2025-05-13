@@ -343,17 +343,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBuybackRequest(request: InsertBuybackRequest): Promise<BuybackRequest> {
-    const [newRequest] = await db.insert(buybackRequests).values(request).returning();
-    return newRequest;
+    try {
+      // Handle the array case by ensuring we're passing a single object
+      const requestData = Array.isArray(request) ? request[0] : request;
+      
+      const [newRequest] = await db
+        .insert(buybackRequests)
+        .values(requestData)
+        .returning();
+        
+      return newRequest;
+    } catch (error) {
+      console.error("Error creating buyback request:", error);
+      throw error;
+    }
   }
 
   async updateBuybackRequest(id: number, requestData: Partial<InsertBuybackRequest>): Promise<BuybackRequest | undefined> {
-    const [updatedRequest] = await db
-      .update(buybackRequests)
-      .set({ ...requestData, updated_at: new Date() })
-      .where(eq(buybackRequests.id, id))
-      .returning();
-    return updatedRequest;
+    // Handle potential JSON fields that need conversion
+    const normalizedData = {
+      ...requestData
+    };
+    
+    // Remove updated_at if it's being sent from the client
+    // as we'll set it correctly below
+    if ('updated_at' in normalizedData) {
+      delete normalizedData.updated_at;
+    }
+    
+    try {
+      const [updatedRequest] = await db
+        .update(buybackRequests)
+        .set({ 
+          ...normalizedData,
+          updated_at: new Date() 
+        })
+        .where(eq(buybackRequests.id, id))
+        .returning();
+      
+      return updatedRequest;
+    } catch (error) {
+      console.error("Error updating buyback request:", error);
+      throw error;
+    }
   }
 
   async deleteBuybackRequest(id: number): Promise<boolean> {
