@@ -82,23 +82,62 @@ export default function AdminBuybacks() {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Fetch buyback requests
-  const { data: buybackData = [], isLoading: isLoadingBuybacks } = useQuery({
+  // Fetch buyback requests with error handling
+  const { data: buybackData = [], isLoading: isLoadingBuybacks, error: buybackError, refetch: refetchBuybacks } = useQuery({
     queryKey: ['/api/buyback-requests'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/buyback-requests');
-      return response.json();
+      try {
+        const response = await apiRequest('GET', '/api/buyback-requests');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch buyback requests: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (err) {
+        console.error("Error fetching buyback requests:", err);
+        throw err;
+      }
     },
+    staleTime: 30000, // Cache data for 30 seconds
+    refetchOnWindowFocus: true // Refetch when window gets focus
   });
 
-  // Fetch partners for displaying assigned partner names
-  const { data: partners = [], isLoading: isLoadingPartners } = useQuery({
+  // Fetch partners for displaying assigned partner names with error handling
+  const { data: partners = [], isLoading: isLoadingPartners, error: partnersError, refetch: refetchPartners } = useQuery({
     queryKey: ['/api/partners'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/partners');
-      return response.json();
+      try {
+        const response = await apiRequest('GET', '/api/partners');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch partners: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (err) {
+        console.error("Error fetching partners:", err);
+        throw err;
+      }
     },
+    staleTime: 30000, // Cache data for 30 seconds
+    refetchOnWindowFocus: true // Refetch when window gets focus
   });
+  
+  // Show error toast if data fetching fails
+  useEffect(() => {
+    if (buybackError) {
+      toast({
+        title: 'Error Fetching Data',
+        description: `Failed to fetch buyback requests: ${(buybackError as Error).message}`,
+        variant: 'destructive'
+      });
+    }
+    
+    if (partnersError) {
+      toast({
+        title: 'Error Fetching Data',
+        description: `Failed to fetch partners: ${(partnersError as Error).message}`,
+        variant: 'destructive'
+      });
+    }
+  }, [buybackError, partnersError, toast]);
 
   // Generate filtered buybacks based on active tab, search, and status filter
   const getFilteredBuybacks = () => {
@@ -149,11 +188,20 @@ export default function AdminBuybacks() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Mutation to update buyback request status
+  // Mutation to update buyback request status with improved error handling
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number, status: string }) => {
-      const response = await apiRequest('PUT', `/api/buyback-requests/${id}`, { status });
-      return response.json();
+      try {
+        const response = await apiRequest('PUT', `/api/buyback-requests/${id}`, { status });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error occurred' }));
+          throw new Error(errorData.message || `Failed to update status: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (err) {
+        console.error('Error updating buyback status:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast({
