@@ -82,7 +82,7 @@ export default function AdminBuybacks() {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Fetch buyback requests with error handling
+  // Fetch buyback requests with error handling and better caching strategy
   const { data: buybackData = [], isLoading: isLoadingBuybacks, error: buybackError, refetch: refetchBuybacks } = useQuery({
     queryKey: ['/api/buyback-requests'],
     queryFn: async () => {
@@ -97,8 +97,10 @@ export default function AdminBuybacks() {
         throw err;
       }
     },
-    staleTime: 30000, // Cache data for 30 seconds
-    refetchOnWindowFocus: true // Refetch when window gets focus
+    staleTime: 0, // Always refetch on component mount
+    refetchOnWindowFocus: true, // Refetch when window gets focus
+    refetchInterval: 5000, // Poll for updates every 5 seconds
+    refetchIntervalInBackground: false // Only poll when tab is active
   });
 
   // Fetch partners for displaying assigned partner names with error handling
@@ -188,7 +190,7 @@ export default function AdminBuybacks() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Mutation to update buyback request status with improved error handling
+  // Mutation to update buyback request status with improved error handling and optimistic updates
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number, status: string }) => {
       try {
@@ -203,19 +205,48 @@ export default function AdminBuybacks() {
         throw err;
       }
     },
-    onSuccess: () => {
+    onMutate: async ({ id, status }) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['/api/buyback-requests'] });
+      
+      // Snapshot of the previous value
+      const previousBuybackRequests = queryClient.getQueryData(['/api/buyback-requests']);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(['/api/buyback-requests'], (old: any[]) => {
+        return old?.map(request => 
+          request.id === id ? { ...request, status } : request
+        ) || [];
+      });
+      
+      // Return a context object with the snapshotted value
+      return { previousBuybackRequests };
+    },
+    onSuccess: (data) => {
       toast({
         title: 'Success',
         description: 'Buyback request status updated successfully',
       });
+      // Force a refetch to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests/count'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests/recent'] });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // Revert back to the previous value if mutation fails
+      if (context?.previousBuybackRequests) {
+        queryClient.setQueryData(['/api/buyback-requests'], context.previousBuybackRequests);
+      }
+      
       toast({
         title: 'Error',
         description: `Failed to update status: ${error.message || 'Unknown error'}`,
         variant: 'destructive'
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have the correct data
+      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
     }
   });
 
@@ -253,42 +284,95 @@ export default function AdminBuybacks() {
     setInvoiceModalOpen(true);
   };
 
-  // Export data to Excel/CSV
+  // Export data to Excel/CSV with enhanced data fields
   const exportToExcel = () => {
     try {
-      // Create headers for the CSV
+      // Create comprehensive headers for the CSV
       const headers = [
         'ID', 
         'Device Type', 
         'Manufacturer', 
         'Model', 
         'Status', 
-        'Assigned To', 
+        'Assigned Partner', 
+        'Partner Email',
+        'Partner Phone',
         'Created Date', 
-        'Value', 
-        'Condition'
+        'Updated Date',
+        'IMEI',
+        'Serial Number',
+        'Estimated Value', 
+        'Offered Price',
+        'Final Price',
+        'Condition',
+        'Region',
+        'PIN Code'
       ];
       
-      // Format data for CSV
+      // Get additional questionnaire answer headers from the first request that has them
+      const sampleRequest = buybackData.find(r => r.questionnaire_answers && Object.keys(r.questionnaire_answers).length > 0);
+      const questionnaireHeaders = sampleRequest?.questionnaire_answers ? 
+        Object.keys(sampleRequest.questionnaire_answers) : [];
+      
+      // Add questionnaire headers to main headers
+      const allHeaders = [...headers, ...questionnaireHeaders];
+      
+      // Format data for CSV with proper escaping for CSV values
       const csvData = buybackData.map((request: BuybackRequest) => {
-        return [
+        // Get partner details
+        const partner = partners.find(p => p.id === request.partner_id);
+        
+        // Get region name
+        const getRegionName = (regionId: number) => {
+          const region = regions?.find(r => r.id === regionId);
+          return region ? region.name : '';
+        };
+        
+        // Base request data
+        const baseData = [
           request.id,
-          request.device_type,
-          request.manufacturer,
-          request.model,
-          request.status,
-          getPartnerName(request.partner_id),
+          request.device_type || '',
+          request.manufacturer || '',
+          request.model || '',
+          request.status || 'pending',
+          partner?.name || '',
+          partner?.email || '',
+          partner?.phone || '',
           formatDate(request.created_at),
+          formatDate(request.updated_at),
+          request.imei || '',
+          request.serial_number || '',
+          request.estimated_value || '0.00',
+          request.offered_price || request.estimated_value || '0.00',
           request.final_price || request.offered_price || request.estimated_value || '0.00',
-          request.condition || 'N/A'
+          request.condition || 'N/A',
+          request.region_id ? getRegionName(request.region_id) : '',
+          request.pin_code || ''
         ];
+        
+        // Add questionnaire answers in the same order as headers
+        const answersData = questionnaireHeaders.map(header => {
+          return request.questionnaire_answers && request.questionnaire_answers[header] ? 
+            request.questionnaire_answers[header] : '';
+        });
+        
+        return [...baseData, ...answersData];
       });
       
       // Add headers to the beginning
-      csvData.unshift(headers);
+      csvData.unshift(allHeaders);
       
-      // Convert to CSV format
-      const csvContent = csvData.map(row => row.join(',')).join('\n');
+      // Convert to CSV format with proper escaping
+      const csvContent = csvData.map(row => 
+        row.map(value => {
+          // If the value contains commas, quotes, or newlines, wrap it in quotes
+          // Also escape any quotes inside the value by doubling them
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(',')
+      ).join('\n');
       
       // Create a blob and download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -303,15 +387,15 @@ export default function AdminBuybacks() {
       
       toast({
         title: 'Export Successful',
-        description: 'Buyback requests data has been exported to CSV',
+        description: 'Buyback requests exported with complete data including questionnaire answers',
       });
     } catch (error) {
+      console.error('Error exporting data:', error);
       toast({
         title: 'Export Failed',
-        description: 'There was a problem exporting the data',
+        description: `Failed to export data: ${(error as any).message || 'Unknown error'}`,
         variant: 'destructive'
       });
-      console.error('Export error:', error);
     }
   };
 
