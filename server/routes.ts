@@ -489,8 +489,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert device_type_id to deviceTypeId if present
       const formattedQuestionData: any = { ...questionData };
-      if (questionData.device_type_id) {
-        formattedQuestionData.deviceTypeId = Number(questionData.device_type_id);
+      
+      // Handle deviceTypeId from either source
+      let deviceTypeId = questionData.device_type_id || questionData.deviceTypeId;
+      if (deviceTypeId !== undefined) {
+        deviceTypeId = parseInt(deviceTypeId.toString(), 10);
+        if (isNaN(deviceTypeId)) {
+          deviceTypeId = 1; // Default to first device type if invalid
+        }
+        formattedQuestionData.deviceTypeId = deviceTypeId;
+      }
+      
+      // Clean up the extra field if it exists
+      if (formattedQuestionData.device_type_id) {
         delete formattedQuestionData.device_type_id;
       }
       
