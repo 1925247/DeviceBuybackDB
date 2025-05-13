@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignBuybackForm } from '@/components/admin/AssignBuybackForm';
+import InvoiceModal from '@/components/admin/InvoiceModal';
 import { 
   MoreHorizontal, 
   Search, 
@@ -49,7 +50,9 @@ import {
   Clock,
   RefreshCw,
   X,
-  UserCog
+  UserCog,
+  FileText,
+  Printer
 } from 'lucide-react';
 
 interface BuybackRequest {
