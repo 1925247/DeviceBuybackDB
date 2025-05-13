@@ -17,7 +17,9 @@ import {
   discounts, type Discount, type InsertDiscount,
   settings, type Setting, type InsertSetting,
   invoiceTemplates, type InvoiceTemplate, type InsertInvoiceTemplate,
-  partners
+  partners, type Partner,
+  regions, type Region,
+  routeRules, type RouteRule, type InsertRouteRule
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";
@@ -142,6 +144,26 @@ export interface IStorage {
   // Settings operations
   getSettings(): Promise<any>;
   updateSettings(settings: any): Promise<any>;
+  
+  // Partner operations
+  getPartners(): Promise<Partner[]>;
+  getPartner(id: number): Promise<Partner | undefined>;
+  
+  // Region operations
+  getRegions(): Promise<Region[]>;
+  getRegion(id: number): Promise<Region | undefined>;
+  
+  // Route Rules operations
+  getRouteRules(): Promise<RouteRule[]>;
+  getRouteRule(id: number): Promise<RouteRule | undefined>;
+  createRouteRule(rule: InsertRouteRule): Promise<RouteRule>;
+  updateRouteRule(id: number, rule: Partial<InsertRouteRule>): Promise<RouteRule | undefined>;
+  deleteRouteRule(id: number): Promise<boolean>;
+  changeRoutePriority(id: number, direction: 'up' | 'down'): Promise<RouteRule | undefined>;
+  
+  // PIN code-based lead assignment
+  getPartnerByPinCode(pinCode: string): Promise<Partner | undefined>;
+  assignLeadToPartner(leadId: number, partnerId: number): Promise<BuybackRequest | undefined>;
   
   // E-commerce operations
   
