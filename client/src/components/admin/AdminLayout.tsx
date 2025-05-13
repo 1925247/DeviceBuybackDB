@@ -392,6 +392,18 @@ const AdminLayout: React.FC = () => {
                     <Route className="w-5 h-5 mr-3" />
                     <span>Routes & Content</span>
                   </Link>
+                  
+                  <Link
+                    to="/admin/route-rules"
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                      isActive("/admin/route-rules")
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <MapPin className="w-5 h-5 mr-3" />
+                    <span>Lead Routing</span>
+                  </Link>
 
                   <Link
                     to="/admin/store-templates"
