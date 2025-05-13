@@ -74,7 +74,14 @@ export interface IStorage {
   deleteOrder(id: number): Promise<boolean>;
   
   // Reference data operations
+  // Device Type operations
   getDeviceTypes(): Promise<DeviceType[]>;
+  getDeviceType(id: number): Promise<DeviceType | undefined>;
+  createDeviceType(data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType>;
+  updateDeviceType(id: number, data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType | undefined>;
+  deleteDeviceType(id: number): Promise<boolean>;
+  
+  // Brand operations
   getBrands(): Promise<Brand[]>;
   getBrand(id: number): Promise<Brand | undefined>;
   createBrand(data: { name: string; slug: string; logo?: string }): Promise<Brand>;
@@ -448,6 +455,54 @@ export class DatabaseStorage implements IStorage {
   // Reference data operations
   async getDeviceTypes(): Promise<DeviceType[]> {
     return await db.select().from(deviceTypes).orderBy(deviceTypes.name);
+  }
+  
+  async getDeviceType(id: number): Promise<DeviceType | undefined> {
+    const [deviceType] = await db.select().from(deviceTypes).where(eq(deviceTypes.id, id));
+    return deviceType;
+  }
+  
+  async createDeviceType(data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType> {
+    const [newDeviceType] = await db.insert(deviceTypes).values({
+      ...data,
+      active: data.active ?? true,
+      created_at: new Date(),
+      updated_at: new Date()
+    }).returning();
+    return newDeviceType;
+  }
+  
+  async updateDeviceType(id: number, data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType | undefined> {
+    const [updatedDeviceType] = await db
+      .update(deviceTypes)
+      .set({
+        ...data,
+        updated_at: new Date()
+      })
+      .where(eq(deviceTypes.id, id))
+      .returning();
+    
+    return updatedDeviceType;
+  }
+  
+  async deleteDeviceType(id: number): Promise<boolean> {
+    try {
+      // Check if there are any device models using this device type
+      const [modelCount] = await db
+        .select({ count: sql`count(*)` })
+        .from(deviceModels)
+        .where(eq(deviceModels.device_type_id, id));
+      
+      if (Number(modelCount?.count || 0) > 0) {
+        throw new Error('Cannot delete device type because there are device models associated with it');
+      }
+      
+      await db.delete(deviceTypes).where(eq(deviceTypes.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting device type:', error);
+      return false;
+    }
   }
 
   async getBrands(): Promise<Brand[]> {
