@@ -35,12 +35,12 @@ import ProfilePage from "./pages/ProfilePage";
 import ShopPage from "./pages/shop";
 
 // Shop Flow Pages
-import BuyHome from "./pages/Shop/BuyHome";
-import BuyProduct from "./pages/Shop/BuyProduct";
-import BuyCheckout from "./pages/Shop/BuyCheckout";
-import BuyPayment from "./pages/Shop/BuyPayment";
-import BuyInvoice from "./pages/Shop/BuyInvoice";
-import ProductDetails from "./pages/Shop/ProductDetails";
+import BuyHome from "./pages/shop/BuyHome";
+import BuyProduct from "./pages/shop/BuyProduct";
+import BuyCheckout from "./pages/shop/BuyCheckout";
+import BuyPayment from "./pages/shop/BuyPayment";
+import BuyInvoice from "./pages/shop/BuyInvoice";
+import ProductDetails from "./pages/shop/ProductDetails";
 
 // Admin Panel Pages
 import AdminLogin from "./pages/admin/AdminLogin";
