@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Recycle,
   ChevronRight,
+  CheckCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -194,102 +195,131 @@ const HomePage = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-3 text-center">How It Works</h2>
-          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
-            Selling your device is quick and easy with our simple process.
-          </p>
+      <section id="how-it-works" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Selling your device is quick and easy with our simple process.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {/* Step 1 */}
-            <div className="flex flex-col items-center">
-              <div className="bg-blue-100 p-4 rounded-full mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            <div className="relative">
+              <div className="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
                 <Smartphone className="h-10 w-10 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">
-                Select Your Device
-              </h3>
-              <p className="text-gray-600 text-center text-sm">
-                Choose your device and get an instant quote based on its
-                condition.
-              </p>
+              <div className="absolute top-10 left-1/2 w-full hidden lg:block">
+                <div className="h-0.5 bg-blue-200 relative">
+                  <div className="absolute -right-2 -top-1 w-3 h-3 rounded-full bg-blue-200"></div>
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">
+                  Select Your Device
+                </h3>
+                <p className="text-gray-600">
+                  Choose your device and get an instant quote based on its
+                  condition.
+                </p>
+              </div>
             </div>
 
-            {/* Step 2 */}
-            <div className="flex flex-col items-center">
-              <div className="bg-green-100 p-4 rounded-full mb-4">
-                <Truck className="h-10 w-10 text-green-600" />
+            <div className="relative">
+              <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">
-                Schedule Pickup
-              </h3>
-              <p className="text-gray-600 text-center text-sm">
-                Book a free doorstep pickup at your convenient time.
-              </p>
+              <div className="absolute top-10 left-1/2 w-full hidden lg:block">
+                <div className="h-0.5 bg-green-200 relative">
+                  <div className="absolute -right-2 -top-1 w-3 h-3 rounded-full bg-green-200"></div>
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">Schedule Pickup</h3>
+                <p className="text-gray-600">
+                  Book a free doorstep pickup at your convenient time.
+                </p>
+              </div>
             </div>
 
-            {/* Step 3 */}
-            <div className="flex flex-col items-center md:col-span-2 lg:col-span-1">
-              <div className="bg-purple-100 p-4 rounded-full mb-4">
-                <DollarSign className="h-10 w-10 text-purple-600" />
+            <div className="relative">
+              <div className="bg-purple-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                <Clock className="h-10 w-10 text-purple-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">
-                Get Paid
-              </h3>
-              <p className="text-gray-600 text-center text-sm">
-                Receive payment through your preferred method upon verification.
-              </p>
+              <div className="absolute top-10 left-1/2 w-full hidden lg:block">
+                <div className="h-0.5 bg-purple-200 relative">
+                  <div className="absolute -right-2 -top-1 w-3 h-3 rounded-full bg-purple-200"></div>
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">
+                  Device Inspection
+                </h3>
+                <p className="text-gray-600">
+                  Quick inspection by our expert at your doorstep.
+                </p>
+              </div>
             </div>
+
+            <div className="relative">
+              <div className="bg-orange-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                <CreditCard className="h-10 w-10 text-orange-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">Instant Payment</h3>
+                <p className="text-gray-600">
+                  Get paid instantly via your preferred payment method.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center">
+            <a
+              href="#device-categories"
+              className="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition duration-300"
+              aria-label="Start selling your device"
+            >
+              Sell Your Device Now <ArrowRight className="ml-2 h-5 w-5" />
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 text-center">Why Choose Us</h2>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Best Value */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="mb-4 flex justify-center">
-                <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-blue-600" />
-                </div>
+      {/* Why Choose Us Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Why Choose Us
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-xl shadow-md transform hover:scale-105 transition-transform">
+              <div className="bg-blue-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                <DollarSign className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold mb-2 text-center">Best Value</h3>
-              <p className="text-gray-600 text-sm text-center">
-                We offer competitive prices for your old devices, guaranteed.
-                Our transparent pricing ensures you get the maximum value.
+              <h3 className="text-xl font-semibold mb-2">Best Value</h3>
+              <p className="text-gray-600">
+                We offer the best prices for your used devices, guaranteed. Our
+                transparent pricing ensures you get the maximum value.
               </p>
             </div>
-
-            {/* Free Pickup */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="mb-4 flex justify-center">
-                <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <Truck className="h-6 w-6 text-green-600" />
-                </div>
+            <div className="bg-white p-6 rounded-xl shadow-md transform hover:scale-105 transition-transform">
+              <div className="bg-green-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                <Truck className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="font-semibold mb-2 text-center">Free Pickup</h3>
-              <p className="text-gray-600 text-sm text-center">
-                We handle pickup at a time that's convenient for you. No need to
-                visit a store or ship your device.
+              <h3 className="text-xl font-semibold mb-2">Free Pickup</h3>
+              <p className="text-gray-600">
+                We offer free doorstep pickup at a time that's convenient for
+                you. No need to visit a store or ship your device.
               </p>
             </div>
-
-            {/* Secure & Safe */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="mb-4 flex justify-center">
-                <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <ShieldCheck className="h-6 w-6 text-purple-600" />
-                </div>
+            <div className="bg-white p-6 rounded-xl shadow-md transform hover:scale-105 transition-transform">
+              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                <Shield className="h-8 w-8 text-purple-600" />
               </div>
-              <h3 className="font-semibold mb-2 text-center">Secure & Safe</h3>
-              <p className="text-gray-600 text-sm text-center">
-                Your data is secure with us. We ensure complete data erasure
-                from your device before recycling or refurbishing.
+              <h3 className="text-xl font-semibold mb-2">Secure &amp; Safe</h3>
+              <p className="text-gray-600">
+                Your data security is our priority. We ensure complete data
+                erasure from your device before recycling or refurbishing.
               </p>
             </div>
           </div>
@@ -357,45 +387,44 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Environmental Impact */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+      {/* Environmental Impact Section */}
+      <section className="py-16 bg-green-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-2xl font-bold mb-3">
+              <h2 className="text-3xl font-bold mb-4">
                 Making a Positive Environmental Impact
               </h2>
               <p className="text-gray-600 mb-6">
-                By choosing to sell your device, you contribute to reducing
-                e-waste and promoting a circular economy. Our certified
-                recycling process ensures maximum environmental benefit.
+                {environmentalImpact.impactDescription}
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center">
-                  <Recycle className="text-green-600 h-5 w-5 mr-2" />
-                  <span className="text-gray-600">
-                    Over 100,000+ devices recycled
-                  </span>
-                </li>
-                <li className="flex items-center">
-                  <Recycle className="text-green-600 h-5 w-5 mr-2" />
-                  <span className="text-gray-600">
-                    Reduced 500+ tons of e-waste
-                  </span>
-                </li>
-                <li className="flex items-center">
-                  <Recycle className="text-green-600 h-5 w-5 mr-2" />
-                  <span className="text-gray-600">
-                    ISO 14001 certified recycling process
-                  </span>
-                </li>
-              </ul>
+              <div className="flex items-center mb-4">
+                <Recycle className="h-6 w-6 text-green-600 mr-2" />
+                <span className="text-gray-700">
+                  Over {environmentalImpact.devicesRecycled} devices recycled
+                </span>
+              </div>
+              <div className="flex items-center mb-4">
+                <Recycle className="h-6 w-6 text-green-600 mr-2" />
+                <span className="text-gray-700">
+                  Reduced {environmentalImpact.eWasteReduced} of e-waste
+                </span>
+              </div>
+              <div className="flex items-center">
+                <Recycle className="h-6 w-6 text-green-600 mr-2" />
+                <span className="text-gray-700">
+                  {environmentalImpact.certification}
+                </span>
+              </div>
             </div>
             <div>
               <img
-                src="/images/recycling-bins.jpg"
-                alt="Recycling bins"
-                className="rounded-lg shadow-sm w-full"
+                src="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80"
+                alt="Environmental sustainability"
+                className="rounded-lg shadow-xl"
+                loading="lazy"
+                width="600"
+                height="400"
               />
             </div>
           </div>
