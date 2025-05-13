@@ -233,30 +233,94 @@ export default function AdminBuybacks() {
     setInvoiceModalOpen(true);
   };
 
+  const exportToExcel = () => {
+    try {
+      // Create headers for the CSV
+      const headers = [
+        'ID', 
+        'Device Type', 
+        'Manufacturer', 
+        'Model', 
+        'Status', 
+        'Assigned To', 
+        'Created Date', 
+        'Value', 
+        'Condition'
+      ];
+      
+      // Format data for CSV
+      const csvData = buybackData.map((request: BuybackRequest) => {
+        return [
+          request.id,
+          request.device_type,
+          request.manufacturer,
+          request.model,
+          request.status,
+          getPartnerName(request.partner_id),
+          formatDate(request.created_at),
+          request.final_price || request.offered_price || request.estimated_value || '0.00',
+          request.condition || 'N/A'
+        ];
+      });
+      
+      // Add headers to the beginning
+      csvData.unshift(headers);
+      
+      // Convert to CSV format
+      const csvContent = csvData.map(row => row.join(',')).join('\n');
+      
+      // Create a blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `buyback-requests-${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: 'Export Successful',
+        description: 'Buyback requests data has been exported to CSV',
+      });
+    } catch (error) {
+      toast({
+        title: 'Export Failed',
+        description: 'There was a problem exporting the data',
+        variant: 'destructive'
+      });
+      console.error('Export error:', error);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Buyback Requests Management</h1>
-        <Button variant="outline">
+        <Button onClick={exportToExcel} className="bg-white text-black border border-gray-200 hover:bg-gray-100">
           Export Data
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Requests</p>
-              <h3 className="text-2xl font-bold">{buybackData.length}</h3>
+              <h3 className="text-4xl font-bold mt-1">{buybackData.length}</h3>
             </div>
-            <PieChart className="h-8 w-8 text-primary opacity-80" />
+            <div className="bg-blue-50 p-3 rounded-full">
+              <PieChart className="h-6 w-6 text-blue-600" />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        
+        <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">New Today</p>
-              <h3 className="text-2xl font-bold">
+              <h3 className="text-4xl font-bold mt-1">
                 {buybackData.filter((r: BuybackRequest) => {
                   const today = new Date();
                   const createdDate = new Date(r.created_at);
@@ -268,43 +332,91 @@ export default function AdminBuybacks() {
                 }).length}
               </h3>
             </div>
-            <Calendar className="h-8 w-8 text-green-600 opacity-80" />
+            <div className="bg-green-50 p-3 rounded-full">
+              <Calendar className="h-6 w-6 text-green-600" />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        
+        <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Assigned</p>
-              <h3 className="text-2xl font-bold">{
+              <h3 className="text-4xl font-bold mt-1">{
                 buybackData.filter((r: BuybackRequest) => r.partner_id !== null).length
               }</h3>
             </div>
-            <UserCheck className="h-8 w-8 text-blue-600 opacity-80" />
+            <div className="bg-purple-50 p-3 rounded-full">
+              <UserCheck className="h-6 w-6 text-purple-600" />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        
+        <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Value</p>
-              <h3 className="text-2xl font-bold">${
+              <h3 className="text-4xl font-bold mt-1 text-amber-600">${
                 buybackData.reduce((sum: number, request: BuybackRequest) => {
-                  const value = parseFloat(request.estimated_value || '0');
+                  const value = parseFloat(request.final_price || request.offered_price || request.estimated_value || '0');
                   return sum + (isNaN(value) ? 0 : value);
                 }, 0).toFixed(2)
               }</h3>
             </div>
-            <DollarSign className="h-8 w-8 text-yellow-600 opacity-80" />
+            <div className="bg-amber-50 p-3 rounded-full">
+              <DollarSign className="h-6 w-6 text-amber-600" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Requests</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="assigned">Assigned</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-        </TabsList>
+      <div className="bg-white rounded-md shadow-sm p-4 mb-4">
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Buyback Requests</h2>
+            <p className="text-sm text-muted-foreground">Manage all incoming device buyback requests</p>
+          </div>
+        </div>
+      </div>
+
+      <Tabs defaultValue="all" className="bg-white rounded-md shadow-sm p-4">
+        <div className="flex justify-between items-center mb-4">
+          <TabsList className="bg-gray-100 p-1 rounded-md">
+            <TabsTrigger value="all" className="rounded-sm data-[state=active]:bg-white">All Requests</TabsTrigger>
+            <TabsTrigger value="pending" className="rounded-sm data-[state=active]:bg-white">Pending</TabsTrigger>
+            <TabsTrigger value="assigned" className="rounded-sm data-[state=active]:bg-white">Assigned</TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-sm data-[state=active]:bg-white">Completed</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search requests..."
+                className="pl-8 w-[250px] bg-gray-50 border-gray-200"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <SelectValue placeholder="Filter by status" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <TabsContent value="all" className="mt-4">
           <Card>
             <CardHeader>
