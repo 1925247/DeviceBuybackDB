@@ -1,11 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface BuybackRequest {
   id: number;
@@ -27,124 +40,175 @@ interface Partner {
   active?: boolean;
 }
 
-export function AssignBuybackForm() {
-  const [selectedBuybackRequest, setSelectedBuybackRequest] = useState<string>('');
-  const [selectedPartner, setSelectedPartner] = useState<string>('');
+interface AssignBuybackFormProps {
+  open: boolean;
+  onClose: () => void;
+  buybackRequestId?: number;
+}
+
+export function AssignBuybackForm({ open, onClose, buybackRequestId }: AssignBuybackFormProps) {
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch buyback requests
-  const { data: buybackRequests, isLoading: isLoadingBuybackRequests } = useQuery({
-    queryKey: ['/api/buyback-requests'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/buyback-requests');
-      return response.json();
+  // Reset selected partner when dialog opens or buybackRequestId changes
+  useEffect(() => {
+    if (open) {
+      setSelectedPartnerId('');
     }
-  });
+  }, [open, buybackRequestId]);
 
-  // Fetch partners
-  const { data: partners, isLoading: isLoadingPartners } = useQuery({
+  // Fetch the partners list
+  const { data: partners, isLoading: loadingPartners } = useQuery({
     queryKey: ['/api/partners'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/partners');
       return response.json();
-    }
+    },
+    enabled: open
   });
 
-  // Mutation for assigning a buyback request to a partner
-  const assignBuybackMutation = useMutation({
-    mutationFn: async () => {
+  // Fetch buyback requests (or the specific request if ID is provided)
+  const { data: buybackRequests, isLoading: loadingRequests } = useQuery({
+    queryKey: ['/api/buyback-requests', buybackRequestId],
+    queryFn: async () => {
+      const url = buybackRequestId 
+        ? `/api/buyback-requests/${buybackRequestId}` 
+        : '/api/buyback-requests';
+      
+      const response = await apiRequest('GET', url);
+      const data = await response.json();
+      
+      // If we fetched a specific request, wrap it in an array
+      return buybackRequestId ? [data] : data;
+    },
+    enabled: open
+  });
+
+  // Mutation to assign a partner to a buyback request
+  const assignPartnerMutation = useMutation({
+    mutationFn: async ({ buybackId, partnerId }: { buybackId: number; partnerId: number }) => {
       const response = await apiRequest('POST', '/api/partners/assign-buyback', {
-        buybackRequestId: parseInt(selectedBuybackRequest),
-        partnerId: parseInt(selectedPartner)
+        buybackRequestId: buybackId,
+        partnerId
       });
       return response.json();
     },
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Buyback request assigned to partner successfully.',
+        description: 'Partner successfully assigned to the buyback request',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-      setSelectedBuybackRequest('');
-      setSelectedPartner('');
+      onClose();
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: `Failed to assign buyback request: ${error.message || 'Unknown error'}`,
-        variant: 'destructive',
+        description: `Failed to assign partner: ${error.message || 'Unknown error'}`,
+        variant: 'destructive'
       });
     }
   });
 
   const handleAssign = () => {
-    if (!selectedBuybackRequest || !selectedPartner) {
+    if (!selectedPartnerId || !buybackRequestId) {
       toast({
-        title: 'Warning',
-        description: 'Please select both a buyback request and a partner.',
-        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select a partner to assign',
+        variant: 'destructive'
       });
       return;
     }
 
-    assignBuybackMutation.mutate();
+    assignPartnerMutation.mutate({
+      buybackId: buybackRequestId,
+      partnerId: parseInt(selectedPartnerId)
+    });
   };
 
+  const isLoading = loadingPartners || loadingRequests || assignPartnerMutation.isPending;
+  const buybackRequest = buybackRequests?.find((req: BuybackRequest) => req.id === buybackRequestId);
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Assign Buyback Request to Partner</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="buyback-request">Buyback Request</Label>
-            <Select 
-              value={selectedBuybackRequest} 
-              onValueChange={setSelectedBuybackRequest}
-              disabled={isLoadingBuybackRequests}
-            >
-              <SelectTrigger id="buyback-request">
-                <SelectValue placeholder="Select a buyback request" />
-              </SelectTrigger>
-              <SelectContent>
-                {buybackRequests && buybackRequests.map((request: BuybackRequest) => (
-                  <SelectItem key={request.id} value={request.id.toString()}>
-                    {request.manufacturer} {request.model} ({request.status})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign Partner to Buyback Request</DialogTitle>
+          <DialogDescription>
+            Select a partner to handle this buyback request. The partner will be notified and responsible for device collection and processing.
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="flex justify-center my-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="partner">Partner</Label>
-            <Select 
-              value={selectedPartner} 
-              onValueChange={setSelectedPartner}
-              disabled={isLoadingPartners}
-            >
-              <SelectTrigger id="partner">
-                <SelectValue placeholder="Select a partner" />
-              </SelectTrigger>
-              <SelectContent>
-                {partners && partners.map((partner: Partner) => (
-                  <SelectItem key={partner.id} value={partner.id.toString()}>
-                    {partner.name} ({partner.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        ) : (
+          <div className="space-y-4 my-2">
+            {buybackRequest && (
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium">Buyback Request Details</h4>
+                <div className="bg-muted p-3 rounded-md text-sm space-y-1">
+                  <p><span className="font-medium">Device:</span> {buybackRequest.manufacturer} {buybackRequest.model}</p>
+                  <p><span className="font-medium">Type:</span> {buybackRequest.device_type}</p>
+                  <p><span className="font-medium">Current Status:</span> {buybackRequest.status}</p>
+                  <p><span className="font-medium">Created:</span> {new Date(buybackRequest.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-1">
+              <Label htmlFor="partner">Select Partner</Label>
+              <Select
+                value={selectedPartnerId}
+                onValueChange={setSelectedPartnerId}
+                disabled={isLoading}
+              >
+                <SelectTrigger id="partner">
+                  <SelectValue placeholder="Select a partner" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partners && partners.map((partner: Partner) => (
+                    <SelectItem key={partner.id} value={partner.id.toString()}>
+                      {partner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedPartnerId && partners && (
+              <div className="bg-muted p-3 rounded-md text-sm space-y-1">
+                <h4 className="font-medium">Partner Details</h4>
+                {(() => {
+                  const partner = partners.find((p: Partner) => p.id === parseInt(selectedPartnerId));
+                  return partner ? (
+                    <>
+                      <p><span className="font-medium">Email:</span> {partner.email}</p>
+                      {partner.phone && <p><span className="font-medium">Phone:</span> {partner.phone}</p>}
+                      <p><span className="font-medium">Status:</span> {partner.active ? 'Active' : 'Inactive'}</p>
+                    </>
+                  ) : null;
+                })()}
+              </div>
+            )}
           </div>
-          
+        )}
+        
+        <DialogFooter className="flex space-x-2 sm:justify-end">
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
           <Button 
             onClick={handleAssign} 
-            disabled={assignBuybackMutation.isPending || !selectedBuybackRequest || !selectedPartner}
+            disabled={!selectedPartnerId || isLoading}
+            className={isLoading ? 'opacity-70 cursor-not-allowed' : ''}
           >
-            {assignBuybackMutation.isPending ? 'Assigning...' : 'Assign to Partner'}
+            {isLoading ? 'Assigning...' : 'Assign Partner'}
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

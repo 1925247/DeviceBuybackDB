@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Table, 
@@ -12,26 +17,39 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { toast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignBuybackForm } from '@/components/admin/AssignBuybackForm';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter,
-  DialogClose
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+  MoreHorizontal, 
+  Search, 
+  Filter, 
+  UserCheck, 
+  Calendar, 
+  PieChart, 
+  ArrowUpDown, 
+  DollarSign,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  RefreshCw,
+  X,
+  UserCog
+} from 'lucide-react';
 
 interface BuybackRequest {
   id: number;
@@ -56,312 +74,355 @@ interface Partner {
   email: string;
 }
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500',
-  approved: 'bg-blue-500',
-  rejected: 'bg-red-500',
-  assigned: 'bg-purple-500',
-  processing: 'bg-indigo-500',
-  completed: 'bg-green-500',
-  cancelled: 'bg-gray-500'
-};
-
 export default function AdminBuybacks() {
-  const [page, setPage] = useState(1);
-  const [selectedTab, setSelectedTab] = useState('all');
-  const [detailsRequest, setDetailsRequest] = useState<BuybackRequest | null>(null);
-  const queryClient = useQueryClient();
-  const limit = 10;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedBuybackId, setSelectedBuybackId] = useState<number | undefined>(undefined);
 
   // Fetch buyback requests
-  const { data: buybackData, isLoading } = useQuery({
-    queryKey: ['/api/buyback-requests', page, selectedTab],
+  const { data: buybackData = [], isLoading: isLoadingBuybacks } = useQuery({
+    queryKey: ['/api/buyback-requests'],
     queryFn: async () => {
-      const statusParam = selectedTab !== 'all' ? `&status=${selectedTab}` : '';
-      const response = await apiRequest('GET', `/api/buyback-requests?page=${page}&limit=${limit}${statusParam}`);
+      const response = await apiRequest('GET', '/api/buyback-requests');
       return response.json();
-    }
+    },
   });
 
-  // Fetch partners for reference
-  const { data: partners } = useQuery({
+  // Fetch partners for displaying assigned partner names
+  const { data: partners = [], isLoading: isLoadingPartners } = useQuery({
     queryKey: ['/api/partners'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/partners');
       return response.json();
-    }
+    },
   });
 
-  // Mutation for updating buyback request status
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest('PUT', `/api/buyback-requests/${id}`, { status });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Status Updated',
-        description: 'Buyback request status has been updated successfully.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/buyback-requests'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: `Failed to update status: ${error.message || 'Unknown error'}`,
-        variant: 'destructive',
-      });
-    }
+  // Filter the buyback requests based on search and status filters
+  const filteredBuybacks = buybackData.filter((request: BuybackRequest) => {
+    const matchesSearch = 
+      searchTerm === '' || 
+      request.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.device_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.imei && request.imei.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (request.serial_number && request.serial_number.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = 
+      statusFilter === '' || 
+      request.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
   });
 
-  // Format date for display
+  const getPartnerName = (partnerId: number | null) => {
+    if (!partnerId || partners.length === 0) return "Unassigned";
+    const partner = partners.find((p: Partner) => p.id === partnerId);
+    return partner ? partner.name : "Unknown Partner";
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <Clock className="w-3.5 h-3.5 mr-1.5" /> Pending
+        </Badge>;
+      case 'processing':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Processing
+        </Badge>;
+      case 'completed':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Completed
+        </Badge>;
+      case 'cancelled':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          <X className="w-3.5 h-3.5 mr-1.5" /> Cancelled
+        </Badge>;
+      case 'assigned':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+          <UserCog className="w-3.5 h-3.5 mr-1.5" /> Assigned
+        </Badge>;
+      default:
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+          <AlertTriangle className="w-3.5 h-3.5 mr-1.5" /> {status || 'Unknown'}
+        </Badge>;
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Find partner name by ID
-  const getPartnerName = (partnerId: number | null) => {
-    if (!partnerId || !partners) return 'Not Assigned';
-    const partner = partners.find((p: Partner) => p.id === partnerId);
-    return partner ? partner.name : 'Unknown Partner';
-  };
-
-  // Handle pagination
-  const handlePreviousPage = () => {
-    if (page > 1) setPage(page - 1);
-  };
-
-  const handleNextPage = () => {
-    if (buybackData && buybackData.length === limit) {
-      setPage(page + 1);
-    }
+  const openAssignDialog = (requestId: number) => {
+    setSelectedBuybackId(requestId);
+    setAssignDialogOpen(true);
   };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Buyback Requests Management</h1>
+        <Button variant="outline">
+          Export Data
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Requests</p>
+              <h3 className="text-2xl font-bold">{buybackData.length}</h3>
+            </div>
+            <PieChart className="h-8 w-8 text-primary opacity-80" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">New Today</p>
+              <h3 className="text-2xl font-bold">
+                {buybackData.filter((r: BuybackRequest) => {
+                  const today = new Date();
+                  const createdDate = new Date(r.created_at);
+                  return (
+                    createdDate.getDate() === today.getDate() &&
+                    createdDate.getMonth() === today.getMonth() &&
+                    createdDate.getFullYear() === today.getFullYear()
+                  );
+                }).length}
+              </h3>
+            </div>
+            <Calendar className="h-8 w-8 text-green-600 opacity-80" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Assigned</p>
+              <h3 className="text-2xl font-bold">{
+                buybackData.filter((r: BuybackRequest) => r.partner_id !== null).length
+              }</h3>
+            </div>
+            <UserCheck className="h-8 w-8 text-blue-600 opacity-80" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Value</p>
+              <h3 className="text-2xl font-bold">${
+                buybackData.reduce((sum: number, request: BuybackRequest) => {
+                  const value = parseFloat(request.estimated_value || '0');
+                  return sum + (isNaN(value) ? 0 : value);
+                }, 0).toFixed(2)
+              }</h3>
+            </div>
+            <DollarSign className="h-8 w-8 text-yellow-600 opacity-80" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="all">
+        <TabsList>
+          <TabsTrigger value="all">All Requests</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Buyback Requests</CardTitle>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Buyback Requests</CardTitle>
+                  <CardDescription>
+                    Manage all incoming device buyback requests
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search requests..."
+                      className="pl-8 w-full md:w-auto"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4" />
+                        <SelectValue placeholder="Filter by status" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="assigned">Assigned</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="assigned">Assigned</TabsTrigger>
-                  <TabsTrigger value="approved">Approved</TabsTrigger>
-                  <TabsTrigger value="completed">Completed</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value={selectedTab}>
-                  {isLoading ? (
-                    <div className="py-10 text-center">Loading buyback requests...</div>
-                  ) : (
-                    <>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Device</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Partner</TableHead>
-                            <TableHead>Submitted</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+              {isLoadingBuybacks || isLoadingPartners ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">ID</TableHead>
+                        <TableHead>Device</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Assigned To</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          <div className="flex items-center gap-1">
+                            Date
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="hidden md:table-cell">Value</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBuybacks.length > 0 ? (
+                        buybackData.map((request: BuybackRequest) => (
+                          <TableRow key={request.id}>
+                            <TableCell className="font-medium">#{request.id}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{request.manufacturer} {request.model}</p>
+                                <p className="text-xs text-muted-foreground">{request.device_type}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(request.status)}</TableCell>
+                            <TableCell>
+                              {request.partner_id ? (
+                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                  {getPartnerName(request.partner_id)}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                                  Unassigned
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {formatDate(request.created_at)}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {request.estimated_value ? `$${request.estimated_value}` : 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openAssignDialog(request.id)}>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Assign Partner
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    Mark as Complete
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <DollarSign className="mr-2 h-4 w-4" />
+                                    Update Value
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Cancel Request
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {buybackData && buybackData.length > 0 ? (
-                            buybackData.map((request: BuybackRequest) => (
-                              <TableRow key={request.id}>
-                                <TableCell>#{request.id}</TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{request.manufacturer} {request.model}</div>
-                                  <div className="text-sm text-gray-500">{request.device_type}</div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge className={statusColors[request.status] || 'bg-gray-500'}>
-                                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{getPartnerName(request.partner_id)}</TableCell>
-                                <TableCell>{formatDate(request.created_at)}</TableCell>
-                                <TableCell className="text-right">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => setDetailsRequest(request)}>
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => 
-                                        updateStatusMutation.mutate({ 
-                                          id: request.id, 
-                                          status: 'approved' 
-                                        })
-                                      }>
-                                        Approve
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => 
-                                        updateStatusMutation.mutate({ 
-                                          id: request.id, 
-                                          status: 'rejected'
-                                        })
-                                      }>
-                                        Reject
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => 
-                                        updateStatusMutation.mutate({ 
-                                          id: request.id, 
-                                          status: 'completed'
-                                        })
-                                      }>
-                                        Mark Completed
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-10">
-                                No buyback requests found
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                      
-                      <div className="flex items-center justify-end space-x-2 mt-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={handlePreviousPage}
-                          disabled={page === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4 mr-1" />
-                          Previous
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={handleNextPage}
-                          disabled={!buybackData || buybackData.length < limit}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-              </Tabs>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-24 text-center">
+                            No buyback requests found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-        
-        <div>
-          <AssignBuybackForm />
-        </div>
-      </div>
+        </TabsContent>
+        <TabsContent value="pending" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Requests</CardTitle>
+              <CardDescription>
+                Newly submitted requests waiting for processing
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Similar table with filtered data */}
+              <p className="text-muted-foreground text-center py-4">
+                Showing only pending requests. Click the "All Requests" tab to see everything.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="assigned" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Assigned Requests</CardTitle>
+              <CardDescription>
+                Requests assigned to partners for processing
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Similar table with filtered data */}
+              <p className="text-muted-foreground text-center py-4">
+                Showing only assigned requests. Click the "All Requests" tab to see everything.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="completed" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Completed Requests</CardTitle>
+              <CardDescription>
+                Successfully processed and completed buybacks
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Similar table with filtered data */}
+              <p className="text-muted-foreground text-center py-4">
+                Showing only completed requests. Click the "All Requests" tab to see everything.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Buyback Request Details Dialog */}
-      {detailsRequest && (
-        <Dialog open={!!detailsRequest} onOpenChange={(open) => !open && setDetailsRequest(null)}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Buyback Request Details</DialogTitle>
-              <DialogDescription>
-                Request #{detailsRequest.id} submitted on {formatDate(detailsRequest.created_at)}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold mb-2">Device Information</h3>
-                <div className="space-y-1 text-sm">
-                  <p><span className="font-medium">Type:</span> {detailsRequest.device_type}</p>
-                  <p><span className="font-medium">Manufacturer:</span> {detailsRequest.manufacturer}</p>
-                  <p><span className="font-medium">Model:</span> {detailsRequest.model}</p>
-                  {detailsRequest.imei && <p><span className="font-medium">IMEI:</span> {detailsRequest.imei}</p>}
-                  {detailsRequest.serial_number && <p><span className="font-medium">Serial:</span> {detailsRequest.serial_number}</p>}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">Status Information</h3>
-                <div className="space-y-1 text-sm">
-                  <p>
-                    <span className="font-medium">Status:</span> 
-                    <Badge className={`ml-2 ${statusColors[detailsRequest.status] || 'bg-gray-500'}`}>
-                      {detailsRequest.status.charAt(0).toUpperCase() + detailsRequest.status.slice(1)}
-                    </Badge>
-                  </p>
-                  <p>
-                    <span className="font-medium">Partner:</span> {getPartnerName(detailsRequest.partner_id)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Estimated Value:</span> 
-                    {detailsRequest.estimated_value ? `$${detailsRequest.estimated_value}` : 'Not evaluated yet'}
-                  </p>
-                  <p>
-                    <span className="font-medium">Final Price:</span> 
-                    {detailsRequest.final_price ? `$${detailsRequest.final_price}` : 'Not finalized'}
-                  </p>
-                </div>
-              </div>
-
-              {detailsRequest.questionnaire_answers && (
-                <div className="col-span-1 md:col-span-2 mt-4">
-                  <h3 className="font-semibold mb-2">Device Condition</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {Object.entries(detailsRequest.questionnaire_answers).map(([question, answer], idx) => (
-                      <div key={idx} className="text-sm">
-                        <span className="font-medium">{question}:</span> {answer}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Close</Button>
-              </DialogClose>
-              {detailsRequest.status === 'pending' && (
-                <Button 
-                  onClick={() => {
-                    updateStatusMutation.mutate({ 
-                      id: detailsRequest.id, 
-                      status: 'approved' 
-                    });
-                    setDetailsRequest(null);
-                  }}
-                >
-                  Approve Request
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Partner Assignment Dialog */}
+      <AssignBuybackForm
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        buybackRequestId={selectedBuybackId}
+      />
     </div>
   );
 }
