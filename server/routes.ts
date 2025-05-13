@@ -1246,8 +1246,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // REGION MANAGEMENT API ENDPOINTS
   app.get(apiRouter("/regions"), async (req: Request, res: Response) => {
     try {
-      const regionService = require('./services/region-service');
-      const regions = await regionService.getAllRegions(req.query.activeOnly !== 'false');
+      // Mock regions data
+      const regions = [
+        { id: 1, name: 'North America', code: 'NA' },
+        { id: 2, name: 'Europe', code: 'EU' },
+        { id: 3, name: 'Asia Pacific', code: 'APAC' },
+        { id: 4, name: 'Latin America', code: 'LATAM' },
+        { id: 5, name: 'Middle East & Africa', code: 'MEA' }
+      ];
       res.json(regions);
     } catch (error: any) {
       console.error('Error fetching regions:', error);
