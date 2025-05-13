@@ -236,9 +236,9 @@ const AdminLayout: React.FC = () => {
                 </h3>
                 <nav className="mt-2 space-y-1">
                   <Link
-                    to="/admin/AdminDevices.tsx"
+                    to="/admin/device-types"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("/admin/AdminDevices.tsx")
+                      isActive("/admin/device-types")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
@@ -248,9 +248,9 @@ const AdminLayout: React.FC = () => {
                   </Link>
 
                   <Link
-                    to="/admin/AdminBrands.tsx"
+                    to="/admin/brands"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("/admin/AdminBrands.tsx")
+                      isActive("/admin/brands")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
@@ -260,9 +260,9 @@ const AdminLayout: React.FC = () => {
                   </Link>
 
                   <Link
-                    to="/admin/AdminModels.tsx"
+                    to="/admin/models"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("/admin/AdminModels.tsx")
+                      isActive("/admin/models")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
@@ -284,9 +284,9 @@ const AdminLayout: React.FC = () => {
                   </Link> */}
 
                   <Link
-                    to="/admin/AdminCQS.tsx"
+                    to="/admin/condition-questions"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("admin/AdminCQS.tsx")
+                      isActive("/admin/condition-questions")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
@@ -296,9 +296,9 @@ const AdminLayout: React.FC = () => {
                   </Link>
 
                   <Link
-                    to="admin/AdminPricing.tsx"
+                    to="/admin/valuations"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("admin/AdminPricing.tsx")
+                      isActive("/admin/valuations")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
@@ -308,9 +308,9 @@ const AdminLayout: React.FC = () => {
                   </Link>
 
                   <Link
-                    to="/admin/AdminOrders.tsx"
+                    to="/admin/buyback"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("/admin/AdminOrders.tsx")
+                      isActive("/admin/buyback")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
