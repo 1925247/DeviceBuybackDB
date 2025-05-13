@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Device types API endpoint
+  // Device types API endpoints
   app.get(apiRouter("/device-types"), async (_req: Request, res: Response) => {
     try {
       const deviceTypesData = await storage.getDeviceTypes();
@@ -66,6 +66,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching device types:", error);
       res.status(500).json({ message: error.message || "Failed to fetch device types" });
+    }
+  });
+
+  app.get(apiRouter("/device-types/:id"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = parseInt(req.params.id);
+      if (isNaN(deviceTypeId)) {
+        return res.status(400).json({ message: "Invalid device type ID" });
+      }
+      
+      const deviceType = await storage.getDeviceType(deviceTypeId);
+      if (!deviceType) {
+        return res.status(404).json({ message: "Device type not found" });
+      }
+      
+      res.json(deviceType);
+    } catch (error: any) {
+      console.error("Error fetching device type:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch device type" });
+    }
+  });
+  
+  app.post(apiRouter("/device-types"), async (req: Request, res: Response) => {
+    try {
+      const { name, slug, icon, active = true } = req.body;
+      
+      if (!name || !slug) {
+        return res.status(400).json({ message: "Name and slug are required" });
+      }
+      
+      const deviceType = await storage.createDeviceType({ name, slug, icon, active });
+      res.status(201).json(deviceType);
+    } catch (error: any) {
+      console.error("Error creating device type:", error);
+      res.status(500).json({ message: error.message || "Failed to create device type" });
+    }
+  });
+  
+  app.put(apiRouter("/device-types/:id"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = parseInt(req.params.id);
+      if (isNaN(deviceTypeId)) {
+        return res.status(400).json({ message: "Invalid device type ID" });
+      }
+      
+      const { name, slug, icon, active } = req.body;
+      
+      if (!name || !slug) {
+        return res.status(400).json({ message: "Name and slug are required" });
+      }
+      
+      const updatedDeviceType = await storage.updateDeviceType(deviceTypeId, { name, slug, icon, active });
+      
+      if (!updatedDeviceType) {
+        return res.status(404).json({ message: "Device type not found" });
+      }
+      
+      res.json(updatedDeviceType);
+    } catch (error: any) {
+      console.error("Error updating device type:", error);
+      res.status(500).json({ message: error.message || "Failed to update device type" });
+    }
+  });
+  
+  app.delete(apiRouter("/device-types/:id"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = parseInt(req.params.id);
+      if (isNaN(deviceTypeId)) {
+        return res.status(400).json({ message: "Invalid device type ID" });
+      }
+      
+      const success = await storage.deleteDeviceType(deviceTypeId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Device type not found or could not be deleted" });
+      }
+      
+      res.status(200).json({ message: "Device type deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting device type:", error);
+      res.status(500).json({ message: error.message || "Failed to delete device type" });
     }
   });
 
