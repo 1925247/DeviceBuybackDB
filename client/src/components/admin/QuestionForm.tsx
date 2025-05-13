@@ -32,14 +32,27 @@ interface ConditionQuestion {
   id?: number;
   question: string;
   deviceTypeId: number;
+  brandId?: number | null;
   order: number;
   active: boolean;
+  required: boolean;
+  questionType: string;
+  helpText?: string;
   options: ConditionOption[];
+}
+
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
+  active?: boolean;
 }
 
 interface QuestionFormProps {
   initialData?: ConditionQuestion;
   deviceTypes: DeviceType[];
+  brands?: Brand[];
   onSubmit: (data: ConditionQuestion) => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -48,6 +61,7 @@ interface QuestionFormProps {
 export default function QuestionForm({
   initialData,
   deviceTypes,
+  brands = [],
   onSubmit,
   onCancel,
   isSubmitting
@@ -55,8 +69,12 @@ export default function QuestionForm({
   const [formData, setFormData] = useState<ConditionQuestion>({
     question: '',
     deviceTypeId: 0,
+    brandId: null,
     order: 0,
     active: true,
+    required: true,
+    questionType: 'multiple_choice',
+    helpText: '',
     options: [{ text: '', value: '' }]
   });
   const [newOption, setNewOption] = useState('');
