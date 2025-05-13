@@ -716,15 +716,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get(apiRouter("/users/count"), async (_req: Request, res: Response) => {
     try {
-      // Return mock count data for the dashboard
+      // Get real counts from database
+      const userCount = await storage.getUsersCount();
+      const deviceCount = await storage.getDevicesCount();
+      const orderCount = await storage.getOrdersCount();
+      
       res.json({
-        count: 24,
-        deviceCount: 37,
-        orderCount: 18
+        count: userCount,
+        deviceCount: deviceCount,
+        orderCount: orderCount
       });
     } catch (error: any) {
       console.error("Error fetching user counts:", error);
-      res.status(500).json({ message: "Failed to get users count" });
+      res.status(500).json({ message: "Failed to get user count" });
     }
   });
 
@@ -1045,8 +1049,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(apiRouter("/buyback-requests/count"), async (req: Request, res: Response) => {
     try {
       const status = req.query.status as string | undefined;
-      // Provide mock count data for demo purposes
-      res.json({ count: 5 });
+      const count = await storage.getBuybackRequestsCount(status);
+      res.json({ count });
     } catch (error: any) {
       console.error("Error fetching buyback requests count:", error);
       res.status(500).json({ message: "Failed to get buyback requests count" });
