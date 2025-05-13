@@ -253,6 +253,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message || "Failed to delete brand" });
     }
   });
+  
+  // Brand Device Types endpoints
+  app.get(apiRouter("/brand-device-types"), async (_req: Request, res: Response) => {
+    try {
+      const relations = await storage.getAllBrandDeviceTypes();
+      res.json(relations);
+    } catch (error) {
+      console.error("Error getting brand device types:", error);
+      res.status(500).json({ message: "Failed to get brand device types" });
+    }
+  });
+  
+  app.get(apiRouter("/brand-device-types/:id"), async (req: Request, res: Response) => {
+    try {
+      const relation = await storage.getBrandDeviceType(Number(req.params.id));
+      if (!relation) {
+        return res.status(404).json({ message: "Brand device type relation not found" });
+      }
+      res.json(relation);
+    } catch (error) {
+      console.error("Error getting brand device type:", error);
+      res.status(500).json({ message: "Failed to get brand device type" });
+    }
+  });
+  
+  app.post(apiRouter("/brand-device-types"), async (req: Request, res: Response) => {
+    try {
+      const { brand_id, device_type_id } = req.body;
+      
+      if (!brand_id || !device_type_id) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      const newRelation = await storage.createBrandDeviceType({
+        brand_id: Number(brand_id),
+        device_type_id: Number(device_type_id)
+      });
+      
+      res.status(201).json(newRelation);
+    } catch (error) {
+      console.error("Error creating brand device type:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create brand device type";
+      res.status(500).json({ message: errorMessage });
+    }
+  });
+  
+  app.delete(apiRouter("/brand-device-types/:id"), async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteBrandDeviceType(Number(req.params.id));
+      if (!deleted) {
+        return res.status(404).json({ message: "Brand device type relation not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting brand device type:", error);
+      res.status(500).json({ message: "Failed to delete brand device type" });
+    }
+  });
+  
+  app.get(apiRouter("/device-types/:id/brands"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = Number(req.params.id);
+      const brands = await storage.getBrandForDeviceType(deviceTypeId);
+      res.json(brands);
+    } catch (error) {
+      console.error("Error getting brands for device type:", error);
+      res.status(500).json({ message: "Failed to get brands for device type" });
+    }
+  });
 
   // Device models API endpoint
   app.get(apiRouter("/device-models"), async (_req: Request, res: Response) => {

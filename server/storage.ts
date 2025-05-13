@@ -628,6 +628,125 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
+  
+  // Brand Device Types operations
+  async getAllBrandDeviceTypes(): Promise<any[]> {
+    try {
+      const relations = await db
+        .select({
+          id: brandDeviceTypes.id,
+          brand_id: brandDeviceTypes.brand_id,
+          device_type_id: brandDeviceTypes.device_type_id,
+          created_at: brandDeviceTypes.created_at,
+          updated_at: brandDeviceTypes.updated_at,
+          brand_name: brands.name,
+          device_type_name: deviceTypes.name
+        })
+        .from(brandDeviceTypes)
+        .leftJoin(brands, eq(brandDeviceTypes.brand_id, brands.id))
+        .leftJoin(deviceTypes, eq(brandDeviceTypes.device_type_id, deviceTypes.id));
+      
+      return relations;
+    } catch (error) {
+      console.error("Error getting brand device types:", error);
+      throw error;
+    }
+  }
+
+  async getBrandDeviceType(id: number): Promise<any | undefined> {
+    try {
+      const [relation] = await db
+        .select({
+          id: brandDeviceTypes.id,
+          brand_id: brandDeviceTypes.brand_id,
+          device_type_id: brandDeviceTypes.device_type_id,
+          created_at: brandDeviceTypes.created_at,
+          updated_at: brandDeviceTypes.updated_at,
+          brand_name: brands.name,
+          device_type_name: deviceTypes.name
+        })
+        .from(brandDeviceTypes)
+        .leftJoin(brands, eq(brandDeviceTypes.brand_id, brands.id))
+        .leftJoin(deviceTypes, eq(brandDeviceTypes.device_type_id, deviceTypes.id))
+        .where(eq(brandDeviceTypes.id, id));
+      
+      return relation;
+    } catch (error) {
+      console.error(`Error getting brand device type with id ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createBrandDeviceType(data: { brand_id: number; device_type_id: number }): Promise<any> {
+    try {
+      // Check if the relation already exists
+      const existing = await db
+        .select()
+        .from(brandDeviceTypes)
+        .where(
+          and(
+            eq(brandDeviceTypes.brand_id, data.brand_id),
+            eq(brandDeviceTypes.device_type_id, data.device_type_id)
+          )
+        );
+      
+      if (existing.length > 0) {
+        throw new Error("This brand-device type relation already exists");
+      }
+      
+      const [newRelation] = await db
+        .insert(brandDeviceTypes)
+        .values({
+          brand_id: data.brand_id,
+          device_type_id: data.device_type_id
+        })
+        .returning();
+        
+      return newRelation;
+    } catch (error) {
+      console.error("Error creating brand device type relation:", error);
+      throw error;
+    }
+  }
+
+  async deleteBrandDeviceType(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(brandDeviceTypes)
+        .where(eq(brandDeviceTypes.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting brand device type with id ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async getBrandForDeviceType(deviceTypeId: number): Promise<Brand[]> {
+    try {
+      const query = db
+        .select()
+        .from(brands)
+        .innerJoin(
+          brandDeviceTypes,
+          eq(brands.id, brandDeviceTypes.brand_id)
+        )
+        .where(eq(brandDeviceTypes.device_type_id, deviceTypeId));
+
+      const results = await query;
+      return results.map(result => ({
+        id: result.brands.id,
+        name: result.brands.name,
+        slug: result.brands.slug,
+        logo: result.brands.logo,
+        created_at: result.brands.created_at,
+        updated_at: result.brands.updated_at,
+      }));
+    } catch (error) {
+      console.error(`Error getting brands for device type with id ${deviceTypeId}:`, error);
+      return [];
+    }
+  }
 
   async getDeviceModel(id: number): Promise<DeviceModel | undefined> {
     const [model] = await db.select({
