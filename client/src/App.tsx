@@ -59,6 +59,7 @@ import AdminConfig from "./pages/admin/AdminConfig";
 import AdminCQS from "./pages/admin/AdminCQS";
 import AdminDiagnostic from "./pages/admin/AdminDiagnostic";
 import AdminBuybacks from "./pages/admin/AdminBuybacks";
+import AdminBuybacksNew from "./pages/admin/AdminBuybacksNew";
 import ConditionQuestionsAdmin from "./pages/admin/ConditionQuestionsAdmin";
 import RegionsManagement from "./pages/admin/RegionsManagement";
 import UserRoleManagement from "./pages/admin/UserRoleManagement";
@@ -447,7 +448,7 @@ function App() {
                   <Route path="devices" element={<AdminDevices />} />
 
                   {/* Buyback Program */}
-                  <Route path="buyback" element={<AdminBuybacks />} />
+                  <Route path="buyback" element={<AdminBuybacksNew />} />
                   <Route
                     path="condition-questions"
                     element={<ConditionQuestionsAdmin />}
