@@ -135,7 +135,7 @@ const AdminProducts: React.FC = () => {
       let url = '/api/products';
       const params: string[] = [];
       
-      if (selectedCategory) {
+      if (selectedCategory && selectedCategory !== 'all') {
         params.push(`category_id=${selectedCategory}`);
       }
       
@@ -619,7 +619,7 @@ const AdminProducts: React.FC = () => {
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Uncategorized</SelectItem>
+                <SelectItem value="none">Uncategorized</SelectItem>
                 {categories?.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -639,7 +639,7 @@ const AdminProducts: React.FC = () => {
                 <SelectValue placeholder="Select device type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {deviceTypes?.map((deviceType) => (
                   <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
                     {deviceType.name}
@@ -659,7 +659,7 @@ const AdminProducts: React.FC = () => {
                 <SelectValue placeholder="Select brand" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {brands?.map((brand) => (
                   <SelectItem key={brand.id} value={brand.id.toString()}>
                     {brand.name}
@@ -680,7 +680,7 @@ const AdminProducts: React.FC = () => {
                 <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select model"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {models?.map((model) => (
                   <SelectItem key={model.id} value={model.id.toString()}>
                     {model.name}
@@ -874,7 +874,7 @@ const AdminProducts: React.FC = () => {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
