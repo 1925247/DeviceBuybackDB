@@ -76,7 +76,7 @@ interface Partner {
 
 export default function AdminBuybacks() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedBuybackId, setSelectedBuybackId] = useState<number | undefined>(undefined);
 
@@ -260,7 +260,7 @@ export default function AdminBuybacks() {
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="assigned">Assigned</SelectItem>
                       <SelectItem value="processing">Processing</SelectItem>

@@ -61,7 +61,7 @@ interface DeviceType {
 }
 
 export default function ConditionQuestionsAdmin() {
-  const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
+  const [selectedDeviceType, setSelectedDeviceType] = useState<string>('all');
   const [editingQuestion, setEditingQuestion] = useState<ConditionQuestion | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const queryClient = useQueryClient();
@@ -79,7 +79,7 @@ export default function ConditionQuestionsAdmin() {
   const { data: questions, isLoading: loadingQuestions } = useQuery({
     queryKey: ['/api/condition-questions', selectedDeviceType],
     queryFn: async () => {
-      const endpoint = selectedDeviceType 
+      const endpoint = selectedDeviceType && selectedDeviceType !== 'all'
         ? `/api/condition-questions?deviceTypeId=${selectedDeviceType}` 
         : '/api/condition-questions';
       const response = await apiRequest('GET', endpoint);
@@ -193,7 +193,7 @@ export default function ConditionQuestionsAdmin() {
                   <SelectValue placeholder="All Device Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Device Types</SelectItem>
+                  <SelectItem value="all">All Device Types</SelectItem>
                   {deviceTypes && deviceTypes.map((type: DeviceType) => (
                     <SelectItem key={type.id} value={type.id.toString()}>
                       {type.name}
