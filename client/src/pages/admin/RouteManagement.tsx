@@ -290,51 +290,7 @@ const RouteManagement: React.FC = () => {
     );
   }
 
-  // Error or empty state
-  if (!routes || routes.length === 0) {
-    return (
-      <div className="py-8 px-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Route Management</h1>
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="mb-4 flex items-center gap-2">
-                <PlusCircle size={16} />
-                Add New Route
-              </Button>
-            </DialogTrigger>
-            {renderAddModal()}
-          </Dialog>
-        </div>
-        <div className="bg-amber-50 p-6 rounded-lg border border-amber-200 mb-8">
-          <h3 className="text-lg font-medium text-amber-800 mb-2">No Routes Available</h3>
-          <p className="text-amber-700 mb-4">
-            You haven't set up any routes yet. Routes determine how customer requests are directed to partners and regions.
-          </p>
-          <Button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <PlusCircle size={16} />
-            Create Your First Route
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const getPartnerName = (partnerId?: number) => {
-    if (!partnerId || !partners) return 'N/A';
-    const partner = partners.find(p => p.id === partnerId);
-    return partner ? partner.name : 'Unknown Partner';
-  };
-
-  const getRegionName = (regionId?: number) => {
-    if (!regionId || !regions) return 'N/A';
-    const region = regions.find(r => r.id === regionId);
-    return region ? region.name : 'Unknown Region';
-  };
-
+  // Modal render functions (defined before they're used)
   const renderAddModal = () => (
     <DialogContent className="max-w-md">
       <DialogHeader>
@@ -460,6 +416,53 @@ const RouteManagement: React.FC = () => {
       </form>
     </DialogContent>
   );
+
+  // Error or empty state
+  if (!routes || routes.length === 0) {
+    return (
+      <div className="py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Route Management</h1>
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="mb-4 flex items-center gap-2">
+                <PlusCircle size={16} />
+                Add New Route
+              </Button>
+            </DialogTrigger>
+            {renderAddModal()}
+          </Dialog>
+        </div>
+        <div className="bg-amber-50 p-6 rounded-lg border border-amber-200 mb-8">
+          <h3 className="text-lg font-medium text-amber-800 mb-2">No Routes Available</h3>
+          <p className="text-amber-700 mb-4">
+            You haven't set up any routes yet. Routes determine how customer requests are directed to partners and regions.
+          </p>
+          <Button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle size={16} />
+            Create Your First Route
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const getPartnerName = (partnerId?: number) => {
+    if (!partnerId || !partners) return 'N/A';
+    const partner = partners.find(p => p.id === partnerId);
+    return partner ? partner.name : 'Unknown Partner';
+  };
+
+  const getRegionName = (regionId?: number) => {
+    if (!regionId || !regions) return 'N/A';
+    const region = regions.find(r => r.id === regionId);
+    return region ? region.name : 'Unknown Region';
+  };
+
+  // renderAddModal already defined above
 
   const renderEditModal = () => (
     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
