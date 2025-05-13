@@ -44,8 +44,12 @@ interface ConditionQuestion {
   id: number;
   question: string;
   deviceTypeId: number;
+  brandId?: number | null;
   order: number;
   active: boolean;
+  required: boolean;
+  questionType: string;
+  helpText?: string;
   options: ConditionOption[];
 }
 
@@ -54,6 +58,14 @@ interface DeviceType {
   name: string;
   slug: string;
   icon?: string;
+  active?: boolean;
+}
+
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
   active?: boolean;
 }
 
@@ -71,6 +83,15 @@ export default function ConditionQuestionsAdmin() {
     queryKey: ['/api/device-types'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/device-types');
+      return response.json();
+    }
+  });
+  
+  // Fetch brands
+  const { data: brands, isLoading: loadingBrands } = useQuery({
+    queryKey: ['/api/brands'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/brands');
       return response.json();
     }
   });
@@ -150,6 +171,24 @@ export default function ConditionQuestionsAdmin() {
     if (!deviceTypes) return 'Unknown';
     const deviceType = deviceTypes.find((type: DeviceType) => type.id === id);
     return deviceType ? deviceType.name : 'Unknown';
+  };
+  
+  const getBrandName = (id: number) => {
+    if (!deviceTypes) return 'Unknown';
+    const brand = brands?.find((brand: Brand) => brand.id === id);
+    return brand ? brand.name : 'Unknown';
+  };
+  
+  const getQuestionTypeName = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'multiple_choice': 'Multiple Choice',
+      'single_choice': 'Single Choice',
+      'yes_no': 'Yes/No',
+      'text': 'Text Input',
+      'numeric': 'Numeric Input'
+    };
+    
+    return typeMap[type] || type;
   };
 
   const handleChangeOrder = (question: ConditionQuestion, direction: 'up' | 'down') => {
@@ -242,6 +281,9 @@ export default function ConditionQuestionsAdmin() {
                     <TableHead className="w-[80px]">Order</TableHead>
                     <TableHead>Question</TableHead>
                     <TableHead>Device Type</TableHead>
+                    <TableHead>Brand</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Required</TableHead>
                     <TableHead>Options</TableHead>
                     <TableHead className="w-[100px]">Status</TableHead>
                     <TableHead className="text-right w-[100px]">Actions</TableHead>
@@ -276,6 +318,19 @@ export default function ConditionQuestionsAdmin() {
                         </TableCell>
                         <TableCell>{question.question}</TableCell>
                         <TableCell>{getDeviceTypeName(question.deviceTypeId)}</TableCell>
+                        <TableCell>
+                          {question.brandId ? getBrandName(question.brandId) : 'Any Brand'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {getQuestionTypeName(question.questionType)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={question.required ? "default" : "secondary"}>
+                            {question.required ? "Required" : "Optional"}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {question.options.map((option, index) => (
