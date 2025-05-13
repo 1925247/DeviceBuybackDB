@@ -3,10 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -22,11 +21,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter,
-  DialogClose
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { 
   DropdownMenu, 
@@ -34,10 +30,11 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Plus, Edit, Trash, MoreHorizontal, Move, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash, MoreHorizontal, ChevronUp, ChevronDown } from 'lucide-react';
+import QuestionForm from '@/components/admin/QuestionForm';
 
 interface ConditionOption {
-  id: number;
+  id?: number;
   text: string;
   answer?: string;
   value: string | number;
@@ -64,7 +61,10 @@ export default function ConditionQuestionsAdmin() {
   const [selectedDeviceType, setSelectedDeviceType] = useState<string>('all');
   const [editingQuestion, setEditingQuestion] = useState<ConditionQuestion | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Fetch device types for filtering
   const { data: deviceTypes, isLoading: loadingDeviceTypes } = useQuery({
@@ -87,8 +87,7 @@ export default function ConditionQuestionsAdmin() {
     }
   });
 
-  // Placeholder for future implementation
-  // These mutations would be used once the real API endpoints are implemented
+  // Mutations for CRUD operations
   const createQuestionMutation = useMutation({
     mutationFn: async (questionData: Omit<ConditionQuestion, 'id'>) => {
       const response = await apiRequest('POST', '/api/condition-questions', questionData);
@@ -135,6 +134,8 @@ export default function ConditionQuestionsAdmin() {
     onSuccess: () => {
       toast({ title: 'Success', description: 'Question deleted successfully' });
       queryClient.invalidateQueries({ queryKey: ['/api/condition-questions'] });
+      setShowDeleteDialog(false);
+      setQuestionToDelete(null);
     },
     onError: (error: any) => {
       toast({ 
@@ -151,12 +152,39 @@ export default function ConditionQuestionsAdmin() {
     return deviceType ? deviceType.name : 'Unknown';
   };
 
-  const handleChangeOrder = (questionId: number, direction: 'up' | 'down') => {
-    // This would be implemented with the real API
-    toast({
-      title: 'Not Implemented',
-      description: 'Reordering questions is not implemented in this demo version.',
-      variant: 'default'
+  const handleChangeOrder = (question: ConditionQuestion, direction: 'up' | 'down') => {
+    const newOrder = direction === 'up' ? question.order - 1 : question.order + 1;
+    if (newOrder < 0) return;
+    
+    updateQuestionMutation.mutate({
+      ...question,
+      order: newOrder
+    });
+  };
+
+  const handleAddQuestion = (questionData: Omit<ConditionQuestion, 'id'>) => {
+    createQuestionMutation.mutate(questionData);
+  };
+
+  const handleEditQuestion = (questionData: ConditionQuestion) => {
+    updateQuestionMutation.mutate(questionData);
+  };
+
+  const handleDeleteQuestion = () => {
+    if (questionToDelete) {
+      deleteQuestionMutation.mutate(questionToDelete);
+    }
+  };
+
+  const openDeleteDialog = (questionId: number) => {
+    setQuestionToDelete(questionId);
+    setShowDeleteDialog(true);
+  };
+
+  const toggleQuestionStatus = (question: ConditionQuestion) => {
+    updateQuestionMutation.mutate({
+      ...question,
+      active: !question.active
     });
   };
 
@@ -231,7 +259,7 @@ export default function ConditionQuestionsAdmin() {
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-6 w-6 p-0" 
-                                onClick={() => handleChangeOrder(question.id, 'up')}
+                                onClick={() => handleChangeOrder(question, 'up')}
                               >
                                 <ChevronUp className="h-4 w-4" />
                               </Button>
@@ -239,7 +267,7 @@ export default function ConditionQuestionsAdmin() {
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-6 w-6 p-0" 
-                                onClick={() => handleChangeOrder(question.id, 'down')}
+                                onClick={() => handleChangeOrder(question, 'down')}
                               >
                                 <ChevronDown className="h-4 w-4" />
                               </Button>
@@ -274,20 +302,11 @@ export default function ConditionQuestionsAdmin() {
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                if (confirm("Are you sure you want to delete this question?")) {
-                                  deleteQuestionMutation.mutate(question.id);
-                                }
-                              }}>
+                              <DropdownMenuItem onClick={() => openDeleteDialog(question.id)}>
                                 <Trash className="mr-2 h-4 w-4" />
                                 Delete
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                updateQuestionMutation.mutate({
-                                  ...question,
-                                  active: !question.active
-                                });
-                              }}>
+                              <DropdownMenuItem onClick={() => toggleQuestionStatus(question)}>
                                 <Checkbox 
                                   checked={question.active} 
                                   className="mr-2 h-4 w-4"
@@ -303,7 +322,7 @@ export default function ConditionQuestionsAdmin() {
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-6">
                         No condition questions found
-                        {selectedDeviceType && " for the selected device type"}
+                        {selectedDeviceType && selectedDeviceType !== 'all' && " for the selected device type"}
                       </TableCell>
                     </TableRow>
                   )}
@@ -312,6 +331,71 @@ export default function ConditionQuestionsAdmin() {
             )}
           </CardContent>
         </Card>
+
+        {/* Add Question Dialog */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add Condition Question</DialogTitle>
+              <DialogDescription>
+                Create a new question for the device condition assessment
+              </DialogDescription>
+            </DialogHeader>
+            {deviceTypes && (
+              <QuestionForm
+                deviceTypes={deviceTypes}
+                onSubmit={handleAddQuestion}
+                onCancel={() => setShowAddDialog(false)}
+                isSubmitting={createQuestionMutation.isPending}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Question Dialog */}
+        <Dialog open={!!editingQuestion} onOpenChange={(open) => !open && setEditingQuestion(null)}>
+          <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Condition Question</DialogTitle>
+              <DialogDescription>
+                Update the question details and answer options
+              </DialogDescription>
+            </DialogHeader>
+            {editingQuestion && deviceTypes && (
+              <QuestionForm
+                initialData={editingQuestion}
+                deviceTypes={deviceTypes}
+                onSubmit={handleEditQuestion}
+                onCancel={() => setEditingQuestion(null)}
+                isSubmitting={updateQuestionMutation.isPending}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Question</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this question? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteQuestion}
+                disabled={deleteQuestionMutation.isPending}
+              >
+                {deleteQuestionMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader>
