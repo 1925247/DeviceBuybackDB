@@ -1021,6 +1021,31 @@ export class DatabaseStorage implements IStorage {
   // Create a new condition answer option
   async createConditionAnswer(answerData: any): Promise<any> {
     try {
+      // Check if an answer with this ID already exists
+      if (answerData.id) {
+        const existingAnswer = await db.select()
+          .from(conditionAnswers)
+          .where(eq(conditionAnswers.id, answerData.id))
+          .limit(1);
+        
+        if (existingAnswer.length > 0) {
+          // Update the existing answer instead of creating a new one
+          const [updatedAnswer] = await db.update(conditionAnswers)
+            .set({
+              question_id: answerData.question_id,
+              answer: answerData.text || answerData.value?.toString() || 'Option',
+              impact: answerData.value || '0',
+              order: answerData.order || 1,
+              updated_at: new Date(),
+            })
+            .where(eq(conditionAnswers.id, answerData.id))
+            .returning();
+          
+          return updatedAnswer;
+        }
+      }
+      
+      // Otherwise, insert a new answer
       const [newAnswer] = await db.insert(conditionAnswers)
         .values({
           question_id: answerData.question_id,

@@ -324,7 +324,7 @@ const PrintableInvoice: React.FC<BuybackInvoiceProps> = ({
                     <p className="font-medium text-blue-800">{question}</p>
                     <p className="text-gray-700">{answer}</p>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
