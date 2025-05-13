@@ -8,6 +8,7 @@ import {
   deviceTypes, type DeviceType,
   brands, type Brand,
   deviceModels, type DeviceModel,
+  brandDeviceTypes,
   conditionQuestions, conditionAnswers, valuations,
   products, type Product, type InsertProduct,
   productVariants, type ProductVariant, type InsertProductVariant,
@@ -88,6 +89,12 @@ export interface IStorage {
   createBrand(data: { name: string; slug: string; logo?: string }): Promise<Brand>;
   updateBrand(id: number, data: { name: string; slug: string; logo?: string }): Promise<Brand | undefined>;
   deleteBrand(id: number): Promise<{ success: boolean; error?: string }>;
+  
+  // Brand Device Types operations
+  getAllBrandDeviceTypes(): Promise<any[]>;
+  getBrandDeviceType(id: number): Promise<any | undefined>;
+  createBrandDeviceType(data: { brand_id: number; device_type_id: number }): Promise<any>;
+  deleteBrandDeviceType(id: number): Promise<boolean>;
   
   // Device models operations
   getDeviceModels(): Promise<DeviceModel[]>;
