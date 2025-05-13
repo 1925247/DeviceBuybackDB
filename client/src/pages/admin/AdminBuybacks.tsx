@@ -82,7 +82,9 @@ export default function AdminBuybacks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [selectedBuybackId, setSelectedBuybackId] = useState<number | undefined>(undefined);
+  const [selectedBuyback, setSelectedBuyback] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -197,6 +199,12 @@ export default function AdminBuybacks() {
   const openAssignDialog = (requestId: number) => {
     setSelectedBuybackId(requestId);
     setAssignDialogOpen(true);
+  };
+  
+  // Function to open the invoice modal
+  const openInvoiceModal = (request: BuybackRequest) => {
+    setSelectedBuyback(request);
+    setInvoiceModalOpen(true);
   };
 
   return (
@@ -379,6 +387,12 @@ export default function AdminBuybacks() {
                                     <CheckCircle2 className="mr-2 h-4 w-4" />
                                     Mark as Complete
                                   </DropdownMenuItem>
+                                  {request.status === 'completed' && (
+                                    <DropdownMenuItem onClick={() => openInvoiceModal(request)}>
+                                      <FileText className="mr-2 h-4 w-4" />
+                                      View/Print Invoice
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem onClick={() => cancelRequest(request.id)}>
                                     <X className="mr-2 h-4 w-4" />
                                     Cancel Request
@@ -458,6 +472,15 @@ export default function AdminBuybacks() {
         onClose={() => setAssignDialogOpen(false)}
         buybackRequestId={selectedBuybackId}
       />
+
+      {/* Invoice Modal */}
+      {selectedBuyback && (
+        <InvoiceModal
+          open={invoiceModalOpen}
+          onClose={() => setInvoiceModalOpen(false)}
+          buybackRequest={selectedBuyback}
+        />
+      )}
     </div>
   );
 }
