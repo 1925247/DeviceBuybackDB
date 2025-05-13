@@ -150,3 +150,17 @@ VALUES
   ('Standard Invoice', 'Default invoice template', TRUE, 
    '<div class="invoice"><h1>INVOICE</h1>{{invoiceContent}}</div>')
 ON CONFLICT DO NOTHING;
+
+-- Create route_rules table for PIN code-based lead assignment
+CREATE TABLE IF NOT EXISTS route_rules (
+  id SERIAL PRIMARY KEY,
+  path TEXT NOT NULL,
+  pin_code TEXT,
+  partner_id INTEGER REFERENCES partners(id),
+  region_id INTEGER REFERENCES regions(id),
+  priority INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
