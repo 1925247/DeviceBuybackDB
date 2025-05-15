@@ -41,9 +41,13 @@ export const partners = pgTable("partners", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const partnersRelations = relations(partners, ({ many }) => ({
+export const partnersRelations = relations(partners, ({ many, one }) => ({
   users: many(users),
   leads: many(buybackRequests),
+  wallet: one(partnerWallets, {
+    fields: [partners.id],
+    references: [partnerWallets.partner_id],
+  }),
 }));
 
 export const insertPartnerSchema = createInsertSchema(partners, {
@@ -939,4 +943,124 @@ export const insertSettingSchema = createInsertSchema(settings, {
 
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
+
+// Partner Wallets Table
+export const partnerWallets = pgTable("partner_wallets", {
+  id: serial("id").primaryKey(),
+  partner_id: integer("partner_id").references(() => partners.id).notNull(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  pending_balance: decimal("pending_balance", { precision: 12, scale: 2 }).default("0"),
+  pan_number: text("pan_number"),
+  bank_account_number: text("bank_account_number"),
+  bank_ifsc: text("bank_ifsc"),
+  bank_name: text("bank_name"),
+  account_holder_name: text("account_holder_name"),
+  is_verified: boolean("is_verified").default(false),
+  verification_date: timestamp("verification_date"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const partnerWalletsRelations = relations(partnerWallets, ({ one, many }) => ({
+  partner: one(partners, {
+    fields: [partnerWallets.partner_id],
+    references: [partners.id],
+  }),
+  transactions: many(walletTransactions),
+}));
+
+export const insertPartnerWalletSchema = createInsertSchema(partnerWallets, {
+  partner_id: z.number(),
+  balance: z.number().min(0).default(0),
+  pending_balance: z.number().min(0).default(0).optional(),
+  pan_number: z.string().optional(),
+  bank_account_number: z.string().optional(),
+  bank_ifsc: z.string().optional(),
+  bank_name: z.string().optional(),
+  account_holder_name: z.string().optional(),
+  is_verified: z.boolean().default(false),
+}).omit({ id: true, created_at: true, updated_at: true, verification_date: true });
+
+export type InsertPartnerWallet = z.infer<typeof insertPartnerWalletSchema>;
+export type PartnerWallet = typeof partnerWallets.$inferSelect;
+
+// Wallet Transactions Table
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: serial("id").primaryKey(),
+  wallet_id: integer("wallet_id").references(() => partnerWallets.id).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  type: text("type").notNull(), // credit, debit
+  status: text("status").notNull().default("completed"), // pending, completed, failed
+  description: text("description").notNull(),
+  reference_id: text("reference_id"),
+  reference_type: text("reference_type"),
+  metadata: jsonb("metadata"),
+  transaction_date: timestamp("transaction_date").defaultNow().notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const walletTransactionsRelations = relations(walletTransactions, ({ one }) => ({
+  wallet: one(partnerWallets, {
+    fields: [walletTransactions.wallet_id],
+    references: [partnerWallets.id],
+  }),
+}));
+
+export const insertWalletTransactionSchema = createInsertSchema(walletTransactions, {
+  wallet_id: z.number(),
+  amount: z.number(),
+  type: z.enum(["credit", "debit"]),
+  status: z.enum(["pending", "completed", "failed"]).default("completed"),
+  description: z.string(),
+  reference_id: z.string().optional(),
+  reference_type: z.string().optional(),
+  metadata: z.any().optional(),
+}).omit({ id: true, created_at: true, updated_at: true, transaction_date: true });
+
+export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
+
+// Withdrawal Requests Table
+export const withdrawalRequests = pgTable("withdrawal_requests", {
+  id: serial("id").primaryKey(),
+  wallet_id: integer("wallet_id").references(() => partnerWallets.id).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected, processed
+  transaction_id: integer("transaction_id").references(() => walletTransactions.id),
+  payment_method: text("payment_method").notNull(), // bank_transfer, upi, etc.
+  payment_details: jsonb("payment_details"),
+  notes: text("notes"),
+  processed_by: integer("processed_by").references(() => users.id),
+  processed_date: timestamp("processed_date"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const withdrawalRequestsRelations = relations(withdrawalRequests, ({ one }) => ({
+  wallet: one(partnerWallets, {
+    fields: [withdrawalRequests.wallet_id],
+    references: [partnerWallets.id],
+  }),
+  transaction: one(walletTransactions, {
+    fields: [withdrawalRequests.transaction_id],
+    references: [walletTransactions.id],
+  }),
+  processor: one(users, {
+    fields: [withdrawalRequests.processed_by],
+    references: [users.id],
+  }),
+}));
+
+export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests, {
+  wallet_id: z.number(),
+  amount: z.number().positive(),
+  status: z.enum(["pending", "approved", "rejected", "processed"]).default("pending"),
+  payment_method: z.enum(["bank_transfer", "upi", "other"]),
+  payment_details: z.any().optional(),
+  notes: z.string().optional(),
+}).omit({ id: true, created_at: true, updated_at: true, transaction_id: true, processed_by: true, processed_date: true });
+
+export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
+export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 
