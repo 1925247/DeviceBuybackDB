@@ -462,7 +462,7 @@ const WalletDashboard: React.FC<WalletDashboardProps> = ({ partnerId }) => {
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
                     <FormControl>
-                      <Input value="bank_transfer" disabled {...field} />
+                      <Input disabled {...field} />
                     </FormControl>
                     <FormDescription>
                       All withdrawals are processed via bank transfer.

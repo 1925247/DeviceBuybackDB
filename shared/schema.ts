@@ -1,1070 +1,318 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, foreignKey, unique, index, json, jsonb } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  integer,
+  timestamp,
+  boolean,
+  serial,
+  real,
+  primaryKey,
+  unique,
+  varchar,
+  json,
+  pgEnum,
+  date,
+  jsonb,
+  index as pgIndex,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Regions Table
-export const regions = pgTable("regions", {
+// Enums
+export const userRoleEnum = pgEnum("user_role", [
+  "customer",
+  "admin",
+  "partner",
+  "partner_staff",
+  "partner_manager",
+  "partner_owner",
+]);
+
+export const userStatusEnum = pgEnum("user_status", [
+  "active",
+  "inactive",
+  "pending",
+  "suspended",
+]);
+
+// Sessions for auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => ({
+    expireIdx: pgIndex("IDX_session_expire").on(table.expire),
+  })
+);
+
+// Users
+export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  code: text("code").notNull().unique(),
-  active: boolean("active").default(true).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  email: text("email").unique().notNull(),
+  password: text("password").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  role: userRoleEnum("role").default("customer").notNull(),
+  status: userStatusEnum("status").default("active").notNull(),
+  partnerId: integer("partner_id").references(() => partners.id),
+  permissions: jsonb("permissions"),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertRegionSchema = createInsertSchema(regions, {
-  name: z.string().min(1),
-  code: z.string().min(1),
-  active: z.boolean(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertRegion = z.infer<typeof insertRegionSchema>;
-export type Region = typeof regions.$inferSelect;
-
-// Partners Table
+// Partners (Business Partners)
 export const partners = pgTable("partners", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  phone: text("phone"),
-  address: text("address"),
+  businessType: text("business_type").notNull(),
+  gstNumber: text("gst_number").unique(),
+  panNumber: text("pan_number").unique(),
+  shopActLicense: text("shop_act_license"),
+  shopActExpiryDate: date("shop_act_expiry_date"),
+  msmeRegistration: text("msme_registration"),
+  contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone").notNull(),
+  alternatePhone: text("alternate_phone"),
+  addressLine1: text("address_line1").notNull(),
+  addressLine2: text("address_line2"),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  pincode: text("pincode").notNull(),
+  serviceablePincodes: text("serviceable_pincodes"),
+  bankName: text("bank_name"),
+  accountNumber: text("account_number"),
+  ifscCode: text("ifsc_code"),
+  accountHolderName: text("account_holder_name"),
+  commissionRate: real("commission_rate").default(10),
+  status: text("status").default("pending").notNull(),
+  isVerified: boolean("is_verified").default(false),
+  verificationDate: timestamp("verification_date"),
   logo: text("logo"),
-  status: text("status").notNull().default("active"),
-  specialization: text("specialization"),
-  regions: json("regions").$type<number[]>(),
-  device_types: json("device_types").$type<number[]>(),
-  pin_codes: json("pin_codes").$type<string[]>(),
-  commission_rate: decimal("commission_rate", { precision: 5, scale: 2 }).default("10").notNull(),
-  tenant_id: text("tenant_id").notNull().unique(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  documents: jsonb("documents"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const partnersRelations = relations(partners, ({ many, one }) => ({
-  users: many(users),
-  leads: many(buybackRequests),
-  wallet: one(partnerWallets, {
-    fields: [partners.id],
-    references: [partnerWallets.partner_id],
-  }),
-}));
-
-export const insertPartnerSchema = createInsertSchema(partners, {
-  name: z.string().min(1),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  logo: z.string().optional(),
-  status: z.enum(["active", "inactive", "pending"]),
-  specialization: z.string().optional(),
-  regions: z.array(z.number()).optional(),
-  device_types: z.array(z.number()).optional(),
-  pin_codes: z.array(z.string()).optional(),
-  commission_rate: z.number().min(0).max(100).optional(),
-  tenant_id: z.string().min(1),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertPartner = z.infer<typeof insertPartnerSchema>;
-export type Partner = typeof partners.$inferSelect;
-
-// Users Table
-export const users = pgTable("users", {
+// Partner Wallets
+export const partnerWallets = pgTable("partner_wallets", {
   id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  password_hash: text("password_hash").notNull(),
-  first_name: text("first_name").notNull(),
-  last_name: text("last_name").notNull(),
-  role: text("role").notNull().default("user"),
-  stripe_customer_id: text("stripe_customer_id"),
-  stripe_subscription_id: text("stripe_subscription_id"),
-  partner_id: integer("partner_id").references(() => partners.id),
-  region_id: integer("region_id").references(() => regions.id),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  partnerId: integer("partner_id")
+    .notNull()
+    .references(() => partners.id),
+  balance: real("balance").notNull().default(0),
+  pendingBalance: real("pending_balance").default(0),
+  panNumber: text("pan_number"),
+  bankAccountNumber: text("bank_account_number"),
+  bankIfsc: text("bank_ifsc"),
+  bankName: text("bank_name"),
+  accountHolderName: text("account_holder_name"),
+  isVerified: boolean("is_verified").default(false),
+  verificationDate: timestamp("verification_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
-  devices: many(devices),
-  buyerOrders: many(orders, { relationName: "buyer" }),
-  sellerOrders: many(orders, { relationName: "seller" }),
-  buybackRequests: many(buybackRequests),
+// Wallet Transactions
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: serial("id").primaryKey(),
+  walletId: integer("wallet_id")
+    .notNull()
+    .references(() => partnerWallets.id),
+  amount: real("amount").notNull(),
+  type: text("type").notNull(), // credit, debit
+  status: text("status").notNull().default("completed"), // pending, completed, failed
+  description: text("description").notNull(),
+  referenceId: text("reference_id"),
+  referenceType: text("reference_type"),
+  metadata: jsonb("metadata"),
+  transactionDate: timestamp("transaction_date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Withdrawal Requests
+export const withdrawalRequests = pgTable("withdrawal_requests", {
+  id: serial("id").primaryKey(),
+  walletId: integer("wallet_id")
+    .notNull()
+    .references(() => partnerWallets.id),
+  amount: real("amount").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected, processed
+  transactionId: integer("transaction_id").references(
+    () => walletTransactions.id
+  ),
+  paymentMethod: text("payment_method").notNull(), // bank_transfer, upi, etc.
+  paymentDetails: jsonb("payment_details"),
+  notes: text("notes"),
+  processedBy: integer("processed_by").references(() => users.id),
+  processedDate: timestamp("processed_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Staff Permissions (Role-Based Access Control)
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  role: userRoleEnum("role").notNull(),
+  resource: text("resource").notNull(), // e.g., 'leads', 'devices', 'orders'
+  action: text("action").notNull(), // e.g., 'create', 'read', 'update', 'delete'
+  restrictions: jsonb("restrictions"), // Additional restrictions like region, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueRoleResource: unique().on(table.role, table.resource, table.action),
 }));
 
-export const insertUserSchema = createInsertSchema(users, {
-  email: z.string().email(),
-  password_hash: z.string().min(6),
-  first_name: z.string().min(1),
-  last_name: z.string().min(1),
-  role: z.enum(["user", "admin", "seller"]),
-}).omit({ id: true, created_at: true, updated_at: true });
+// Partner Staff (employees of partners)
+export const partnerStaff = pgTable("partner_staff", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  partnerId: integer("partner_id")
+    .notNull()
+    .references(() => partners.id),
+  role: userRoleEnum("role").default("partner_staff").notNull(),
+  assignedRegions: jsonb("assigned_regions"), // Array of regions/states
+  assignedPincodes: jsonb("assigned_pincodes"), // Array of pincodes
+  customPermissions: jsonb("custom_permissions"), // Override default role permissions
+  status: userStatusEnum("status").default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+// Postal PIN Codes
+export const postalCodes = pgTable("postal_codes", {
+  id: serial("id").primaryKey(),
+  pincode: text("pincode").notNull().unique(),
+  officeName: text("office_name"),
+  district: text("district"),
+  state: text("state").notNull(),
+  country: text("country").notNull().default("India"),
+  regionId: integer("region_id").references(() => regions.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-// Device Types Table
+// Route Rules
+export const routeRules = pgTable("route_rules", {
+  id: serial("id").primaryKey(),
+  partnerId: integer("partner_id")
+    .notNull()
+    .references(() => partners.id),
+  pincode: text("pincode").notNull(),
+  priority: integer("priority").default(0),
+  active: boolean("active").default(true),
+  languagePreference: text("language_preference"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniquePartnerPincode: unique().on(table.partnerId, table.pincode),
+}));
+
+// Regions
+export const regions = pgTable("regions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Device Types (e.g. Smartphone, Laptop, Tablet)
 export const deviceTypes = pgTable("device_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  icon: text("icon").notNull(),
-  active: boolean("active").default(true).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  image: text("image"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const deviceTypesRelations = relations(deviceTypes, ({ many }) => ({
-  brands: many(brandDeviceTypes),
-  models: many(deviceModels),
-}));
-
-export const insertDeviceTypeSchema = createInsertSchema(deviceTypes, {
-  name: z.string().min(1),
-  slug: z.string().min(1),
-  icon: z.string().min(1),
-  active: z.boolean(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertDeviceType = z.infer<typeof insertDeviceTypeSchema>;
-export type DeviceType = typeof deviceTypes.$inferSelect;
-
-// Brands Table
+// Brands (e.g. Apple, Samsung, Google)
 export const brands = pgTable("brands", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  logo: text("logo").notNull(),
-  active: boolean("active").default(true).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+  logo: text("logo"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const brandsRelations = relations(brands, ({ many }) => ({
-  deviceTypes: many(brandDeviceTypes),
-  models: many(deviceModels),
-}));
-
-export const insertBrandSchema = createInsertSchema(brands, {
-  name: z.string().min(1),
-  slug: z.string().min(1),
-  logo: z.string().min(1),
-  active: z.boolean(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertBrand = z.infer<typeof insertBrandSchema>;
-export type Brand = typeof brands.$inferSelect;
-
-// Brand-DeviceType Relationship Table
-export const brandDeviceTypes = pgTable("brand_device_types", {
-  id: serial("id").primaryKey(),
-  brand_id: integer("brand_id").references(() => brands.id).notNull(),
-  device_type_id: integer("device_type_id").references(() => deviceTypes.id).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-}, (t) => ({
-  unq: unique().on(t.brand_id, t.device_type_id),
-}));
-
-export const brandDeviceTypesRelations = relations(brandDeviceTypes, ({ one }) => ({
-  brand: one(brands, {
-    fields: [brandDeviceTypes.brand_id],
-    references: [brands.id],
-  }),
-  deviceType: one(deviceTypes, {
-    fields: [brandDeviceTypes.device_type_id],
-    references: [deviceTypes.id],
-  }),
-}));
-
-// Device Models Table
+// Models (e.g. iPhone 13, Galaxy S21)
 export const deviceModels = pgTable("device_models", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  image: text("image").notNull(),
-  brand_id: integer("brand_id").references(() => brands.id).notNull(),
-  device_type_id: integer("device_type_id").references(() => deviceTypes.id).notNull(),
-  active: boolean("active").default(true).notNull(),
-  featured: boolean("featured").default(false).notNull(),
-  variants: json("variants").$type<string[]>(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const deviceModelsRelations = relations(deviceModels, ({ one }) => ({
-  brand: one(brands, {
-    fields: [deviceModels.brand_id],
-    references: [brands.id],
-  }),
-  deviceType: one(deviceTypes, {
-    fields: [deviceModels.device_type_id],
-    references: [deviceTypes.id],
-  }),
-}));
-
-export const insertDeviceModelSchema = createInsertSchema(deviceModels, {
-  name: z.string().min(1),
-  slug: z.string().min(1),
-  image: z.string().min(1),
-  active: z.boolean(),
-  featured: z.boolean(),
-  variants: z.array(z.string()).optional(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertDeviceModel = z.infer<typeof insertDeviceModelSchema>;
-export type DeviceModel = typeof deviceModels.$inferSelect;
-
-// Condition Questions Table
-export const conditionQuestions = pgTable("condition_questions", {
-  id: serial("id").primaryKey(),
-  device_type_id: integer("device_type_id").references(() => deviceTypes.id).notNull(),
-  brand_id: integer("brand_id").references(() => brands.id),
-  question: text("question").notNull(),
-  order: integer("order").notNull(),
-  active: boolean("active").default(true).notNull(),
-  question_type: text("question_type").default("multiple_choice").notNull(),
-  required: boolean("required").default(true).notNull(),
-  help_text: text("help_text"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const conditionQuestionsRelations = relations(conditionQuestions, ({ one, many }) => ({
-  deviceType: one(deviceTypes, {
-    fields: [conditionQuestions.device_type_id],
-    references: [deviceTypes.id],
-  }),
-  answers: many(conditionAnswers),
-}));
-
-// Condition Answers Table
-export const conditionAnswers = pgTable("condition_answers", {
-  id: serial("id").primaryKey(),
-  question_id: integer("question_id").references(() => conditionQuestions.id).notNull(),
-  answer: text("answer").notNull(),
-  impact: decimal("impact", { precision: 5, scale: 2 }).notNull(),
-  order: integer("order").notNull(),
-  deduction_type: text("deduction_type").default("percentage").notNull(), // percentage or fixed
-  fixed_amount: decimal("fixed_amount", { precision: 10, scale: 2 }),
-  applicable_brands: json("applicable_brands").$type<number[]>(),
-  applicable_models: json("applicable_models").$type<number[]>(),
+  slug: text("slug").notNull(),
   description: text("description"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const conditionAnswersRelations = relations(conditionAnswers, ({ one }) => ({
-  question: one(conditionQuestions, {
-    fields: [conditionAnswers.question_id],
-    references: [conditionQuestions.id],
-  }),
+  imageUrl: text("image_url"),
+  brandId: integer("brand_id").references(() => brands.id),
+  deviceTypeId: integer("device_type_id").references(() => deviceTypes.id),
+  active: boolean("active").default(true),
+  specifications: jsonb("specifications"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueModelPerBrandDeviceType: unique().on(table.slug, table.brandId, table.deviceTypeId),
 }));
 
-// Diagnostic Questions Table
-export const diagnosticQuestions = pgTable("diagnostic_questions", {
-  id: serial("id").primaryKey(),
-  device_type_id: integer("device_type_id").references(() => deviceTypes.id).notNull(),
-  question: text("question").notNull(),
-  order: integer("order").notNull(),
-  active: boolean("active").default(true).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
+// Define schemas
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email(),
+  password: z.string().min(6),
+  role: z.enum(["customer", "admin", "partner", "partner_staff", "partner_manager", "partner_owner"]),
 });
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
 
-export const diagnosticQuestionsRelations = relations(diagnosticQuestions, ({ one, many }) => ({
-  deviceType: one(deviceTypes, {
-    fields: [diagnosticQuestions.device_type_id],
-    references: [deviceTypes.id],
-  }),
-  answers: many(diagnosticAnswers),
-}));
+export const insertPartnerSchema = createInsertSchema(partners);
+export type InsertPartner = z.infer<typeof insertPartnerSchema>;
+export type Partner = typeof partners.$inferSelect;
 
-// Diagnostic Answers Table
-export const diagnosticAnswers = pgTable("diagnostic_answers", {
-  id: serial("id").primaryKey(),
-  question_id: integer("question_id").references(() => diagnosticQuestions.id).notNull(),
-  answer: text("answer").notNull(),
-  is_pass: boolean("is_pass").notNull(),
-  order: integer("order").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
+export const insertPartnerStaffSchema = createInsertSchema(partnerStaff);
+export type InsertPartnerStaff = z.infer<typeof insertPartnerStaffSchema>;
+export type PartnerStaff = typeof partnerStaff.$inferSelect;
 
-export const diagnosticAnswersRelations = relations(diagnosticAnswers, ({ one }) => ({
-  question: one(diagnosticQuestions, {
-    fields: [diagnosticAnswers.question_id],
-    references: [diagnosticQuestions.id],
-  }),
-}));
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions);
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;
 
-// Valuation Table
-export const valuations = pgTable("valuations", {
-  id: serial("id").primaryKey(),
-  device_model_id: integer("device_model_id").references(() => deviceModels.id).notNull(),
-  base_price: decimal("base_price", { precision: 10, scale: 2 }).notNull(),
-  condition_excellent: decimal("condition_excellent", { precision: 5, scale: 2 }).notNull(),
-  condition_good: decimal("condition_good", { precision: 5, scale: 2 }).notNull(),
-  condition_fair: decimal("condition_fair", { precision: 5, scale: 2 }).notNull(),
-  condition_poor: decimal("condition_poor", { precision: 5, scale: 2 }).notNull(),
-  variant_multipliers: json("variant_multipliers").$type<Record<string, number>>(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const valuationsRelations = relations(valuations, ({ one }) => ({
-  deviceModel: one(deviceModels, {
-    fields: [valuations.device_model_id],
-    references: [deviceModels.id],
-  }),
-}));
-
-// Devices Table
-export const devices = pgTable("devices", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  device_model_id: integer("device_model_id").references(() => deviceModels.id),
-  manufacturer: text("manufacturer").notNull(),
-  model: text("model").notNull(),
-  specs: text("specs"),
-  condition: text("condition").notNull(),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  seller_id: integer("seller_id").references(() => users.id).notNull(),
-  status: text("status").notNull().default("active"),
-  listed_date: timestamp("listed_date").defaultNow().notNull(),
-  description: text("description"),
-  variant: text("variant"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const devicesRelations = relations(devices, ({ one, many }) => ({
-  seller: one(users, {
-    fields: [devices.seller_id],
-    references: [users.id],
-  }),
-  deviceModel: one(deviceModels, {
-    fields: [devices.device_model_id],
-    references: [deviceModels.id],
-  }),
-  images: many(deviceImages),
-  marketplaceListing: one(marketplaceListings, {
-    fields: [devices.id],
-    references: [marketplaceListings.device_id],
-  }),
-  order: many(orders),
-}));
-
-export const insertDeviceSchema = createInsertSchema(devices, {
-  name: z.string().min(1),
-  manufacturer: z.string().min(1),
-  model: z.string().min(1),
-  condition: z.enum(["excellent", "good", "fair", "poor"]),
-  price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val),
-  status: z.enum(["active", "pending", "sold"]),
-  variant: z.string().optional(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertDevice = z.infer<typeof insertDeviceSchema>;
-export type Device = typeof devices.$inferSelect;
-
-// Device Images Table
-export const deviceImages = pgTable("device_images", {
-  id: serial("id").primaryKey(),
-  device_id: integer("device_id").references(() => devices.id).notNull(),
-  url: text("url").notNull(),
-  is_primary: boolean("is_primary").default(false).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const deviceImagesRelations = relations(deviceImages, ({ one }) => ({
-  device: one(devices, {
-    fields: [deviceImages.device_id],
-    references: [devices.id],
-  }),
-}));
-
-export const insertDeviceImageSchema = createInsertSchema(deviceImages).omit({ id: true, created_at: true, updated_at: true });
-export type InsertDeviceImage = z.infer<typeof insertDeviceImageSchema>;
-export type DeviceImage = typeof deviceImages.$inferSelect;
-
-// Buyback Requests Table
-export const buybackRequests = pgTable("buyback_requests", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").references(() => users.id).notNull(),
-  device_type: text("device_type").notNull(),
-  device_model_id: integer("device_model_id").references(() => deviceModels.id),
-  manufacturer: text("manufacturer").notNull(),
-  model: text("model").notNull(),
-  condition: text("condition").notNull(),
-  offered_price: decimal("offered_price", { precision: 10, scale: 2 }),
-  status: text("status").notNull().default("pending"),
-  notes: text("notes"),
-  variant: text("variant"),
-  customer_name: text("customer_name"),
-  customer_email: text("customer_email"),
-  customer_phone: text("customer_phone"),
-  pickup_address: text("pickup_address"),
-  pickup_date: text("pickup_date"),
-  pickup_time: text("pickup_time"),
-  assigned_to: text("assigned_to"),
-  pickup_notes: text("pickup_notes"),
-  partner_id: integer("partner_id").references(() => partners.id),
-  region_id: integer("region_id").references(() => regions.id),
-  pin_code: text("pin_code"),
-  staff_id: integer("staff_id").references(() => users.id),
-  questionnaire_answers: json("questionnaire_answers").$type<Record<string, string>>(),
-  image_urls: json("image_urls").$type<string[]>(),
-  deductions: json("deductions").$type<Record<string, number>>(),
-  final_price: decimal("final_price", { precision: 10, scale: 2 }),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const buybackRequestsRelations = relations(buybackRequests, ({ one }) => ({
-  user: one(users, {
-    fields: [buybackRequests.user_id],
-    references: [users.id],
-  }),
-  deviceModel: one(deviceModels, {
-    fields: [buybackRequests.device_model_id],
-    references: [deviceModels.id],
-  }),
-  partner: one(partners, {
-    fields: [buybackRequests.partner_id],
-    references: [partners.id],
-  }),
-  region: one(regions, {
-    fields: [buybackRequests.region_id],
-    references: [regions.id],
-  }),
-  staff: one(users, {
-    fields: [buybackRequests.staff_id],
-    references: [users.id],
-    relationName: "assigned_staff",
-  }),
-}));
-
-export const insertBuybackRequestSchema = createInsertSchema(buybackRequests).omit({ id: true, created_at: true, updated_at: true });
-export type InsertBuybackRequest = z.infer<typeof insertBuybackRequestSchema>;
-export type BuybackRequest = typeof buybackRequests.$inferSelect;
-
-// Marketplace Listings Table
-export const marketplaceListings = pgTable("marketplace_listings", {
-  id: serial("id").primaryKey(),
-  device_id: integer("device_id").references(() => devices.id).notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  status: text("status").notNull().default("active"),
-  sell_ready: boolean("sell_ready").default(false).notNull(),
-  partner_sourced: boolean("partner_sourced").default(false),
-  partner_id: integer("partner_id").references(() => partners.id),
-  regions: json("regions").$type<number[]>(),  // Regions where this listing is available
-  template_id: integer("template_id"),  // For consistent display templates
-  seo_title: text("seo_title"),
-  seo_description: text("seo_description"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const marketplaceListingsRelations = relations(marketplaceListings, ({ one }) => ({
-  device: one(devices, {
-    fields: [marketplaceListings.device_id],
-    references: [devices.id],
-  }),
-  partner: one(partners, {
-    fields: [marketplaceListings.partner_id],
-    references: [partners.id],
-  }),
-}));
-
-export const insertMarketplaceListingSchema = createInsertSchema(marketplaceListings).omit({ id: true, created_at: true, updated_at: true });
-export type InsertMarketplaceListing = z.infer<typeof insertMarketplaceListingSchema>;
-export type MarketplaceListing = typeof marketplaceListings.$inferSelect;
-
-// Orders Table
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
-  buyer_id: integer("buyer_id").references(() => users.id).notNull(),
-  seller_id: integer("seller_id").references(() => users.id).notNull(),
-  device_id: integer("device_id").references(() => devices.id).notNull(),
-  status: text("status").notNull().default("pending"),
-  total_amount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  shipping_address: text("shipping_address"),
-  tracking_number: text("tracking_number"),
-  notes: text("notes"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const ordersRelations = relations(orders, ({ one }) => ({
-  buyer: one(users, {
-    fields: [orders.buyer_id],
-    references: [users.id],
-    relationName: "buyer",
-  }),
-  seller: one(users, {
-    fields: [orders.seller_id],
-    references: [users.id],
-    relationName: "seller",
-  }),
-  device: one(devices, {
-    fields: [orders.device_id],
-    references: [devices.id],
-  }),
-}));
-
-export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, created_at: true, updated_at: true });
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type Order = typeof orders.$inferSelect;
-
-// Store Templates Table (for Shopify-like customization)
-export const storeTemplates = pgTable("store_templates", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  type: text("type").notNull(), // product, category, cart, checkout, etc.
-  thumbnail: text("thumbnail"),
-  is_default: boolean("is_default").default(false),
-  configuration: json("configuration").$type<any>(), // Template configuration
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertStoreTemplateSchema = createInsertSchema(storeTemplates).omit({ id: true, created_at: true, updated_at: true });
-export type InsertStoreTemplate = z.infer<typeof insertStoreTemplateSchema>;
-export type StoreTemplate = typeof storeTemplates.$inferSelect;
-
-// Store Theme Table (for overall store design)
-export const storeThemes = pgTable("store_themes", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  is_active: boolean("is_active").default(false),
-  colors: json("colors").$type<Record<string, string>>(),
-  fonts: json("fonts").$type<Record<string, string>>(),
-  layout: json("layout").$type<any>(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertStoreThemeSchema = createInsertSchema(storeThemes).omit({ id: true, created_at: true, updated_at: true });
-export type InsertStoreTheme = z.infer<typeof insertStoreThemeSchema>;
-export type StoreTheme = typeof storeThemes.$inferSelect;
-
-// Invoice Templates Table
-export const invoiceTemplates = pgTable("invoice_templates", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  is_default: boolean("is_default").default(false),
-  html_template: text("html_template").notNull(),
-  css_styles: text("css_styles"),
-  configuration: json("configuration").$type<Record<string, any>>(),
-  partner_id: integer("partner_id").references(() => partners.id),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const invoiceTemplatesRelations = relations(invoiceTemplates, ({ one }) => ({
-  partner: one(partners, {
-    fields: [invoiceTemplates.partner_id],
-    references: [partners.id],
-  }),
-}));
-
-export const insertInvoiceTemplateSchema = createInsertSchema(invoiceTemplates).omit({ id: true, created_at: true, updated_at: true });
-export type InsertInvoiceTemplate = z.infer<typeof insertInvoiceTemplateSchema>;
-export type InvoiceTemplate = typeof invoiceTemplates.$inferSelect;
-
-// Products Table (E-Commerce specific)
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  compare_at_price: decimal("compare_at_price", { precision: 10, scale: 2 }),
-  cost_price: decimal("cost_price", { precision: 10, scale: 2 }),
-  sku: text("sku").notNull(),
-  barcode: text("barcode"),
-  status: text("status").notNull().default("draft"), // draft, active, archived
-  is_physical: boolean("is_physical").default(true).notNull(),
-  requires_shipping: boolean("requires_shipping").default(true).notNull(),
-  tax_class: text("tax_class"),
-  weight: decimal("weight", { precision: 8, scale: 2 }),
-  weight_unit: text("weight_unit").default("kg"),
-  has_variants: boolean("has_variants").default(false).notNull(),
-  device_model_id: integer("device_model_id").references(() => deviceModels.id),
-  featured: boolean("featured").default(false).notNull(),
-  vendor: text("vendor"),
-  condition: text("condition"), // excellent, good, fair, poor
-  seo_title: text("seo_title"),
-  seo_description: text("seo_description"),
-  regions: json("regions").$type<number[]>(), // Regions where this product is available
-  template_id: integer("template_id").references(() => storeTemplates.id),
-  sell_ready: boolean("sell_ready").default(false),
-  refurbished: boolean("refurbished").default(false),
-  partner_id: integer("partner_id").references(() => partners.id),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const productsRelations = relations(products, ({ many, one }) => ({
-  variants: many(productVariants),
-  images: many(productImages),
-  categories: many(productCategories),
-  tags: many(productTags),
-  deviceModel: one(deviceModels, {
-    fields: [products.device_model_id],
-    references: [deviceModels.id],
-  }),
-}));
-
-export const insertProductSchema = createInsertSchema(products, {
-  price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val),
-  compare_at_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
-  cost_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
-  status: z.enum(["draft", "active", "archived"]),
-  condition: z.enum(["excellent", "good", "fair", "poor"]).optional(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertProduct = z.infer<typeof insertProductSchema>;
-export type Product = typeof products.$inferSelect;
-
-// Product Variants Table
-export const productVariants = pgTable("product_variants", {
-  id: serial("id").primaryKey(),
-  product_id: integer("product_id").references(() => products.id).notNull(),
-  title: text("title").notNull(),
-  sku: text("sku").notNull(),
-  barcode: text("barcode"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  compare_at_price: decimal("compare_at_price", { precision: 10, scale: 2 }),
-  cost_price: decimal("cost_price", { precision: 10, scale: 2 }),
-  position: integer("position").default(0).notNull(),
-  inventory_quantity: integer("inventory_quantity").default(0).notNull(),
-  inventory_policy: text("inventory_policy").default("deny").notNull(), // deny or continue
-  weight: decimal("weight", { precision: 8, scale: 2 }),
-  weight_unit: text("weight_unit").default("kg"),
-  requires_shipping: boolean("requires_shipping").default(true).notNull(),
-  options: json("options").$type<Record<string, string>>().notNull(), // {color: "red", size: "large"}
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const productVariantsRelations = relations(productVariants, ({ one }) => ({
-  product: one(products, {
-    fields: [productVariants.product_id],
-    references: [products.id],
-  }),
-}));
-
-export const insertProductVariantSchema = createInsertSchema(productVariants, {
-  price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val),
-  compare_at_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
-  cost_price: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
-  inventory_policy: z.enum(["deny", "continue"]),
-  options: z.record(z.string(), z.string()),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
-export type ProductVariant = typeof productVariants.$inferSelect;
-
-// Product Images Table
-export const productImages = pgTable("product_images", {
-  id: serial("id").primaryKey(),
-  product_id: integer("product_id").references(() => products.id).notNull(),
-  url: text("url").notNull(),
-  alt: text("alt"),
-  position: integer("position").default(0).notNull(),
-  is_primary: boolean("is_primary").default(false).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const productImagesRelations = relations(productImages, ({ one }) => ({
-  product: one(products, {
-    fields: [productImages.product_id],
-    references: [products.id],
-  }),
-}));
-
-export const insertProductImageSchema = createInsertSchema(productImages).omit({ id: true, created_at: true, updated_at: true });
-export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
-export type ProductImage = typeof productImages.$inferSelect;
-
-// Categories Table
-export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  parent_id: integer("parent_id"), // We'll set up the self-reference in the relations
-  is_visible: boolean("is_visible").default(true).notNull(),
-  image: text("image"),
-  seo_title: text("seo_title"),
-  seo_description: text("seo_description"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Set up the self-reference with categories
-export const categoriesRelations = relations(categories, ({ one, many }) => ({
-  parent: one(categories, {
-    fields: [categories.parent_id],
-    references: [categories.id],
-    relationName: "category_parent",
-  }),
-  children: many(categories, {
-    relationName: "category_parent",
-  }),
-  products: many(productCategories),
-}));
-
-export const insertCategorySchema = createInsertSchema(categories).omit({ id: true, created_at: true, updated_at: true });
-export type InsertCategory = z.infer<typeof insertCategorySchema>;
-export type Category = typeof categories.$inferSelect;
-
-// Product-Category Relationship Table
-export const productCategories = pgTable("product_categories", {
-  id: serial("id").primaryKey(),
-  product_id: integer("product_id").references(() => products.id).notNull(),
-  category_id: integer("category_id").references(() => categories.id).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-}, (t) => ({
-  unq: unique().on(t.product_id, t.category_id),
-}));
-
-export const productCategoriesRelations = relations(productCategories, ({ one }) => ({
-  product: one(products, {
-    fields: [productCategories.product_id],
-    references: [products.id],
-  }),
-  category: one(categories, {
-    fields: [productCategories.category_id],
-    references: [categories.id],
-  }),
-}));
-
-// Tags Table
-export const tags = pgTable("tags", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const tagsRelations = relations(tags, ({ many }) => ({
-  products: many(productTags),
-}));
-
-// Route Rules Table for PIN code-based lead assignment
-export const routeRules = pgTable("route_rules", {
-  id: serial("id").primaryKey(),
-  path: text("path").notNull(),
-  pin_code: text("pin_code"),
-  partner_id: integer("partner_id").references(() => partners.id),
-  region_id: integer("region_id").references(() => regions.id),
-  priority: integer("priority").default(0).notNull(),
-  is_active: boolean("is_active").default(true).notNull(),
-  description: text("description"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const routeRulesRelations = relations(routeRules, ({ one }) => ({
-  partner: one(partners, {
-    fields: [routeRules.partner_id],
-    references: [partners.id],
-  }),
-  region: one(regions, {
-    fields: [routeRules.region_id],
-    references: [regions.id],
-  }),
-}));
-
-export const insertRouteRuleSchema = createInsertSchema(routeRules, {
-  path: z.string().min(1),
-  pin_code: z.string().optional(),
-  partner_id: z.number().optional(),
-  region_id: z.number().optional(),
-  priority: z.number().default(0),
-  is_active: z.boolean().default(true),
-  description: z.string().optional(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
+export const insertRouteRuleSchema = createInsertSchema(routeRules);
 export type InsertRouteRule = z.infer<typeof insertRouteRuleSchema>;
 export type RouteRule = typeof routeRules.$inferSelect;
 
-// Product-Tag Relationship Table
-export const productTags = pgTable("product_tags", {
-  id: serial("id").primaryKey(),
-  product_id: integer("product_id").references(() => products.id).notNull(),
-  tag_id: integer("tag_id").references(() => tags.id).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-}, (t) => ({
-  unq: unique().on(t.product_id, t.tag_id),
-}));
-
-export const productTagsRelations = relations(productTags, ({ one }) => ({
-  product: one(products, {
-    fields: [productTags.product_id],
-    references: [products.id],
-  }),
-  tag: one(tags, {
-    fields: [productTags.tag_id],
-    references: [tags.id],
-  }),
-}));
-
-// Discounts Table
-export const discounts = pgTable("discounts", {
-  id: serial("id").primaryKey(),
-  code: text("code").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description"),
-  discount_type: text("discount_type").notNull(), // fixed_amount, percentage, free_shipping
-  value: decimal("value", { precision: 10, scale: 2 }),
-  status: text("status").notNull().default("active"), // active, paused, expired
-  min_order_amount: decimal("min_order_amount", { precision: 10, scale: 2 }),
-  max_discount_amount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
-  usage_limit: integer("usage_limit"),
-  usage_count: integer("usage_count").default(0).notNull(),
-  starts_at: timestamp("starts_at"),
-  ends_at: timestamp("ends_at"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertDiscountSchema = createInsertSchema(discounts, {
-  discount_type: z.enum(["fixed_amount", "percentage", "free_shipping"]),
-  status: z.enum(["active", "paused", "expired"]),
-  value: z.string().or(z.number()).transform(val => typeof val === 'string' ? parseFloat(val) : val).optional(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertDiscount = z.infer<typeof insertDiscountSchema>;
-export type Discount = typeof discounts.$inferSelect;
-
-// Checkout Table
-export const checkouts = pgTable("checkouts", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").references(() => users.id),
-  email: text("email").notNull(),
-  shipping_address_id: integer("shipping_address_id"),
-  billing_address_id: integer("billing_address_id"),
-  shipping_method: text("shipping_method"),
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  shipping_cost: decimal("shipping_cost", { precision: 10, scale: 2 }),
-  tax_amount: decimal("tax_amount", { precision: 10, scale: 2 }),
-  discount_amount: decimal("discount_amount", { precision: 10, scale: 2 }),
-  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
-  discount_code: text("discount_code"),
-  payment_status: text("payment_status").default("pending").notNull(), // pending, paid, failed
-  notes: text("notes"),
-  completed_at: timestamp("completed_at"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const checkoutsRelations = relations(checkouts, ({ one, many }) => ({
-  user: one(users, {
-    fields: [checkouts.user_id],
-    references: [users.id],
-  }),
-  items: many(checkoutItems),
-}));
-
-// Checkout Items Table
-export const checkoutItems = pgTable("checkout_items", {
-  id: serial("id").primaryKey(),
-  checkout_id: integer("checkout_id").references(() => checkouts.id).notNull(),
-  product_id: integer("product_id").references(() => products.id).notNull(),
-  variant_id: integer("variant_id").references(() => productVariants.id),
-  quantity: integer("quantity").notNull(),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const checkoutItemsRelations = relations(checkoutItems, ({ one }) => ({
-  checkout: one(checkouts, {
-    fields: [checkoutItems.checkout_id],
-    references: [checkouts.id],
-  }),
-  product: one(products, {
-    fields: [checkoutItems.product_id],
-    references: [products.id],
-  }),
-  variant: one(productVariants, {
-    fields: [checkoutItems.variant_id],
-    references: [productVariants.id],
-  }),
-}));
-
-// E-commerce Payments Table
-export const payments = pgTable("payments", {
-  id: serial("id").primaryKey(),
-  checkout_id: integer("checkout_id").references(() => checkouts.id).notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  currency: text("currency").default("USD").notNull(),
-  payment_method: text("payment_method").notNull(), // credit_card, paypal, etc.
-  payment_method_details: json("payment_method_details"),
-  payment_intent_id: text("payment_intent_id"),
-  charge_id: text("charge_id"),
-  status: text("status").notNull(), // pending, succeeded, failed
-  error_message: text("error_message"),
-  refunded: boolean("refunded").default(false).notNull(),
-  refunded_amount: decimal("refunded_amount", { precision: 10, scale: 2 }),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const paymentsRelations = relations(payments, ({ one }) => ({
-  checkout: one(checkouts, {
-    fields: [payments.checkout_id],
-    references: [checkouts.id],
-  }),
-}));
-
-// Settings Table
-export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
-  key: text("key").notNull().unique(),
-  value: jsonb("value").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertSettingSchema = createInsertSchema(settings, {
-  key: z.string().min(1),
-  value: z.any(),
-}).omit({ id: true, created_at: true, updated_at: true });
-
-export type InsertSetting = z.infer<typeof insertSettingSchema>;
-export type Setting = typeof settings.$inferSelect;
-
-// Partner Wallets Table
-export const partnerWallets = pgTable("partner_wallets", {
-  id: serial("id").primaryKey(),
-  partner_id: integer("partner_id").references(() => partners.id).notNull(),
-  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
-  pending_balance: decimal("pending_balance", { precision: 12, scale: 2 }).default("0"),
-  pan_number: text("pan_number"),
-  bank_account_number: text("bank_account_number"),
-  bank_ifsc: text("bank_ifsc"),
-  bank_name: text("bank_name"),
-  account_holder_name: text("account_holder_name"),
-  is_verified: boolean("is_verified").default(false),
-  verification_date: timestamp("verification_date"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const partnerWalletsRelations = relations(partnerWallets, ({ one, many }) => ({
-  partner: one(partners, {
-    fields: [partnerWallets.partner_id],
-    references: [partners.id],
-  }),
-  transactions: many(walletTransactions),
-}));
-
-export const insertPartnerWalletSchema = createInsertSchema(partnerWallets, {
-  partner_id: z.number(),
-  balance: z.number().min(0).default(0),
-  pending_balance: z.number().min(0).default(0).optional(),
-  pan_number: z.string().optional(),
-  bank_account_number: z.string().optional(),
-  bank_ifsc: z.string().optional(),
-  bank_name: z.string().optional(),
-  account_holder_name: z.string().optional(),
-  is_verified: z.boolean().default(false),
-}).omit({ id: true, created_at: true, updated_at: true, verification_date: true });
-
+export const insertPartnerWalletSchema = createInsertSchema(partnerWallets);
 export type InsertPartnerWallet = z.infer<typeof insertPartnerWalletSchema>;
 export type PartnerWallet = typeof partnerWallets.$inferSelect;
 
-// Wallet Transactions Table
-export const walletTransactions = pgTable("wallet_transactions", {
-  id: serial("id").primaryKey(),
-  wallet_id: integer("wallet_id").references(() => partnerWallets.id).notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  type: text("type").notNull(), // credit, debit
-  status: text("status").notNull().default("completed"), // pending, completed, failed
-  description: text("description").notNull(),
-  reference_id: text("reference_id"),
-  reference_type: text("reference_type"),
-  metadata: jsonb("metadata"),
-  transaction_date: timestamp("transaction_date").defaultNow().notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const walletTransactionsRelations = relations(walletTransactions, ({ one }) => ({
-  wallet: one(partnerWallets, {
-    fields: [walletTransactions.wallet_id],
-    references: [partnerWallets.id],
-  }),
-}));
-
-export const insertWalletTransactionSchema = createInsertSchema(walletTransactions, {
-  wallet_id: z.number(),
-  amount: z.number(),
-  type: z.enum(["credit", "debit"]),
-  status: z.enum(["pending", "completed", "failed"]).default("completed"),
-  description: z.string(),
-  reference_id: z.string().optional(),
-  reference_type: z.string().optional(),
-  metadata: z.any().optional(),
-}).omit({ id: true, created_at: true, updated_at: true, transaction_date: true });
-
+export const insertWalletTransactionSchema = createInsertSchema(walletTransactions);
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
 
-// Withdrawal Requests Table
-export const withdrawalRequests = pgTable("withdrawal_requests", {
-  id: serial("id").primaryKey(),
-  wallet_id: integer("wallet_id").references(() => partnerWallets.id).notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  status: text("status").notNull().default("pending"), // pending, approved, rejected, processed
-  transaction_id: integer("transaction_id").references(() => walletTransactions.id),
-  payment_method: text("payment_method").notNull(), // bank_transfer, upi, etc.
-  payment_details: jsonb("payment_details"),
-  notes: text("notes"),
-  processed_by: integer("processed_by").references(() => users.id),
-  processed_date: timestamp("processed_date"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const withdrawalRequestsRelations = relations(withdrawalRequests, ({ one }) => ({
-  wallet: one(partnerWallets, {
-    fields: [withdrawalRequests.wallet_id],
-    references: [partnerWallets.id],
-  }),
-  transaction: one(walletTransactions, {
-    fields: [withdrawalRequests.transaction_id],
-    references: [walletTransactions.id],
-  }),
-  processor: one(users, {
-    fields: [withdrawalRequests.processed_by],
-    references: [users.id],
-  }),
-}));
-
-export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests, {
-  wallet_id: z.number(),
-  amount: z.number().positive(),
-  status: z.enum(["pending", "approved", "rejected", "processed"]).default("pending"),
-  payment_method: z.enum(["bank_transfer", "upi", "other"]),
-  payment_details: z.any().optional(),
-  notes: z.string().optional(),
-}).omit({ id: true, created_at: true, updated_at: true, transaction_id: true, processed_by: true, processed_date: true });
-
+export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests);
 export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 
+export const upsertPartnerSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(3),
+  businessType: z.string(),
+  gstNumber: z.string().optional(),
+  panNumber: z.string().optional(),
+  contactEmail: z.string().email(),
+  contactPhone: z.string(),
+  addressLine1: z.string(),
+  city: z.string(),
+  state: z.string(),
+  pincode: z.string(),
+  status: z.string().default("pending"),
+});
+export type UpsertPartner = z.infer<typeof upsertPartnerSchema>;

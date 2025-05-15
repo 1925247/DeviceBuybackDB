@@ -1,28 +1,14 @@
 import { 
   users, type User, type InsertUser,
-  devices, type Device, type InsertDevice,
-  deviceImages, type DeviceImage, type InsertDeviceImage,
-  buybackRequests, type BuybackRequest, type InsertBuybackRequest, 
-  marketplaceListings, type MarketplaceListing, type InsertMarketplaceListing,
-  orders, type Order, type InsertOrder,
-  deviceTypes, type DeviceType,
-  brands, type Brand,
-  deviceModels, type DeviceModel,
-  brandDeviceTypes,
-  conditionQuestions, conditionAnswers, valuations,
-  products, type Product, type InsertProduct,
-  productVariants, type ProductVariant, type InsertProductVariant,
-  productImages, type ProductImage, type InsertProductImage,
-  categories, type Category, type InsertCategory,
-  discounts, type Discount, type InsertDiscount,
-  settings, type Setting, type InsertSetting,
-  invoiceTemplates, type InvoiceTemplate, type InsertInvoiceTemplate,
   partners, type Partner, type InsertPartner,
-  regions, type Region,
-  routeRules, type RouteRule, type InsertRouteRule,
   partnerWallets, type PartnerWallet, type InsertPartnerWallet,
   walletTransactions, type WalletTransaction, type InsertWalletTransaction,
-  withdrawalRequests, type WithdrawalRequest, type InsertWithdrawalRequest
+  withdrawalRequests, type WithdrawalRequest, type InsertWithdrawalRequest,
+  partnerStaff, type PartnerStaff, type InsertPartnerStaff,
+  rolePermissions, type RolePermission, type InsertRolePermission,
+  routeRules, type RouteRule, type InsertRouteRule,
+  postalCodes, 
+  regions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";

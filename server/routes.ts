@@ -2,21 +2,23 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
-  insertDeviceSchema, insertUserSchema, insertBuybackRequestSchema, insertMarketplaceListingSchema, insertOrderSchema,
-  insertProductSchema, insertProductVariantSchema, insertProductImageSchema, insertCategorySchema, insertDiscountSchema,
-  insertRouteRuleSchema,
-  type InsertUser, type InsertDevice, type InsertBuybackRequest, type InsertMarketplaceListing, type InsertOrder,
-  type InsertProduct, type InsertProductVariant, type InsertProductImage, type InsertCategory, type InsertDiscount,
-  type InsertRouteRule
+  insertUserSchema, insertRouteRuleSchema,
+  type InsertUser, type InsertRouteRule
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import path from "path";
 import { uploadSingleImage, getFileUrl } from "./middleware/upload";
 
+// Import API routes
+import partnerStaffRoutes from "./api/partnerStaff";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
   const apiRouter = (path: string) => `/api${path}`;
+  
+  // Use API routes
+  app.use('/api', partnerStaffRoutes);
 
   // File upload endpoints
   app.post(apiRouter("/upload"), uploadSingleImage, (req: Request, res: Response) => {
