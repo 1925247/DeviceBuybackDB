@@ -476,6 +476,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all withdrawal requests (Admin only)
+  app.get(apiRouter("/withdrawal-requests"), async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string;
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      
+      const withdrawals = await storage.getAllWithdrawalRequests(status, page, limit);
+      
+      res.json(withdrawals);
+    } catch (error: any) {
+      console.error("Error fetching all withdrawal requests:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch withdrawal requests" });
+    }
+  });
+
   // Process withdrawal request (Admin only)
   app.put(apiRouter("/withdrawal-requests/:id/process"), async (req: Request, res: Response) => {
     try {

@@ -2029,6 +2029,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Withdrawal Request operations
+  async getAllWithdrawalRequests(status?: string, page = 1, limit = 20): Promise<WithdrawalRequest[]> {
+    const offset = (page - 1) * limit;
+    
+    let query = db
+      .select({
+        wr: withdrawalRequests,
+        wallet: partnerWallets,
+        partner: partners,
+      })
+      .from(withdrawalRequests)
+      .leftJoin(partnerWallets, eq(withdrawalRequests.wallet_id, partnerWallets.id))
+      .leftJoin(partners, eq(partnerWallets.partner_id, partners.id));
+      
+    if (status && status !== 'all') {
+      query = query.where(eq(withdrawalRequests.status, status));
+    }
+    
+    const results = await query
+      .orderBy(desc(withdrawalRequests.created_at))
+      .limit(limit)
+      .offset(offset);
+      
+    // Reshape the results to include partner info
+    return results.map(r => ({
+      ...r.wr,
+      partner_name: r.partner?.name || 'Unknown Partner',
+      partner_id: r.wallet?.partner_id,
+    })) as WithdrawalRequest[];
+  }
+  
   async getWithdrawalRequests(walletId: number, status?: string, page = 1, limit = 20): Promise<WithdrawalRequest[]> {
     const offset = (page - 1) * limit;
     
