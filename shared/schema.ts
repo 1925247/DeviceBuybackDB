@@ -701,7 +701,7 @@ export const categories = pgTable("categories", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  parent_id: integer("parent_id").references(() => categories.id),
+  parent_id: integer("parent_id"), // We'll set up the self-reference in the relations
   is_visible: boolean("is_visible").default(true).notNull(),
   image: text("image"),
   seo_title: text("seo_title"),
@@ -710,12 +710,16 @@ export const categories = pgTable("categories", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Set up the self-reference with categories
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
   parent: one(categories, {
     fields: [categories.parent_id],
     references: [categories.id],
+    relationName: "category_parent",
   }),
-  children: many(categories),
+  children: many(categories, {
+    relationName: "category_parent",
+  }),
   products: many(productCategories),
 }));
 

@@ -17,9 +17,12 @@ import {
   discounts, type Discount, type InsertDiscount,
   settings, type Setting, type InsertSetting,
   invoiceTemplates, type InvoiceTemplate, type InsertInvoiceTemplate,
-  partners, type Partner,
+  partners, type Partner, type InsertPartner,
   regions, type Region,
-  routeRules, type RouteRule, type InsertRouteRule
+  routeRules, type RouteRule, type InsertRouteRule,
+  partnerWallets, type PartnerWallet, type InsertPartnerWallet,
+  walletTransactions, type WalletTransaction, type InsertWalletTransaction,
+  withdrawalRequests, type WithdrawalRequest, type InsertWithdrawalRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";
