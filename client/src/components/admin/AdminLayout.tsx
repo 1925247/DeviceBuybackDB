@@ -373,6 +373,18 @@ const AdminLayout: React.FC = () => {
                     <MapPin className="w-5 h-5 mr-3" />
                     <span>PIN Code Assignment</span>
                   </Link>
+
+                  <Link
+                    to="/admin/partner-wallets"
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                      isActive("/admin/partner-wallets")
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <CreditCard className="w-5 h-5 mr-3" />
+                    <span>Partner Wallets</span>
+                  </Link>
                 </nav>
               </div>
 
