@@ -67,6 +67,7 @@ import UserRoleManagement from "./pages/admin/UserRoleManagement";
 import RouteManagement from "./pages/admin/RouteManagement";
 import ManageRouteRules from "./pages/admin/ManageRouteRules";
 import PartnersManagement from "./pages/admin/PartnersManagement";
+import PartnerWallets from "./pages/admin/PartnerWallets";
 import AdminLayout from "./components/admin/AdminLayout";
 
 // E-commerce Admin Pages
@@ -500,6 +501,7 @@ function App() {
                   <Route path="partners" element={<PartnersManagement />} />
                   <Route path="partner-staff" element={<AdminUsers />} />
                   <Route path="pin-codes" element={<AdminDashboard />} />
+                  <Route path="partner-wallets" element={<PartnerWallets />} />
 
                   {/* Questionnaires */}
                   <Route path="brand-questionnaires" element={<AdminCQS />} />
