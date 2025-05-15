@@ -1881,6 +1881,280 @@ export class DatabaseStorage implements IStorage {
       
     return updatedRequest;
   }
+
+  // Partner Wallet operations
+  async getPartnerWallet(partnerId: number): Promise<PartnerWallet | undefined> {
+    const [wallet] = await db
+      .select()
+      .from(partnerWallets)
+      .where(eq(partnerWallets.partner_id, partnerId));
+      
+    return wallet;
+  }
+  
+  async createPartnerWallet(wallet: InsertPartnerWallet): Promise<PartnerWallet> {
+    const [newWallet] = await db
+      .insert(partnerWallets)
+      .values(wallet)
+      .returning();
+      
+    return newWallet;
+  }
+  
+  async updatePartnerWallet(id: number, walletData: Partial<InsertPartnerWallet>): Promise<PartnerWallet | undefined> {
+    const [updatedWallet] = await db
+      .update(partnerWallets)
+      .set({
+        ...walletData,
+        updated_at: new Date(),
+      })
+      .where(eq(partnerWallets.id, id))
+      .returning();
+      
+    return updatedWallet;
+  }
+
+  async addFundsToWallet(partnerId: number, amount: number, description: string, reference?: string): Promise<WalletTransaction> {
+    // Get wallet
+    const wallet = await this.getPartnerWallet(partnerId);
+    if (!wallet) {
+      throw new Error('Wallet not found for partner');
+    }
+
+    // Begin transaction
+    const transactionResult = await db.transaction(async (tx) => {
+      // Update wallet balance
+      const [updatedWallet] = await tx
+        .update(partnerWallets)
+        .set({
+          balance: sql`${partnerWallets.balance} + ${amount}`,
+          updated_at: new Date(),
+        })
+        .where(eq(partnerWallets.id, wallet.id))
+        .returning();
+
+      // Create transaction record
+      const [transaction] = await tx
+        .insert(walletTransactions)
+        .values({
+          wallet_id: wallet.id,
+          amount: amount.toString(),
+          type: 'credit',
+          description,
+          reference_id: reference || null,
+          status: 'completed',
+        })
+        .returning();
+
+      return transaction;
+    });
+
+    return transactionResult;
+  }
+
+  async deductFundsFromWallet(partnerId: number, amount: number, description: string, reference?: string): Promise<WalletTransaction | null> {
+    // Get wallet
+    const wallet = await this.getPartnerWallet(partnerId);
+    if (!wallet) {
+      throw new Error('Wallet not found for partner');
+    }
+
+    // Check if enough balance
+    if (parseFloat(wallet.balance.toString()) < amount) {
+      return null; // Not enough funds
+    }
+
+    // Begin transaction
+    const transactionResult = await db.transaction(async (tx) => {
+      // Update wallet balance
+      const [updatedWallet] = await tx
+        .update(partnerWallets)
+        .set({
+          balance: sql`${partnerWallets.balance} - ${amount}`,
+          updated_at: new Date(),
+        })
+        .where(eq(partnerWallets.id, wallet.id))
+        .returning();
+
+      // Create transaction record
+      const [transaction] = await tx
+        .insert(walletTransactions)
+        .values({
+          wallet_id: wallet.id,
+          amount: amount.toString(),
+          type: 'debit',
+          description,
+          reference_id: reference || null,
+          status: 'completed',
+        })
+        .returning();
+
+      return transaction;
+    });
+
+    return transactionResult;
+  }
+
+  // Wallet Transaction operations
+  async getWalletTransactions(walletId: number, page = 1, limit = 20): Promise<WalletTransaction[]> {
+    const offset = (page - 1) * limit;
+    
+    const transactions = await db
+      .select()
+      .from(walletTransactions)
+      .where(eq(walletTransactions.wallet_id, walletId))
+      .orderBy(desc(walletTransactions.transaction_date))
+      .limit(limit)
+      .offset(offset);
+      
+    return transactions;
+  }
+  
+  async getWalletTransaction(id: number): Promise<WalletTransaction | undefined> {
+    const [transaction] = await db
+      .select()
+      .from(walletTransactions)
+      .where(eq(walletTransactions.id, id));
+      
+    return transaction;
+  }
+  
+  async createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction> {
+    const [newTransaction] = await db
+      .insert(walletTransactions)
+      .values(transaction)
+      .returning();
+      
+    return newTransaction;
+  }
+
+  // Withdrawal Request operations
+  async getWithdrawalRequests(walletId: number, status?: string, page = 1, limit = 20): Promise<WithdrawalRequest[]> {
+    const offset = (page - 1) * limit;
+    
+    let query = db
+      .select()
+      .from(withdrawalRequests)
+      .where(eq(withdrawalRequests.wallet_id, walletId));
+      
+    if (status) {
+      query = query.where(eq(withdrawalRequests.status, status));
+    }
+    
+    const requests = await query
+      .orderBy(desc(withdrawalRequests.created_at))
+      .limit(limit)
+      .offset(offset);
+      
+    return requests;
+  }
+  
+  async getWithdrawalRequest(id: number): Promise<WithdrawalRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(withdrawalRequests)
+      .where(eq(withdrawalRequests.id, id));
+      
+    return request;
+  }
+  
+  async createWithdrawalRequest(withdrawal: InsertWithdrawalRequest): Promise<WithdrawalRequest> {
+    const [newRequest] = await db
+      .insert(withdrawalRequests)
+      .values(withdrawal)
+      .returning();
+      
+    return newRequest;
+  }
+  
+  async updateWithdrawalRequest(id: number, withdrawalData: Partial<InsertWithdrawalRequest>, adminId?: number): Promise<WithdrawalRequest | undefined> {
+    const updateData: any = {
+      ...withdrawalData,
+      updated_at: new Date(),
+    };
+    
+    if (adminId) {
+      updateData.processed_by = adminId;
+      updateData.processed_date = new Date();
+    }
+    
+    const [updatedRequest] = await db
+      .update(withdrawalRequests)
+      .set(updateData)
+      .where(eq(withdrawalRequests.id, id))
+      .returning();
+      
+    return updatedRequest;
+  }
+  
+  async processWithdrawalRequest(id: number, status: string, notes: string, adminId: number): Promise<WithdrawalRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(withdrawalRequests)
+      .where(eq(withdrawalRequests.id, id));
+      
+    if (!request) {
+      return undefined;
+    }
+    
+    if (request.status !== 'pending') {
+      throw new Error('This withdrawal request has already been processed');
+    }
+    
+    // Begin transaction
+    const result = await db.transaction(async (tx) => {
+      // Update withdrawal status
+      const [updatedRequest] = await tx
+        .update(withdrawalRequests)
+        .set({
+          status,
+          notes,
+          processed_by: adminId,
+          processed_date: new Date(),
+          updated_at: new Date(),
+        })
+        .where(eq(withdrawalRequests.id, id))
+        .returning();
+        
+      // If approved, create a transaction and update wallet balance
+      if (status === 'approved') {
+        // Create debit transaction
+        const [transaction] = await tx
+          .insert(walletTransactions)
+          .values({
+            wallet_id: request.wallet_id,
+            amount: request.amount.toString(),
+            type: 'debit',
+            description: `Withdrawal approved: ${notes}`,
+            reference_id: id.toString(),
+            reference_type: 'withdrawal_request',
+            status: 'completed',
+          })
+          .returning();
+          
+        // Update withdrawal with transaction ID
+        await tx
+          .update(withdrawalRequests)
+          .set({
+            transaction_id: transaction.id,
+          })
+          .where(eq(withdrawalRequests.id, id));
+          
+        // Update wallet balance
+        await tx
+          .update(partnerWallets)
+          .set({
+            balance: sql`${partnerWallets.balance} - ${request.amount}`,
+            updated_at: new Date(),
+          })
+          .where(eq(partnerWallets.id, request.wallet_id));
+      }
+      
+      return updatedRequest;
+    });
+    
+    return result;
+  }
 }
 
 export const storage = new DatabaseStorage();

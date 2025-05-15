@@ -336,6 +336,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message || "Failed to assign lead" });
     }
   });
+  
+  // Partner Wallet API Endpoints
+  
+  // Get partner wallet
+  app.get(apiRouter("/partners/:partnerId/wallet"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const wallet = await storage.getPartnerWallet(partnerId);
+      
+      if (!wallet) {
+        // Create a new wallet if one doesn't exist
+        const newWallet = await storage.createPartnerWallet({
+          partner_id: partnerId,
+          balance: "0",
+        });
+        
+        return res.json(newWallet);
+      }
+      
+      res.json(wallet);
+    } catch (error: any) {
+      console.error("Error fetching partner wallet:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch partner wallet" });
+    }
+  });
+  
+  // Get wallet transactions
+  app.get(apiRouter("/partners/:partnerId/wallet/transactions"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      
+      // Get wallet first
+      const wallet = await storage.getPartnerWallet(partnerId);
+      
+      if (!wallet) {
+        return res.status(404).json({ message: "Wallet not found for this partner" });
+      }
+      
+      const transactions = await storage.getWalletTransactions(wallet.id, page, limit);
+      
+      res.json(transactions);
+    } catch (error: any) {
+      console.error("Error fetching wallet transactions:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch wallet transactions" });
+    }
+  });
+  
+  // Add funds to wallet
+  app.post(apiRouter("/partners/:partnerId/wallet/add-funds"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const { amount, description, reference } = req.body;
+      
+      if (!amount || !description) {
+        return res.status(400).json({ message: "Amount and description are required" });
+      }
+      
+      const transaction = await storage.addFundsToWallet(
+        partnerId,
+        parseFloat(amount),
+        description,
+        reference
+      );
+      
+      res.json({
+        message: "Funds added successfully",
+        transaction,
+      });
+    } catch (error: any) {
+      console.error("Error adding funds to wallet:", error);
+      res.status(500).json({ message: error.message || "Failed to add funds to wallet" });
+    }
+  });
+  
+  // Create withdrawal request
+  app.post(apiRouter("/partners/:partnerId/wallet/withdrawal"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const { amount, payment_method, payment_details, notes } = req.body;
+      
+      if (!amount || !payment_method) {
+        return res.status(400).json({ message: "Amount and payment method are required" });
+      }
+      
+      // Get wallet first
+      const wallet = await storage.getPartnerWallet(partnerId);
+      
+      if (!wallet) {
+        return res.status(404).json({ message: "Wallet not found for this partner" });
+      }
+      
+      // Check if enough balance
+      if (parseFloat(wallet.balance.toString()) < parseFloat(amount)) {
+        return res.status(400).json({ message: "Insufficient wallet balance" });
+      }
+      
+      const withdrawalRequest = await storage.createWithdrawalRequest({
+        wallet_id: wallet.id,
+        amount: amount.toString(),
+        payment_method,
+        payment_details: payment_details || {},
+        notes,
+      });
+      
+      res.json({
+        message: "Withdrawal request created successfully",
+        withdrawalRequest,
+      });
+    } catch (error: any) {
+      console.error("Error creating withdrawal request:", error);
+      res.status(500).json({ message: error.message || "Failed to create withdrawal request" });
+    }
+  });
+  
+  // Get withdrawal requests
+  app.get(apiRouter("/partners/:partnerId/wallet/withdrawals"), async (req: Request, res: Response) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const status = req.query.status as string;
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      
+      // Get wallet first
+      const wallet = await storage.getPartnerWallet(partnerId);
+      
+      if (!wallet) {
+        return res.status(404).json({ message: "Wallet not found for this partner" });
+      }
+      
+      const withdrawals = await storage.getWithdrawalRequests(wallet.id, status, page, limit);
+      
+      res.json(withdrawals);
+    } catch (error: any) {
+      console.error("Error fetching withdrawal requests:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch withdrawal requests" });
+    }
+  });
+  
+  // Process withdrawal request (Admin only)
+  app.put(apiRouter("/withdrawal-requests/:id/process"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, notes, admin_id } = req.body;
+      
+      if (!status || !notes || !admin_id) {
+        return res.status(400).json({ message: "Status, notes, and admin ID are required" });
+      }
+      
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Status must be either 'approved' or 'rejected'" });
+      }
+      
+      const updatedRequest = await storage.processWithdrawalRequest(id, status, notes, admin_id);
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ message: "Withdrawal request not found" });
+      }
+      
+      res.json({
+        message: `Withdrawal request ${status}`,
+        withdrawalRequest: updatedRequest,
+      });
+    } catch (error: any) {
+      console.error("Error processing withdrawal request:", error);
+      res.status(500).json({ message: error.message || "Failed to process withdrawal request" });
+    }
+  });
 
   // Brands API endpoints
   app.get(apiRouter("/brands"), async (_req: Request, res: Response) => {
