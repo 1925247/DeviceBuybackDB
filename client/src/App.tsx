@@ -70,6 +70,9 @@ import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerWallets from "./pages/admin/PartnerWallets";
 import AdminLayout from "./components/admin/AdminLayout";
 
+// Partner Portal Pages
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+
 // E-commerce Admin Pages
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
