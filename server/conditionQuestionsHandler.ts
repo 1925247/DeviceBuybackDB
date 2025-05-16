@@ -72,7 +72,7 @@ export async function getConditionQuestions(req: Request, res: Response) {
         JOIN device_models dm ON p.device_model_id = dm.id
         LEFT JOIN answer_choices a ON q.id = a.question_id
         WHERE pqm.product_id = $1
-        ORDER BY q.order, a.order_num
+        ORDER BY q.order, a.order
       `, [samsungProductId]);
       
       if (mappedQuestionsResult.rows.length > 0) {
@@ -160,7 +160,7 @@ export async function getConditionQuestions(req: Request, res: Response) {
         SELECT 
           q.id as question_id, 
           q.question_text as question, 
-          q.device_type_id, 
+          dm.device_type_id,  
           q.order as order_num, 
           q.active,
           a.id as option_id,
@@ -169,9 +169,11 @@ export async function getConditionQuestions(req: Request, res: Response) {
           a.value
         FROM product_question_mappings pqm
         JOIN questions q ON pqm.question_id = q.id
+        JOIN products p ON pqm.product_id = p.id
+        JOIN device_models dm ON p.device_model_id = dm.id
         LEFT JOIN answer_choices a ON q.id = a.question_id
         WHERE pqm.product_id = $1
-        ORDER BY q.order, a.order_num
+        ORDER BY q.order, a.order
       `, [productId]);
       
       if (mappedQuestionsResult.rows.length > 0) {
