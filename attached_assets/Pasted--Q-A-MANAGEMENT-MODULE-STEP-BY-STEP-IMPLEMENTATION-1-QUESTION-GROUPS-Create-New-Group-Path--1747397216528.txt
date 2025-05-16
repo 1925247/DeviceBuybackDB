@@ -1,0 +1,159 @@
+✅ Q&A MANAGEMENT MODULE - STEP BY STEP IMPLEMENTATION
+🔷 1. QUESTION GROUPS
+➤ Create New Group
+Path: Admin Dashboard > Q&A Management > Question Groups > Create New
+
+Fields to Implement:
+
+Group Name: e.g., "Smartphone Condition Questions"
+
+Statement: e.g., "Assess physical/functional status of smartphones"
+
+Device Type: Dropdown (Smartphone, Laptop, Watch, etc.)
+
+Icon Upload: Allow uploading or selecting emojis/icons like 📱💻⌚
+
+Save button with success notification
+
+➤ Edit Group
+Allow editing: Name, Statement, Device Type
+
+⚠️ Show warning if group is already mapped: “Editing will affect all mapped products.”
+
+➤ Delete Group
+Trigger confirmation modal: “Are you sure? This will delete the group if not mapped to any product.”
+
+🔐 Dependency Check:
+
+If mapped to any product → Block deletion
+
+If unmapped → Allow deletion
+
+🔷 2. QUESTIONS & ANSWERS
+➤ Create New Question
+Path: Admin Dashboard > Q&A Management > Questions > Create New
+
+Fields to Build:
+
+Question Text: e.g., "Does the device switch on?"
+
+Question Type:
+
+Single Choice (Yes/No)
+
+Multiple Choice (Good/Fair/Poor)
+
+Text Input (e.g., "Describe the damage")
+
+Assigned Group: Dropdown to select existing Group
+
+Add Answer Choices (Dynamic Fields):
+
+Answer Name: e.g., Yes / No / Good
+
+Icon: Upload or emoji
+
+Weightage %: e.g., -30%
+
+Repair Cost: Numeric Input (USD/INR)
+
+Follow-up Logic: If “No” → show next question “Is battery removable?”
+
+➤ Edit Question
+Allow changing:
+
+Question Text
+
+Answer options
+
+Logic
+
+Warning: "Changes may impact mapped products."
+
+➤ Delete Question
+Allow deletion if not used in live mappings
+
+Block or warn if actively mapped
+
+🔷 3. MAPPING TO PRODUCTS
+➤ Map Questions to Product
+Path: Admin Dashboard > Products > [Select Product] > Map Questions
+
+Steps:
+
+Select Product: e.g., iPhone 15 Pro Max
+
+Action Type: Dropdown: Sell, Trade-in, Recycle
+
+Assign Question Group: Select existing group (e.g., Smartphone Condition Questions)
+
+➤ Override Settings
+Per-question override of:
+
+Weightage % (e.g., “No” deducts -40% instead of default -30%)
+
+Repair Cost
+
+Option to revert to default
+
+➤ Save Mapping
+Show Success Message: “Questions successfully mapped to iPhone 15 Pro Max (Sell)”
+
+🔷 4. BUYBACK WORKFLOW CONFIGURATION
+➤ Price Calculation Logic
+Formula:
+
+java
+Copy
+Edit
+Final Price = Max Price × (1 + ΣWeightage %) + ΣRepair Costs
+Example Calculation:
+
+Max Price: $1000
+
+Deductions:
+
+No Power: -30%
+
+Severe Damage: -50%
+
+Repair Cost: $150
+
+Final Price: $1000 × (1 - 0.8) - $150 = $50
+
+➤ Eligibility Rules
+Set Required Conditions:
+
+Must power on = Yes
+
+No water damage = Yes
+
+If condition fails → Auto-reject device (Final Price = $0)
+
+➤ Conditional Logic
+If answer to “Does it switch on?” = “No” → Skip all screen/display-related questions
+
+🔷 5. COPY/PASTE QUESTIONNAIRE
+➤ Duplicate Mappings
+Path: Admin Dashboard > Products > Copy Questionnaire
+
+Steps:
+
+Select Source Product: Samsung Galaxy S23
+
+Select Target Product: Samsung Galaxy S24
+
+Copy Options:
+
+Question Groups
+
+Answer Weightage
+
+Repair Costs
+
+Adjust Overrides:
+
+Change max price, individual weights or costs if needed
+
+Save & Confirm
+

@@ -785,17 +785,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = Number(req.params.id);
       const requestData = req.body;
       
-      // First check if the model exists
-      const existingModel = await db.query.deviceModels.findFirst({
-        where: eq(deviceModels.id, id)
-      });
+      // First check if the model exists using raw SQL to avoid ORM issues
+      const checkModelQuery = `SELECT id FROM device_models WHERE id = $1`;
+      const checkResult = await db.execute(checkModelQuery, [id]);
       
-      if (!existingModel) {
+      if (!checkResult.rows || checkResult.rows.length === 0) {
         return res.status(404).json({ message: "Device model not found" });
       }
       
       // Prepare fields for the database using the actual column names
-      const updateFields: any = {};
+      const updateFields: Record<string, any> = {};
       if (requestData.name !== undefined) updateFields.name = requestData.name;
       if (requestData.slug !== undefined) updateFields.slug = requestData.slug;
       if (requestData.image !== undefined) updateFields.image = requestData.image;
@@ -808,16 +807,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Always add updated_at timestamp
       updateFields.updated_at = new Date();
       
-      // Execute SQL directly to avoid ORM issues
-      const sql = `
+      // Handle arrays specially for PostgreSQL
+      if (updateFields.variants && Array.isArray(updateFields.variants)) {
+        updateFields.variants = JSON.stringify(updateFields.variants);
+      }
+      
+      // Build parameterized update query
+      const keys = Object.keys(updateFields);
+      const placeholders = keys.map((_, i) => `$${i + 2}`);
+      const setClauses = keys.map((key, i) => `${key} = $${i + 2}`);
+      
+      const updateQuery = `
         UPDATE device_models
-        SET ${Object.keys(updateFields).map(key => `${key} = $${key}`).join(', ')}
-        WHERE id = $id
+        SET ${setClauses.join(', ')}
+        WHERE id = $1
         RETURNING *
       `;
       
-      const params = { ...updateFields, id };
-      const result = await db.execute(sql, params);
+      // Create parameters array with id as first parameter
+      const updateValues = [id];
+      
+      // Add all values in the correct order
+      keys.forEach(key => {
+        updateValues.push(updateFields[key]);
+      });
+      
+      console.log("Update query:", updateQuery);
+      console.log("Update values:", updateValues);
+      
+      const result = await db.execute(updateQuery, updateValues);
       
       if (!result.rows || result.rows.length === 0) {
         return res.status(500).json({ message: "Failed to update device model" });
