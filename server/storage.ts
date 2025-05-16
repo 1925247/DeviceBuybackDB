@@ -621,16 +621,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Reference data operations
-  async getDeviceTypes(): Promise<DeviceType[]> {
+  async getDeviceTypes() {
     return await db.select().from(deviceTypes).orderBy(deviceTypes.name);
   }
   
-  async getDeviceType(id: number): Promise<DeviceType | undefined> {
+  async getDeviceType(id: number) {
     const [deviceType] = await db.select().from(deviceTypes).where(eq(deviceTypes.id, id));
     return deviceType;
   }
   
-  async createDeviceType(data: { name: string; slug: string; icon?: string; active?: boolean }): Promise<DeviceType> {
+  async createDeviceType(data: { name: string; slug: string; icon?: string; active?: boolean }) {
     const [newDeviceType] = await db.insert(deviceTypes).values({
       ...data,
       active: data.active ?? true,
