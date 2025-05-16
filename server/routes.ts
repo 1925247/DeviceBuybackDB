@@ -1030,8 +1030,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             statement = $2, 
             device_type_id = $3,
             icon = $4,
-            updated_at = $5
-        WHERE id = $6
+            active = $5,
+            updated_at = $6
+        WHERE id = $7
         RETURNING *`;
       
       const values = [
@@ -1039,6 +1040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         groupData.statement,
         groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
         groupData.icon || null,
+        groupData.active !== undefined ? groupData.active : true,
         new Date(),
         groupId
       ];
