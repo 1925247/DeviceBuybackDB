@@ -1573,15 +1573,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const actionType = mappingData.actionType || null;
         console.log("Using action type:", actionType);
         
-        // Insert new mapping with prepared statement
+        // Get the first question from the group to use as the required question_id
+        const groupQuestions = await pool.query(
+          'SELECT id FROM questions WHERE group_id = $1 LIMIT 1',
+          [parseInt(mappingData.groupId)]
+        );
+        
+        let questionId = null;
+        if (groupQuestions.rows.length > 0) {
+          questionId = groupQuestions.rows[0].id;
+          console.log("Found question ID from group:", questionId);
+        } else {
+          // Create a dummy question to satisfy the constraint if no questions exist in the group
+          console.log("No questions found in the group, creating a placeholder question ID");
+          const dummyQuestion = await pool.query(
+            `INSERT INTO questions 
+            (question_text, question_type, group_id, active, created_at, updated_at) 
+            VALUES ($1, $2, $3, $4, $5, $6) 
+            RETURNING id`,
+            ["Group placeholder question", "single_choice", parseInt(mappingData.groupId), true, new Date(), new Date()]
+          );
+          questionId = dummyQuestion.rows[0].id;
+        }
+
+        // Insert new mapping with prepared statement, including the question_id
         const result = await pool.query(
           `INSERT INTO product_question_mappings
-              (product_id, group_id, action_type, required, impact_multiplier, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+              (product_id, group_id, question_id, action_type, required, impact_multiplier, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            RETURNING *`,
           [
             parseInt(mappingData.productId),
             parseInt(mappingData.groupId),
+            questionId,
             actionType,
             true,
             1.0,
