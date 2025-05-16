@@ -1423,16 +1423,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mappings = await db.select().from(productQuestionMappings)
         .where(productId ? eq(productQuestionMappings.productId, productId) : undefined);
       
-      // Enrich with group information
+      // Enrich with question information
       const enrichedMappings = await Promise.all(
         mappings.map(async (mapping) => {
-          const [group] = await db.select().from(questionGroups)
-            .where(eq(questionGroups.id, mapping.groupId));
+          const [question] = await db.select().from(questions)
+            .where(eq(questions.id, mapping.questionId));
           
           return {
             ...mapping,
-            groupName: group?.name || 'Unknown Group',
-            groupIcon: group?.icon || null
+            questionText: question?.questionText || 'Unknown Question'
           };
         })
       );
@@ -1462,12 +1461,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process each mapping
       for (const mapping of mappings) {
-        // Check if a mapping with the same group and action type already exists for the target
+        // Check if a mapping with the same question and action type already exists for the target
         const existingMappings = await db.select().from(productQuestionMappings)
           .where(and(
             eq(productQuestionMappings.productId, targetProductId),
             eq(productQuestionMappings.actionType, mapping.actionType),
-            eq(productQuestionMappings.groupId, mapping.groupId)
+            eq(productQuestionMappings.questionId, mapping.questionId)
           ));
         
         // Apply any overrides specified for this mapping
@@ -1479,7 +1478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Update the existing mapping
           const [updatedMapping] = await db.update(productQuestionMappings)
             .set({
-              active: mapping.active,
+              active: true, // Default to active
               overrides: mappingOverrides,
               updatedAt: new Date()
             })
@@ -1489,7 +1488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ 
             id: updatedMapping.id, 
             action: 'updated', 
-            groupId: mapping.groupId 
+            questionId: mapping.questionId 
           });
         } else {
           // Create a new mapping
@@ -1497,8 +1496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .values({
               productId: targetProductId,
               actionType: mapping.actionType,
-              groupId: mapping.groupId,
-              active: mapping.active,
+              questionId: mapping.questionId,
+              active: true, // Default to active
               overrides: mappingOverrides,
               createdAt: new Date(),
               updatedAt: new Date()
@@ -1508,7 +1507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ 
             id: newMapping.id, 
             action: 'created', 
-            groupId: mapping.groupId 
+            questionId: mapping.questionId 
           });
         }
       }
@@ -1535,8 +1534,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Action type is required" });
       }
       
-      if (!mappingData.groupId) {
-        return res.status(400).json({ message: "Question group is required" });
+      if (!mappingData.questionId) {
+        return res.status(400).json({ message: "Question ID is required" });
       }
       
       // Check if mapping already exists
@@ -1544,7 +1543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(and(
           eq(productQuestionMappings.productId, parseInt(mappingData.productId)),
           eq(productQuestionMappings.actionType, mappingData.actionType),
-          eq(productQuestionMappings.groupId, parseInt(mappingData.groupId))
+          eq(productQuestionMappings.questionId, parseInt(mappingData.questionId))
         ));
       
       if (existingMapping.length > 0) {
@@ -1555,8 +1554,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .values({
           productId: parseInt(mappingData.productId),
           actionType: mappingData.actionType,
-          groupId: parseInt(mappingData.groupId),
-          active: mappingData.active !== undefined ? mappingData.active : true,
+          questionId: parseInt(mappingData.questionId),
+          active: true,
           overrides: mappingData.overrides || null,
           createdAt: new Date(),
           updatedAt: new Date()
