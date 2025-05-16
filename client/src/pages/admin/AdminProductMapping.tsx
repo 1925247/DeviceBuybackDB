@@ -75,8 +75,7 @@ export default function AdminProductMapping() {
     defaultValues: {
       productId: "",
       actionType: "",
-      groupId: "",
-      active: true
+      groupId: ""
     }
   });
 
@@ -85,7 +84,7 @@ export default function AdminProductMapping() {
     queryKey: ["/api/product-question-mappings", selectedSourceProduct],
     queryFn: async () => {
       if (!selectedSourceProduct) return [];
-      const response = await fetch(`/api/product-question-mappings?productId=${selectedSourceProduct}`);
+      const response = await fetch(`/api/product-question-mappings?product_id=${selectedSourceProduct}`);
       if (!response.ok) {
         throw new Error("Failed to fetch product question mappings");
       }
@@ -101,8 +100,7 @@ export default function AdminProductMapping() {
       const response = await apiRequest("POST", "/api/product-question-mappings", {
         productId: parseInt(values.productId),
         actionType: values.actionType,
-        groupId: parseInt(values.groupId),
-        active: values.active
+        groupId: parseInt(values.groupId)
       });
 
       if (response.ok) {
@@ -324,22 +322,7 @@ export default function AdminProductMapping() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="active"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-end space-x-3 mt-6">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel>Active</FormLabel>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* No active field required */}
                     </div>
 
                     <Button type="submit" disabled={form.formState.isSubmitting} className="mt-4">
