@@ -70,6 +70,7 @@ const AdminFeatureToggles = lazy(() => import("./pages/admin/AdminFeatureToggles
 const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQuestions"));
 const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions"));
 const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
+const AdminProductMapping = lazy(() => import("./pages/admin/AdminProductMapping"));
 const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
 const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
 const UserRoleManagement = lazy(() => import("./pages/admin/UserRoleManagement"));
@@ -690,6 +691,11 @@ function App() {
                   <Route path="condition-questions/:groupId" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminQuestions />
+                    </Suspense>
+                  } />
+                  <Route path="product-mapping" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminProductMapping />
                     </Suspense>
                   } />
                   <Route path="question-groups" element={
