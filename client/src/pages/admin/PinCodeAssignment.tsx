@@ -200,7 +200,7 @@ const PinCodeAssignment: React.FC = () => {
   const queryClient = useQueryClient();
   const perPage = 10;
   
-  // Fetch pincodes
+  // Fetch pincodes with optimized performance
   const { data: pincodes, isLoading: isLoadingPincodes } = useQuery<PinCode[]>({
     queryKey: ['/api/pincodes', stateFilter, partnerFilter, statusFilter, currentPage],
     queryFn: async () => {
@@ -220,22 +220,32 @@ const PinCodeAssignment: React.FC = () => {
       
       return apiRequest('GET', url).then(res => res.json());
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    retry: 2,
+    retryDelay: 1000,
+    placeholderData: (previousData) => previousData // Use previous data while loading new data
   });
   
-  // Fetch partners for dropdown
+  // Fetch partners for dropdown with optimized caching
   const { data: partners, isLoading: isLoadingPartners } = useQuery<Partner[]>({
     queryKey: ['/api/partners'],
     queryFn: async () => {
       return apiRequest('GET', '/api/partners?status=approved').then(res => res.json());
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    retry: 2,
+    retryDelay: 1000,
   });
   
-  // Fetch states for dropdown
+  // Fetch states for dropdown with longer cache (states don't change often)
   const { data: states, isLoading: isLoadingStates } = useQuery<string[]>({
     queryKey: ['/api/states'],
     queryFn: async () => {
       return apiRequest('GET', '/api/states').then(res => res.json());
     },
+    staleTime: 30 * 60 * 1000, // 30 minutes cache
+    retry: 2,
+    retryDelay: 1000,
   });
   
   // Add new pincode mutation
