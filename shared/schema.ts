@@ -520,6 +520,19 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Product Question Mappings
+export const productQuestionMappings = pgTable("product_question_mappings", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id),
+  questionId: integer("question_id").notNull().references(() => questions.id),
+  required: boolean("required").default(true),
+  active: boolean("active").default(true),
+  order: integer("order").default(0),
+  overrides: jsonb("overrides"), // Override default weightages or repair costs
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
 export const insertProductSchema = createInsertSchema(products, {
@@ -527,19 +540,7 @@ export const insertProductSchema = createInsertSchema(products, {
   slug: (schema) => schema.slug.min(1),
 });
 
-// Product-Question mappings
-export const productQuestionMappings = pgTable("product_question_mappings", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id").notNull(), // Can be device model or product
-  actionType: text("action_type").notNull(), // 'sell', 'trade-in', 'recycle'
-  groupId: integer("group_id").notNull().references(() => questionGroups.id),
-  active: boolean("active").default(true),
-  overrides: jsonb("overrides"), // Override default weightages or repair costs
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => ({
-  uniqueMapping: unique().on(table.productId, table.actionType, table.groupId)
-}));
+// Types are defined further below with the rest of the schema types
 
 // Legacy condition questions (keeping for backward compatibility)
 export const conditionQuestions = pgTable("condition_questions", {
@@ -576,9 +577,9 @@ export const insertAnswerChoiceSchema = createInsertSchema(answerChoices);
 export type InsertAnswerChoice = z.infer<typeof insertAnswerChoiceSchema>;
 export type AnswerChoice = typeof answerChoices.$inferSelect;
 
-export const insertProductQuestionMappingSchema = createInsertSchema(productQuestionMappings);
-export type InsertProductQuestionMapping = z.infer<typeof insertProductQuestionMappingSchema>;
+// Product-Question mapping types
 export type ProductQuestionMapping = typeof productQuestionMappings.$inferSelect;
+export type InsertProductQuestionMapping = typeof productQuestionMappings.$inferInsert;
 
 // Legacy schemas
 export const insertConditionQuestionSchema = createInsertSchema(conditionQuestions);
