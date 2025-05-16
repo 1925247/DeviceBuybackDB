@@ -652,7 +652,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Brand Device Types endpoints
   app.get(apiRouter("/brand-device-types"), async (_req: Request, res: Response) => {
     try {
-      const relations = await storage.getAllBrandDeviceTypes();
+      // Execute raw SQL query directly
+      const relations = await db.execute(sql`
+        SELECT 
+          bdt.id, 
+          bdt.brand_id, 
+          bdt.device_type_id, 
+          bdt.created_at, 
+          bdt.updated_at,
+          b.name as brand_name, 
+          dt.name as device_type_name
+        FROM brand_device_types bdt
+        LEFT JOIN brands b ON bdt.brand_id = b.id
+        LEFT JOIN device_types dt ON bdt.device_type_id = dt.id
+      `);
+      
       res.json(relations);
     } catch (error) {
       console.error("Error getting brand device types:", error);
