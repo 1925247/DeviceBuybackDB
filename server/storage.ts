@@ -12,6 +12,7 @@ import {
   deviceTypes,
   brands,
   deviceModels,
+  brandDeviceTypes, type BrandDeviceType, type InsertBrandDeviceType,
   valuations, type Valuation, type InsertValuation,
   featureToggles, type FeatureToggle, type InsertFeatureToggle,
   // Indian database tables
@@ -839,30 +840,24 @@ export class DatabaseStorage implements IStorage {
 
   async createBrandDeviceType(data: { brand_id: number; device_type_id: number }): Promise<any> {
     try {
-      // Check if the relation already exists
-      const existing = await db
-        .select()
-        .from(brandDeviceTypes)
-        .where(
-          and(
-            eq(brandDeviceTypes.brand_id, data.brand_id),
-            eq(brandDeviceTypes.device_type_id, data.device_type_id)
-          )
-        );
+      // Check if the relation already exists using raw SQL
+      const existingResult = await db.execute(sql`
+        SELECT * FROM brand_device_types
+        WHERE brand_id = ${data.brand_id} AND device_type_id = ${data.device_type_id}
+      `);
       
-      if (existing.length > 0) {
+      if (existingResult.length > 0) {
         throw new Error("This brand-device type relation already exists");
       }
       
-      const [newRelation] = await db
-        .insert(brandDeviceTypes)
-        .values({
-          brand_id: data.brand_id,
-          device_type_id: data.device_type_id
-        })
-        .returning();
+      // Create new relation using raw SQL
+      const result = await db.execute(sql`
+        INSERT INTO brand_device_types (brand_id, device_type_id, created_at, updated_at)
+        VALUES (${data.brand_id}, ${data.device_type_id}, NOW(), NOW())
+        RETURNING *
+      `);
         
-      return newRelation;
+      return result[0];
     } catch (error) {
       console.error("Error creating brand device type relation:", error);
       throw error;
