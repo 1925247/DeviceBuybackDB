@@ -1,81 +1,106 @@
-import { Request, Response, Router } from "express";
-import { FeatureToggleService } from "../services/featureToggleService";
+import express, { Request, Response } from "express";
 import { z } from "zod";
-import { insertFeatureToggleSchema } from "../../shared/schema";
+import * as featureToggleService from "../services/featureToggleService";
 
-const featureToggleRouter = Router();
+export const featureToggleRouter = express.Router();
 
-// Validate request body against schema
+// Validation schemas
+const toggleSchema = z.object({
+  featureKey: z.string().min(3),
+  displayName: z.string().min(2),
+  description: z.string().min(5),
+  isEnabled: z.boolean().default(false),
+  category: z.string().min(2),
+  scope: z.string(),
+  scopeId: z.number().optional().nullable(),
+  requiredPermission: z.string().optional(),
+  lastModifiedBy: z.number().optional(),
+});
+
+const toggleUpdateSchema = toggleSchema.partial();
+
+const toggleStatusSchema = z.object({
+  isEnabled: z.boolean(),
+  userId: z.number().optional(),
+});
+
 const validateRequest = <T>(schema: z.ZodType<T>, data: unknown): { data: T; errors: null } | { data: null; errors: z.ZodError } => {
   try {
-    const validData = schema.parse(data);
-    return { data: validData, errors: null };
+    const validated = schema.parse(data);
+    return { data: validated, errors: null };
   } catch (error) {
-    return { data: null, errors: error as z.ZodError };
+    if (error instanceof z.ZodError) {
+      return { data: null, errors: error };
+    }
+    throw error;
   }
 };
 
 // Get all feature toggles
 featureToggleRouter.get("/", async (_req: Request, res: Response) => {
   try {
-    const toggles = await FeatureToggleService.getAllToggles();
+    const toggles = await featureToggleService.getAllFeatureToggles();
     res.json(toggles);
   } catch (error) {
-    console.error("Error fetching feature toggles:", error);
-    res.status(500).json({ message: "Failed to fetch feature toggles" });
+    console.error("Error getting feature toggles:", error);
+    res.status(500).json({ message: "Failed to get feature toggles" });
   }
 });
 
-// Get feature toggles by category
+// Get toggles by category
 featureToggleRouter.get("/category/:category", async (req: Request, res: Response) => {
   try {
     const { category } = req.params;
-    const toggles = await FeatureToggleService.getTogglesByCategory(category);
+    const toggles = await featureToggleService.getFeatureTogglesByCategory(category);
     res.json(toggles);
   } catch (error) {
-    console.error(`Error fetching feature toggles for category ${req.params.category}:`, error);
-    res.status(500).json({ message: "Failed to fetch feature toggles" });
+    console.error(`Error getting feature toggles for category ${req.params.category}:`, error);
+    res.status(500).json({ message: "Failed to get feature toggles" });
   }
 });
 
-// Get a specific feature toggle
+// Get a specific toggle by key
 featureToggleRouter.get("/:featureKey", async (req: Request, res: Response) => {
   try {
     const { featureKey } = req.params;
-    const toggle = await FeatureToggleService.getToggleByKey(featureKey);
+    const toggle = await featureToggleService.getFeatureToggleByKey(featureKey);
     
     if (!toggle) {
-      return res.status(404).json({ message: `Feature toggle '${featureKey}' not found` });
+      return res.status(404).json({ message: "Feature toggle not found" });
     }
     
     res.json(toggle);
   } catch (error) {
-    console.error(`Error fetching feature toggle ${req.params.featureKey}:`, error);
-    res.status(500).json({ message: "Failed to fetch feature toggle" });
+    console.error(`Error getting feature toggle ${req.params.featureKey}:`, error);
+    res.status(500).json({ message: "Failed to get feature toggle" });
   }
 });
 
 // Create a new feature toggle
 featureToggleRouter.post("/", async (req: Request, res: Response) => {
   try {
-    const validation = validateRequest(insertFeatureToggleSchema, req.body);
+    const validation = validateRequest(toggleSchema, req.body);
     
     if (validation.errors) {
       return res.status(400).json({ 
-        message: "Invalid feature toggle data", 
+        message: "Invalid request data", 
         errors: validation.errors.format() 
       });
     }
     
-    const newToggle = await FeatureToggleService.createToggle(validation.data);
-    res.status(201).json(newToggle);
-  } catch (error) {
+    const toggle = await featureToggleService.createFeatureToggle(validation.data);
+    res.status(201).json(toggle);
+  } catch (error: any) {
+    if (error.message && error.message.includes("already exists")) {
+      return res.status(409).json({ message: error.message });
+    }
+    
     console.error("Error creating feature toggle:", error);
     res.status(500).json({ message: "Failed to create feature toggle" });
   }
 });
 
-// Update a feature toggle
+// Update an existing feature toggle
 featureToggleRouter.put("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -84,21 +109,19 @@ featureToggleRouter.put("/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid ID format" });
     }
     
-    // We allow partial updates
-    const updateSchema = insertFeatureToggleSchema.partial();
-    const validation = validateRequest(updateSchema, req.body);
+    const validation = validateRequest(toggleUpdateSchema, req.body);
     
     if (validation.errors) {
       return res.status(400).json({ 
-        message: "Invalid feature toggle data", 
+        message: "Invalid request data", 
         errors: validation.errors.format() 
       });
     }
     
-    const updatedToggle = await FeatureToggleService.updateToggle(id, validation.data);
+    const updatedToggle = await featureToggleService.updateFeatureToggle(id, validation.data);
     
     if (!updatedToggle) {
-      return res.status(404).json({ message: `Feature toggle with ID ${id} not found` });
+      return res.status(404).json({ message: "Feature toggle not found" });
     }
     
     res.json(updatedToggle);
@@ -108,27 +131,27 @@ featureToggleRouter.put("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// Enable or disable a feature toggle
+// Toggle a feature on/off
 featureToggleRouter.patch("/:featureKey/toggle", async (req: Request, res: Response) => {
   try {
     const { featureKey } = req.params;
-    const { isEnabled, userId } = req.body;
+    const validation = validateRequest(toggleStatusSchema, req.body);
     
-    if (typeof isEnabled !== 'boolean') {
-      return res.status(400).json({ message: "isEnabled must be a boolean" });
+    if (validation.errors) {
+      return res.status(400).json({ 
+        message: "Invalid request data", 
+        errors: validation.errors.format() 
+      });
     }
     
-    if (!userId || typeof userId !== 'number') {
-      return res.status(400).json({ message: "userId is required and must be a number" });
+    const { isEnabled, userId } = validation.data;
+    const result = await featureToggleService.toggleFeature(featureKey, isEnabled, userId);
+    
+    if (!result) {
+      return res.status(404).json({ message: "Feature toggle not found" });
     }
     
-    const updatedToggle = await FeatureToggleService.setToggleState(featureKey, isEnabled, userId);
-    
-    if (!updatedToggle) {
-      return res.status(404).json({ message: `Feature toggle '${featureKey}' not found` });
-    }
-    
-    res.json(updatedToggle);
+    res.json(result);
   } catch (error) {
     console.error(`Error toggling feature ${req.params.featureKey}:`, error);
     res.status(500).json({ message: "Failed to toggle feature" });
@@ -144,7 +167,12 @@ featureToggleRouter.delete("/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid ID format" });
     }
     
-    await FeatureToggleService.deleteToggle(id);
+    const success = await featureToggleService.deleteFeatureToggle(id);
+    
+    if (!success) {
+      return res.status(404).json({ message: "Feature toggle not found" });
+    }
+    
     res.status(204).send();
   } catch (error) {
     console.error(`Error deleting feature toggle ${req.params.id}:`, error);
@@ -156,9 +184,14 @@ featureToggleRouter.delete("/:id", async (req: Request, res: Response) => {
 featureToggleRouter.get("/:featureKey/status", async (req: Request, res: Response) => {
   try {
     const { featureKey } = req.params;
-    const scopeId = req.query.scopeId ? parseInt(req.query.scopeId as string, 10) : undefined;
+    const { scope, scopeId } = req.query;
     
-    const isEnabled = await FeatureToggleService.isFeatureEnabled(featureKey, scopeId);
+    const isEnabled = await featureToggleService.isFeatureEnabled(
+      featureKey,
+      scope as string | undefined,
+      scopeId ? parseInt(scopeId as string, 10) : undefined
+    );
+    
     res.json({ featureKey, isEnabled });
   } catch (error) {
     console.error(`Error checking feature status ${req.params.featureKey}:`, error);
@@ -166,17 +199,12 @@ featureToggleRouter.get("/:featureKey/status", async (req: Request, res: Respons
   }
 });
 
-// Initialize default feature toggles
+// Initialize default toggles
 featureToggleRouter.post("/initialize", async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
-    
-    if (!userId || typeof userId !== 'number') {
-      return res.status(400).json({ message: "userId is required and must be a number" });
-    }
-    
-    await FeatureToggleService.initializeDefaultToggles(userId);
-    res.status(200).json({ message: "Default feature toggles initialized successfully" });
+    const userId = req.body.userId;
+    const toggles = await featureToggleService.initializeDefaultToggles(userId);
+    res.json(toggles);
   } catch (error) {
     console.error("Error initializing default feature toggles:", error);
     res.status(500).json({ message: "Failed to initialize default feature toggles" });

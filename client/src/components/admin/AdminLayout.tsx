@@ -484,6 +484,18 @@ const AdminLayout: React.FC = () => {
                     <Settings className="w-5 h-5 mr-3" />
                     <span>General Settings</span>
                   </Link>
+                  
+                  <Link
+                    to="/admin/feature-toggles"
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ${
+                      isActive("/admin/feature-toggles")
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <ToggleLeft className="w-5 h-5 mr-3" />
+                    <span>Feature Toggles</span>
+                  </Link>
 
                   <Link
                     to="/admin/user-roles"
