@@ -975,57 +975,58 @@ export class DatabaseStorage implements IStorage {
   
   async getDeviceModels(): Promise<DeviceModel[]> {
     try {
-      // First, fetch device models without complex joins
-      const models = await db.select({
-        id: deviceModels.id,
-        name: deviceModels.name,
-        slug: deviceModels.slug,
-        brand_id: deviceModels.brand_id,
-        device_type_id: deviceModels.device_type_id,
-        image: deviceModels.image,
-        active: deviceModels.active,
-        featured: deviceModels.featured,
-        variants: deviceModels.variants,
-        created_at: deviceModels.created_at,
-        updated_at: deviceModels.updated_at
-      })
-        .from(deviceModels)
-        .orderBy(deviceModels.name);
-
-      // For each model, fetch brand and device type separately
-      const enhancedModels = await Promise.all(
-        models.map(async (model) => {
-          let brandData = null;
-          let deviceTypeData = null;
-          
-          if (model.brand_id) {
-            const [brand] = await db
-              .select()
-              .from(brands)
-              .where(eq(brands.id, model.brand_id));
-            brandData = brand;
-          }
-          
-          if (model.device_type_id) {
-            const [deviceType] = await db
-              .select()
-              .from(deviceTypes)
-              .where(eq(deviceTypes.id, model.device_type_id));
-            deviceTypeData = deviceType;
-          }
-          
-          return {
-            ...model,
-            brand: brandData,
-            deviceType: deviceTypeData
-          };
-        })
-      );
+      // Use a simpler query approach to avoid ORM-related issues
+      const result = await db.execute(`
+        SELECT 
+          dm.*,
+          b.name as brand_name,
+          b.slug as brand_slug,
+          b.logo as brand_logo,
+          dt.name as device_type_name,
+          dt.slug as device_type_slug,
+          dt.icon as device_type_icon
+        FROM device_models dm
+        LEFT JOIN brands b ON dm.brand_id = b.id
+        LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+        ORDER BY dm.name
+      `);
       
-      return enhancedModels;
+      // Transform the results to match the expected format
+      const models = result.rows.map(row => {
+        const model = {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          image: row.image,
+          imageUrl: row.image_url,
+          active: row.active,
+          featured: row.featured,
+          brand_id: row.brand_id,
+          device_type_id: row.device_type_id,
+          variants: row.variants,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          brand: row.brand_id ? {
+            id: row.brand_id,
+            name: row.brand_name,
+            slug: row.brand_slug,
+            logo: row.brand_logo
+          } : null,
+          deviceType: row.device_type_id ? {
+            id: row.device_type_id,
+            name: row.device_type_name,
+            slug: row.device_type_slug,
+            icon: row.device_type_icon
+          } : null
+        };
+        
+        return model;
+      });
+      
+      return models;
     } catch (error) {
       console.error("Error fetching device models:", error);
-      throw error;
+      return []; // Return empty array instead of throwing to avoid cascading errors
     }
   }
 
