@@ -231,7 +231,7 @@ export const deviceTypes = pgTable("device_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  image: text("image"),
+  icon: text("icon"),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
