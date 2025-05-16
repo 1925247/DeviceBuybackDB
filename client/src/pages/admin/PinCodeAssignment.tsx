@@ -103,6 +103,75 @@ const PinCodeAssignment: React.FC = () => {
   
   const [isLoadingPincodeData, setIsLoadingPincodeData] = useState(false);
   
+  // Function to fetch PIN code information
+  const fetchPincodeInfo = async (pincode: string) => {
+    try {
+      setIsLoadingPincodeData(true);
+      
+      // First, check if the PIN code already exists in our database
+      const existingPincodes = pincodes?.filter(p => p.code === pincode);
+      
+      if (existingPincodes && existingPincodes.length > 0) {
+        const existingPincode = existingPincodes[0];
+        setNewPincode(prev => ({
+          ...prev,
+          city: existingPincode.city,
+          state: existingPincode.state,
+          isMetro: existingPincode.isMetro
+        }));
+        
+        toast({
+          title: 'PIN Code Found',
+          description: `Address details loaded for ${pincode}`,
+        });
+        return;
+      }
+      
+      // Try to fetch from our Indian Postal Code API
+      const response = await fetch(`/api/indian/postal-codes/${pincode}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.city && data.state) {
+          setNewPincode(prev => ({
+            ...prev,
+            city: data.city,
+            state: data.state,
+            // Most major cities are metro areas in India (Delhi, Mumbai, etc.)
+            isMetro: data.isMetro || ['Delhi', 'Mumbai', 'Kolkata', 'Chennai', 'Bangalore', 
+                      'Hyderabad', 'Pune', 'Ahmedabad'].includes(data.city) || prev.isMetro
+          }));
+          
+          toast({
+            title: 'PIN Code Found',
+            description: `Address details loaded for ${pincode}`,
+          });
+        } else {
+          toast({
+            title: 'PIN Code Not Found',
+            description: 'Please enter city and state manually',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        toast({
+          title: 'PIN Code Not Found',
+          description: 'Please enter city and state manually',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching PIN code data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to lookup PIN code information',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingPincodeData(false);
+    }
+  };
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const perPage = 10;
@@ -478,13 +547,28 @@ const PinCodeAssignment: React.FC = () => {
               <Label htmlFor="code" className="text-right">
                 PIN Code
               </Label>
-              <Input
-                id="code"
-                placeholder="e.g. 110001"
-                className="col-span-3"
-                value={newPincode.code}
-                onChange={(e) => setNewPincode({...newPincode, code: e.target.value})}
-              />
+              <div className="col-span-3 flex gap-2">
+                <Input
+                  id="code"
+                  placeholder="e.g. 110001"
+                  className="flex-1"
+                  value={newPincode.code}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewPincode({...newPincode, code: value});
+                    
+                    // Auto-lookup when 6 digits are entered
+                    if (value.length === 6 && /^\d{6}$/.test(value)) {
+                      fetchPincodeInfo(value);
+                    }
+                  }}
+                />
+                {isLoadingPincodeData && (
+                  <div className="flex items-center">
+                    <RefreshCw className="h-4 w-4 animate-spin text-gray-500" />
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
