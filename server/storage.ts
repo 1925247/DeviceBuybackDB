@@ -976,12 +976,24 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
     
+    // Prepare update data - make sure we only include valid schema fields
+    const updateData: any = {
+      updatedAt: new Date() // Use camelCase for Drizzle
+    };
+    
+    // Only include fields that are present
+    if (modelData.name !== undefined) updateData.name = modelData.name;
+    if (modelData.slug !== undefined) updateData.slug = modelData.slug;
+    if (modelData.description !== undefined) updateData.description = modelData.description;
+    if (modelData.imageUrl !== undefined) updateData.imageUrl = modelData.imageUrl;
+    if (modelData.brandId !== undefined) updateData.brandId = modelData.brandId;
+    if (modelData.deviceTypeId !== undefined) updateData.deviceTypeId = modelData.deviceTypeId;
+    if (modelData.active !== undefined) updateData.active = modelData.active;
+    if (modelData.specifications !== undefined) updateData.specifications = modelData.specifications;
+    
     // Update the model
     const [updatedModel] = await db.update(deviceModels)
-      .set({ 
-        ...modelData,
-        updated_at: new Date() 
-      })
+      .set(updateData)
       .where(eq(deviceModels.id, id))
       .returning();
       
