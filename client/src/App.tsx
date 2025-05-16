@@ -68,6 +68,8 @@ import RouteManagement from "./pages/admin/RouteManagement";
 import ManageRouteRules from "./pages/admin/ManageRouteRules";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerWallets from "./pages/admin/PartnerWallets";
+import PinCodeAssignment from "./pages/admin/PinCodeAssignment";
+import PartnerOnboarding from "./pages/admin/PartnerOnboarding";
 import AdminLayout from "./components/admin/AdminLayout";
 
 // Partner Portal Pages
@@ -515,7 +517,8 @@ function App() {
                   <Route path="regions" element={<RegionsManagement />} />
                   <Route path="partners" element={<PartnersManagement />} />
                   <Route path="partner-staff" element={<AdminUsers />} />
-                  <Route path="pin-codes" element={<AdminDashboard />} />
+                  <Route path="pin-codes" element={<PinCodeAssignment />} />
+                  <Route path="partners-onboarding" element={<PartnerOnboarding />} />
                   <Route path="partner-wallets" element={<PartnerWallets />} />
 
                   {/* Questionnaires */}
