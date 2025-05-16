@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -125,10 +125,39 @@ interface Region {
   active: boolean;
 }
 
-const StaffManagement: React.FC = () => {
+interface StaffMember {
+  id: number;
+  userId: number;
+  partnerId: number;
+  role: string;
+  status: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  assignedRegions: string[];
+  assignedPincodes: string[] | null;
+  lastLogin: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+const StaffManagementDemo: React.FC = () => {
   const { toast } = useToast();
-  // Use a local state to manage mock data
-  const [mockStaffData, setMockStaffData] = useState([
+  
+  // Partner ID for demo
+  const partnerId = 1;
+  
+  // Mock data
+  const [regions] = useState<Region[]>([
+    { id: 1, name: 'Maharashtra', code: 'MH', active: true },
+    { id: 2, name: 'Delhi', code: 'DL', active: true },
+    { id: 3, name: 'Karnataka', code: 'KA', active: true },
+    { id: 4, name: 'Tamil Nadu', code: 'TN', active: true },
+    { id: 5, name: 'Gujarat', code: 'GJ', active: true }
+  ]);
+  
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([
     {
       id: 1,
       userId: 101,
@@ -175,95 +204,17 @@ const StaffManagement: React.FC = () => {
       createdAt: '2023-03-01T00:00:00.000Z',
     }
   ]);
+  
+  // UI state
+  const [isLoading, setIsLoading] = useState(false);
   const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false);
   const [isEditStaffDialogOpen, setIsEditStaffDialogOpen] = useState(false);
   const [isDeleteStaffDialogOpen, setIsDeleteStaffDialogOpen] = useState(false);
-  const [currentStaff, setCurrentStaff] = useState<any>(null);
+  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // Mock partner ID for demo - in real app would come from authenticated user
-  const partnerId = 1;
-  
-  // Mock staff data for demonstration
-  const mockStaff = [
-    {
-      id: 1,
-      userId: 101,
-      partnerId: 1,
-      role: 'partner_manager',
-      status: 'active',
-      email: 'manager@example.com',
-      firstName: 'John',
-      lastName: 'Manager',
-      phone: '9876543210',
-      assignedRegions: ['MH', 'DL'],
-      assignedPincodes: null,
-      lastLogin: new Date().toISOString(),
-      createdAt: '2023-01-01T00:00:00.000Z',
-    },
-    {
-      id: 2,
-      userId: 102,
-      partnerId: 1,
-      role: 'partner_staff',
-      status: 'active',
-      email: 'field1@example.com',
-      firstName: 'Alice',
-      lastName: 'Field',
-      phone: '9876543211',
-      assignedRegions: [],
-      assignedPincodes: ['400001', '400002', '400003'],
-      lastLogin: new Date().toISOString(),
-      createdAt: '2023-02-01T00:00:00.000Z',
-    },
-    {
-      id: 3,
-      userId: 103,
-      partnerId: 1,
-      role: 'partner_staff',
-      status: 'inactive',
-      email: 'field2@example.com',
-      firstName: 'Bob',
-      lastName: 'Worker',
-      phone: '9876543212',
-      assignedRegions: [],
-      assignedPincodes: ['500001', '500002'],
-      lastLogin: null,
-      createdAt: '2023-03-01T00:00:00.000Z',
-    }
-  ];
-  
-  // Mock regions data for demonstration
-  const mockRegions = [
-    { id: 1, name: 'Maharashtra', code: 'MH', active: true },
-    { id: 2, name: 'Delhi', code: 'DL', active: true },
-    { id: 3, name: 'Karnataka', code: 'KA', active: true },
-    { id: 4, name: 'Tamil Nadu', code: 'TN', active: true },
-    { id: 5, name: 'Gujarat', code: 'GJ', active: true }
-  ];
-  
-  // Use mock data instead of API calls for demonstration
-  const { data: staff, isLoading: isLoadingStaff } = useQuery({
-    queryKey: [`/api/partners/${partnerId}/staff`],
-    queryFn: async () => {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return mockStaff;
-    },
-  });
-  
-  // Use mock regions data
-  const { data: regions, isLoading: isLoadingRegions } = useQuery({
-    queryKey: ['/api/regions'],
-    queryFn: async () => {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return mockRegions;
-    },
-  });
 
-  // Initialize add staff form
+  // Forms
   const addStaffForm = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: {
@@ -280,7 +231,6 @@ const StaffManagement: React.FC = () => {
     },
   });
 
-  // Initialize edit staff form
   const editStaffForm = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: {
@@ -295,10 +245,7 @@ const StaffManagement: React.FC = () => {
     },
   });
 
-  // Use local state to manage data instead of react-query
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Create staff function using local state
+  // Add staff function
   const addStaffMember = async (data: StaffFormValues) => {
     setIsLoading(true);
     
@@ -306,8 +253,8 @@ const StaffManagement: React.FC = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Create new staff member data
-      const newStaff = {
+      // Create new staff member
+      const newStaff: StaffMember = {
         id: Math.floor(Math.random() * 1000) + 10,
         userId: Math.floor(Math.random() * 1000) + 200,
         partnerId,
@@ -317,13 +264,14 @@ const StaffManagement: React.FC = () => {
         phone: data.phone,
         role: data.role,
         assignedRegions: data.assignedRegions || [],
-        assignedPincodes: data.assignedPincodes ? data.assignedPincodes.split(',').map(p => p.trim()) : [],
+        assignedPincodes: data.assignedPincodes ? data.assignedPincodes.split(',').map(p => p.trim()) : null,
         status: data.status,
+        lastLogin: null,
         createdAt: new Date().toISOString(),
       };
       
-      // Update local state
-      setMockStaffData(prev => [...prev, newStaff]);
+      // Add to state
+      setStaffMembers(prev => [...prev, newStaff]);
       
       toast({
         title: "Staff Added",
@@ -342,7 +290,7 @@ const StaffManagement: React.FC = () => {
     }
   };
 
-  // Update staff function using local state
+  // Update staff function
   const updateStaffMember = async (data: StaffFormValues & { id: number }) => {
     setIsLoading(true);
     
@@ -350,17 +298,16 @@ const StaffManagement: React.FC = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Update staff member in local state
-      setMockStaffData(prev => prev.map(staff => 
+      // Update staff in state
+      setStaffMembers(prev => prev.map(staff => 
         staff.id === data.id ? {
           ...staff,
-          email: data.email,
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone,
           role: data.role,
           assignedRegions: data.assignedRegions || [],
-          assignedPincodes: data.assignedPincodes ? data.assignedPincodes.split(',').map(p => p.trim()) : [],
+          assignedPincodes: data.assignedPincodes ? data.assignedPincodes.split(',').map(p => p.trim()) : null,
           status: data.status,
           updatedAt: new Date().toISOString(),
         } : staff
@@ -383,7 +330,7 @@ const StaffManagement: React.FC = () => {
     }
   };
 
-  // Delete staff function using local state
+  // Delete staff function
   const deleteStaffMember = async (staffId: number) => {
     setIsLoading(true);
     
@@ -391,8 +338,8 @@ const StaffManagement: React.FC = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Remove staff member from local state
-      setMockStaffData(prev => prev.filter(staff => staff.id !== staffId));
+      // Remove from state
+      setStaffMembers(prev => prev.filter(staff => staff.id !== staffId));
       
       toast({
         title: "Staff Removed",
@@ -411,12 +358,11 @@ const StaffManagement: React.FC = () => {
     }
   };
 
-  // Handle form submission for adding staff
+  // Form submission handlers
   const onAddStaffSubmit = (data: StaffFormValues) => {
     addStaffMember(data);
   };
 
-  // Handle form submission for editing staff
   const onEditStaffSubmit = (data: StaffFormValues) => {
     if (!currentStaff) return;
     
@@ -427,7 +373,7 @@ const StaffManagement: React.FC = () => {
   };
 
   // Handle edit staff click
-  const handleEditStaff = (staffMember: any) => {
+  const handleEditStaff = (staffMember: StaffMember) => {
     setCurrentStaff(staffMember);
     
     editStaffForm.reset({
@@ -435,17 +381,17 @@ const StaffManagement: React.FC = () => {
       firstName: staffMember.firstName,
       lastName: staffMember.lastName,
       phone: staffMember.phone,
-      role: staffMember.role,
+      role: staffMember.role as any,
       assignedRegions: staffMember.assignedRegions || [],
       assignedPincodes: staffMember.assignedPincodes?.join(', ') || '',
-      status: staffMember.status,
+      status: staffMember.status as any,
     });
     
     setIsEditStaffDialogOpen(true);
   };
 
   // Handle delete staff click
-  const handleDeleteStaff = (staffMember: any) => {
+  const handleDeleteStaff = (staffMember: StaffMember) => {
     setCurrentStaff(staffMember);
     setIsDeleteStaffDialogOpen(true);
   };
@@ -456,7 +402,7 @@ const StaffManagement: React.FC = () => {
     deleteStaffMember(currentStaff.id);
   };
 
-  // Function to get role badge variant
+  // UI utility functions
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'partner_manager':
@@ -468,7 +414,6 @@ const StaffManagement: React.FC = () => {
     }
   };
 
-  // Function to get status badge variant
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active':
@@ -484,8 +429,14 @@ const StaffManagement: React.FC = () => {
     }
   };
 
-  const renderStaffTable = () => {
-    if (isLoadingStaff) {
+  // Filter staff for different tabs
+  const getAllStaff = () => staffMembers;
+  const getManagers = () => staffMembers.filter(staff => staff.role === 'partner_manager');
+  const getFieldStaff = () => staffMembers.filter(staff => staff.role === 'partner_staff');
+
+  // Render staff table
+  const renderStaffTable = (staff: StaffMember[]) => {
+    if (isLoading) {
       return (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -523,7 +474,7 @@ const StaffManagement: React.FC = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {staff.map((staffMember: any) => (
+          {staff.map((staffMember) => (
             <TableRow key={staffMember.id}>
               <TableCell className="font-medium">
                 {staffMember.firstName} {staffMember.lastName}
@@ -542,7 +493,7 @@ const StaffManagement: React.FC = () => {
               <TableCell>
                 {staffMember.assignedRegions?.length > 0 ? (
                   <span className="text-sm">{staffMember.assignedRegions.join(', ')}</span>
-                ) : staffMember.assignedPincodes?.length > 0 ? (
+                ) : staffMember.assignedPincodes?.length ? (
                   <span className="text-sm">{staffMember.assignedPincodes.length} pincodes</span>
                 ) : (
                   <span className="text-sm text-muted-foreground">None assigned</span>
@@ -596,9 +547,9 @@ const StaffManagement: React.FC = () => {
 
       <Tabs defaultValue="all">
         <TabsList>
-          <TabsTrigger value="all">All Staff</TabsTrigger>
-          <TabsTrigger value="managers">Managers</TabsTrigger>
-          <TabsTrigger value="field">Field Staff</TabsTrigger>
+          <TabsTrigger value="all">All Staff ({getAllStaff().length})</TabsTrigger>
+          <TabsTrigger value="managers">Managers ({getManagers().length})</TabsTrigger>
+          <TabsTrigger value="field">Field Staff ({getFieldStaff().length})</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="space-y-4">
           <Card>
@@ -609,7 +560,7 @@ const StaffManagement: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {renderStaffTable()}
+              {renderStaffTable(getAllStaff())}
             </CardContent>
           </Card>
         </TabsContent>
@@ -622,57 +573,7 @@ const StaffManagement: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingStaff ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : !staff || staff.filter((s: any) => s.role === 'partner_manager').length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No managers found</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Assigned Areas</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {staff
-                      .filter((s: any) => s.role === 'partner_manager')
-                      .map((manager: any) => (
-                        <TableRow key={manager.id}>
-                          <TableCell className="font-medium">
-                            {manager.firstName} {manager.lastName}
-                          </TableCell>
-                          <TableCell>{manager.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(manager.status)}>
-                              {manager.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {manager.assignedRegions?.length > 0 ? (
-                              <span className="text-sm">{manager.assignedRegions.join(', ')}</span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">All regions</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditStaff(manager)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              )}
+              {renderStaffTable(getManagers())}
             </CardContent>
           </Card>
         </TabsContent>
@@ -685,57 +586,7 @@ const StaffManagement: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingStaff ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : !staff || staff.filter((s: any) => s.role === 'partner_staff').length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No field staff found</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Assigned Areas</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {staff
-                      .filter((s: any) => s.role === 'partner_staff')
-                      .map((fieldStaff: any) => (
-                        <TableRow key={fieldStaff.id}>
-                          <TableCell className="font-medium">
-                            {fieldStaff.firstName} {fieldStaff.lastName}
-                          </TableCell>
-                          <TableCell>{fieldStaff.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(fieldStaff.status)}>
-                              {fieldStaff.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {fieldStaff.assignedPincodes?.length > 0 ? (
-                              <span className="text-sm">{fieldStaff.assignedPincodes.length} pincodes</span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">No areas assigned</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditStaff(fieldStaff)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              )}
+              {renderStaffTable(getFieldStaff())}
             </CardContent>
           </Card>
         </TabsContent>
@@ -926,9 +777,7 @@ const StaffManagement: React.FC = () => {
                   <FormItem>
                     <FormLabel>Assigned Regions</FormLabel>
                     <div className="flex flex-wrap gap-2 border rounded-md p-3">
-                      {isLoadingRegions ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : regions?.map((region: Region) => (
+                      {regions?.map((region: Region) => (
                         <div 
                           key={region.id} 
                           className="flex items-center space-x-2"
@@ -1019,9 +868,9 @@ const StaffManagement: React.FC = () => {
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={createStaffMutation.isPending}
+                  disabled={isLoading}
                 >
-                  {createStaffMutation.isPending && (
+                  {isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Add Staff Member
@@ -1144,9 +993,7 @@ const StaffManagement: React.FC = () => {
                   <FormItem>
                     <FormLabel>Assigned Regions</FormLabel>
                     <div className="flex flex-wrap gap-2 border rounded-md p-3">
-                      {isLoadingRegions ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : regions?.map((region: Region) => (
+                      {regions?.map((region: Region) => (
                         <div 
                           key={region.id} 
                           className="flex items-center space-x-2"
@@ -1238,9 +1085,9 @@ const StaffManagement: React.FC = () => {
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={updateStaffMutation.isPending}
+                  disabled={isLoading}
                 >
-                  {updateStaffMutation.isPending && (
+                  {isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Update Staff Member
@@ -1287,9 +1134,9 @@ const StaffManagement: React.FC = () => {
               type="button"
               variant="destructive"
               onClick={confirmDeleteStaff}
-              disabled={deleteStaffMutation.isPending}
+              disabled={isLoading}
             >
-              {deleteStaffMutation.isPending && (
+              {isLoading && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Delete Staff Member
@@ -1301,4 +1148,4 @@ const StaffManagement: React.FC = () => {
   );
 };
 
-export default StaffManagement;
+export default StaffManagementDemo;
