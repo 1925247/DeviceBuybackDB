@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
 import { useNavigate } from 'react-router-dom';
+import { getLocationFromPincode } from '../../api/pincode';
 
 import {
   Form,
@@ -902,10 +903,29 @@ const PartnerOnboarding: React.FC = () => {
                               <FormItem>
                                 <FormLabel>Pincode*</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="e.g. 400001" {...field} disabled={isGstVerified} />
+                                  <Input 
+                                    placeholder="e.g. 400001" 
+                                    {...field} 
+                                    disabled={isGstVerified}
+                                    onChange={async (e) => {
+                                      field.onChange(e);
+                                      const value = e.target.value;
+                                      
+                                      // Auto-populate city and state when a valid 6-digit pincode is entered
+                                      if (!isGstVerified && value.length === 6 && /^\d{6}$/.test(value)) {
+                                        try {
+                                          const location = await getLocationFromPincode(value);
+                                          form.setValue('city', location.city);
+                                          form.setValue('state', location.state);
+                                        } catch (err) {
+                                          console.error('Error fetching location:', err);
+                                        }
+                                      }
+                                    }} 
+                                  />
                                 </FormControl>
                                 <FormDescription>
-                                  {isGstVerified && "Auto-filled from GST data"}
+                                  {isGstVerified ? "Auto-filled from GST data" : "Enter a 6-digit pincode to auto-fill city and state"}
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
