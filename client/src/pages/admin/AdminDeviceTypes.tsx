@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import FileUpload from '@/components/ui/file-upload';
 import {
   ScrollArea,
@@ -857,31 +857,144 @@ const AdminDeviceTypes: React.FC = () => {
           </Card>
         </div>
 
-        {/* Brand Associations */}
-        <div>
+        {/* Brand Associations Section */}
+        <div className="mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Brand Associations</CardTitle>
+              <CardDescription>
+                Manage which brands are associated with each device type
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {displayDeviceTypes.map(deviceType => (
-                  <div key={deviceType.id} className="border rounded-md p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {deviceType.icon && (
-                          <img 
-                            src={deviceType.icon} 
-                            alt={`${deviceType.name} icon`} 
-                            className="h-6 w-6 object-contain"
-                          />
-                        )}
-                        <h3 className="text-lg font-medium">{deviceType.name}</h3>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="h-7 px-2 text-xs"
+              <div className="overflow-hidden border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Device Type</TableHead>
+                      <TableHead>Brand</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {displayBrandDeviceTypes && displayBrandDeviceTypes.length > 0 ? (
+                      displayBrandDeviceTypes.map((relation) => (
+                        <TableRow key={relation.id}>
+                          <TableCell>{relation.id}</TableCell>
+                          <TableCell className="font-medium">{relation.device_type_name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {brands?.find(b => b.id === relation.brand_id)?.logo && (
+                                <img 
+                                  src={brands?.find(b => b.id === relation.brand_id)?.logo} 
+                                  alt={`${relation.brand_name} logo`} 
+                                  className="h-6 w-6 object-contain"
+                                />
+                              )}
+                              {relation.brand_name}
+                            </div>
+                          </TableCell>
+                          <TableCell>{new Date(relation.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                deleteBrandDeviceTypeMutation.mutate(relation.id);
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          No brand associations found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Add New Brand Association</CardTitle>
+              <CardDescription>
+                Create new associations between device types and brands
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="new-device-type" className="mb-2 block">Device Type</Label>
+                  <Select 
+                    onValueChange={(value) => {
+                      const selectedId = Number(value);
+                      setSelectedDeviceType(displayDeviceTypes.find(dt => dt.id === selectedId) || null);
+                    }}
+                  >
+                    <SelectTrigger id="new-device-type">
+                      <SelectValue placeholder="Select device type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {displayDeviceTypes.map(deviceType => (
+                        <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
+                          {deviceType.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex-1">
+                  <Label htmlFor="new-brand" className="mb-2 block">Brand</Label>
+                  <Select 
+                    onValueChange={(value) => {
+                      const selectedId = Number(value);
+                      setSelectedBrands([selectedId]);
+                    }}
+                  >
+                    <SelectTrigger id="new-brand">
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {displayBrands.map(brand => (
+                        <SelectItem key={brand.id} value={brand.id.toString()}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button
+                  onClick={() => {
+                    if (selectedDeviceType && selectedBrands.length > 0) {
+                      handleAssignBrand(selectedBrands[0]);
+                    } else {
+                      toast({
+                        title: "Missing selection",
+                        description: "Please select both a device type and a brand",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
+                  Create Association
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
                         onClick={() => openAssignBrandsModal(deviceType)}
                       >
                         <Plus size={14} className="mr-1" />
