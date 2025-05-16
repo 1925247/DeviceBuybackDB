@@ -421,6 +421,7 @@ const PartnerWallets: React.FC = () => {
                               <TableHead>Date</TableHead>
                               <TableHead>Description</TableHead>
                               <TableHead>Type</TableHead>
+                              <TableHead>Payment Method</TableHead>
                               <TableHead>Reference</TableHead>
                               <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
@@ -433,7 +434,20 @@ const PartnerWallets: React.FC = () => {
                                 </TableCell>
                                 <TableCell>{transaction.description}</TableCell>
                                 <TableCell>{getTransactionTypeBadge(transaction.type)}</TableCell>
-                                <TableCell>{transaction.reference_id || '-'}</TableCell>
+                                <TableCell>
+                                  {transaction.metadata && transaction.metadata.paymentMethod ? (
+                                    <Badge variant="outline" className="capitalize">
+                                      {transaction.metadata.paymentMethod.replace('_', ' ')}
+                                    </Badge>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {transaction.reference_id || 
+                                   (transaction.metadata && transaction.metadata.transactionId) || 
+                                   '-'}
+                                </TableCell>
                                 <TableCell className={`text-right font-medium ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
                                   {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
                                 </TableCell>

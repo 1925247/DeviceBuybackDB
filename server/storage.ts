@@ -2037,7 +2037,13 @@ export class DatabaseStorage implements IStorage {
           type: 'credit',
           description,
           referenceId: reference || null,
+          referenceType: transactionId ? 'manual_payment' : 'system',
           status: 'completed',
+          metadata: {
+            paymentMethod: paymentMethod,
+            transactionId: transactionId || null
+          },
+          transactionDate: new Date()
         })
         .returning();
 
