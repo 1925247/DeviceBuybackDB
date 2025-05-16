@@ -1708,10 +1708,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     options: ConditionOption[];
   }
   
+  // Get condition questions by device type ID
   app.get(apiRouter("/condition-questions"), async (req: Request, res: Response) => {
     try {
       const deviceTypeId = req.query.deviceTypeId ? Number(req.query.deviceTypeId) : undefined;
-      const questionsData = await storage.getConditionQuestions(deviceTypeId) as ConditionQuestion[];
+      const modelId = req.query.modelId ? Number(req.query.modelId) : undefined;
+      
+      let questionsData: ConditionQuestion[] = [];
+      
+      if (modelId) {
+        // If modelId is provided, use the product mapping to get questions
+        try {
+          console.log(`Fetching questions for device model ID: ${modelId}`);
+          
+          // First get the product ID that matches this model ID
+          const productResult = await pool.query(
+            `SELECT id FROM products WHERE model_id = $1`,
+            [modelId]
+          );
+          
+          if (productResult.rows.length === 0) {
+            console.log(`No product found for model ID: ${modelId}`);
+            res.json([]);
+            return;
+          }
+          
+          const productId = productResult.rows[0].id;
+          console.log(`Found product ID: ${productId} for model ID: ${modelId}`);
+          
+          // Get all question groups mapped to this product
+          const mappingsResult = await pool.query(
+            `SELECT DISTINCT m.group_id 
+             FROM product_question_mappings m 
+             WHERE m.product_id = $1`,
+            [productId]
+          );
+          
+          if (mappingsResult.rows.length === 0) {
+            console.log(`No question groups mapped to product ID: ${productId}`);
+            res.json([]);
+            return;
+          }
+          
+          const groupIds = mappingsResult.rows.map(row => row.group_id);
+          console.log(`Found question group IDs: ${groupIds.join(', ')}`);
+          
+          // Get all questions from these groups
+          const questionsResult = await pool.query(
+            `SELECT q.id, q.question_text as question, q.device_type_id as "deviceTypeId", 
+                    q.order_index as "order", q.active
+             FROM questions q
+             WHERE q.group_id IN (${groupIds.map((_, i) => `$${i + 1}`).join(',')})
+             ORDER BY q.order_index`,
+            groupIds
+          );
+          
+          console.log(`Found ${questionsResult.rows.length} questions from mapped groups`);
+          
+          // For each question, get its answer options
+          const questions = await Promise.all(questionsResult.rows.map(async (question) => {
+            const optionsResult = await pool.query(
+              `SELECT id, answer_text as text, value
+               FROM answer_choices
+               WHERE question_id = $1
+               ORDER BY id`,
+              [question.id]
+            );
+            
+            return {
+              ...question,
+              options: optionsResult.rows
+            };
+          }));
+          
+          questionsData = questions;
+        } catch (error) {
+          console.error("Error fetching mapped questions:", error);
+          // Fall back to device type questions if there's an error
+          questionsData = await storage.getConditionQuestions(deviceTypeId) as ConditionQuestion[];
+        }
+      } else {
+        // Fall back to legacy behavior if no modelId is provided
+        questionsData = await storage.getConditionQuestions(deviceTypeId) as ConditionQuestion[];
+      }
       
       // Format questions to match the frontend expected format
       const formattedQuestions = questionsData.map(question => ({

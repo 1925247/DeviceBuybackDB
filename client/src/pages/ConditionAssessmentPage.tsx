@@ -86,29 +86,60 @@ const ConditionAssessmentPage: React.FC = () => {
         const [
           deviceTypesResponse, 
           brandsResponse, 
-          deviceModelsResponse, 
-          conditionQuestionsResponse
+          deviceModelsResponse
         ] = await Promise.all([
           fetch('/api/device-types'),
           fetch('/api/brands'),
-          fetch('/api/device-models'),
-          fetch(`/api/condition-questions${deviceType ? `?deviceTypeId=${getDeviceTypeId(deviceType)}` : ''}`)
+          fetch('/api/device-models')
         ]);
         
         if (!deviceTypesResponse.ok) throw new Error('Failed to fetch device types');
         if (!brandsResponse.ok) throw new Error('Failed to fetch brands');
         if (!deviceModelsResponse.ok) throw new Error('Failed to fetch device models');
-        if (!conditionQuestionsResponse.ok) throw new Error('Failed to fetch condition questions');
         
         const deviceTypesData = await deviceTypesResponse.json();
         const brandsData = await brandsResponse.json();
         const deviceModelsData = await deviceModelsResponse.json();
-        const conditionQuestionsData = await conditionQuestionsResponse.json();
         
         setDeviceTypes(deviceTypesData);
         setBrands(brandsData);
         setDeviceModels(deviceModelsData);
-        setConditionQuestions(conditionQuestionsData);
+        
+        // Now that we have the device models, find the current model by slug
+        const currentModel = deviceModelsData.find(m => 
+          m.slug === model && 
+          m.brand?.slug === brand || 
+          m.brand_id === brandsData.find(b => b.slug === brand)?.id
+        );
+        
+        if (currentModel) {
+          console.log("Found device model:", currentModel.name, "with ID:", currentModel.id);
+          
+          // Fetch condition questions specific to this model ID
+          const conditionQuestionsResponse = await fetch(
+            `/api/condition-questions?modelId=${currentModel.id}&deviceTypeId=${currentModel.device_type_id || getDeviceTypeId(deviceType || '')}`
+          );
+          
+          if (!conditionQuestionsResponse.ok) {
+            throw new Error('Failed to fetch condition questions');
+          }
+          
+          const conditionQuestionsData = await conditionQuestionsResponse.json();
+          console.log("Fetched condition questions:", conditionQuestionsData.length);
+          
+          setConditionQuestions(conditionQuestionsData);
+        } else {
+          console.error("Model not found:", model);
+          // Fallback to device type questions
+          const deviceTypeId = getDeviceTypeId(deviceType || '');
+          if (deviceTypeId) {
+            const fallbackQuestionsResponse = await fetch(`/api/condition-questions?deviceTypeId=${deviceTypeId}`);
+            if (fallbackQuestionsResponse.ok) {
+              const fallbackQuestionsData = await fallbackQuestionsResponse.json();
+              setConditionQuestions(fallbackQuestionsData);
+            }
+          }
+        }
         
         setLoading(false);
       } catch (err) {
