@@ -52,8 +52,7 @@ export async function getTenantDb(partnerId: number) {
   // Create a Drizzle instance with the tenant's schema
   const tenantDb = drizzle(pool, { 
     schema,
-    // Use the tenant's schema if it's not the default database URL
-    ...(tenantConfig.databaseUrl && { schema: tenantConfig.schemaName })
+    // We'll manage schema prefixing at the query level instead
   });
 
   // Cache the connection
