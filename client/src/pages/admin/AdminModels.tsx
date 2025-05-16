@@ -315,29 +315,121 @@ const AdminModels: React.FC = () => {
 
   const handleAddModel = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields before submission
+    if (!formData.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Model name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.device_type_id) {
+      toast({
+        title: 'Validation Error',
+        description: 'Device type is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.brand_id) {
+      toast({
+        title: 'Validation Error',
+        description: 'Brand is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.image) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please upload a model image',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Generate slug if not provided
+    let modelSlug = formData.slug;
+    if (!modelSlug.trim()) {
+      modelSlug = formData.name.toLowerCase().replace(/\s+/g, '-');
+    }
+    
     const processedData = {
       ...formData,
+      slug: modelSlug,
       device_type_id: parseInt(formData.device_type_id),
       brand_id: parseInt(formData.brand_id),
       active: Boolean(formData.active),
       featured: Boolean(formData.featured),
     };
+    
     createModelMutation.mutate(processedData as any);
   };
 
   const handleEditModel = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedModel) {
-      const processedData = {
-        ...formData,
-        id: selectedModel.id,
-        device_type_id: parseInt(formData.device_type_id),
-        brand_id: parseInt(formData.brand_id),
-        active: Boolean(formData.active),
-        featured: Boolean(formData.featured),
-      };
-      updateModelMutation.mutate(processedData as any);
+    
+    if (!selectedModel) return;
+    
+    // Validate required fields before submission
+    if (!formData.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Model name is required',
+        variant: 'destructive',
+      });
+      return;
     }
+    
+    if (!formData.device_type_id) {
+      toast({
+        title: 'Validation Error',
+        description: 'Device type is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.brand_id) {
+      toast({
+        title: 'Validation Error',
+        description: 'Brand is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.image) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please upload a model image',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Generate slug if not provided
+    let modelSlug = formData.slug;
+    if (!modelSlug.trim()) {
+      modelSlug = formData.name.toLowerCase().replace(/\s+/g, '-');
+    }
+    
+    const processedData = {
+      ...formData,
+      id: selectedModel.id,
+      slug: modelSlug,
+      device_type_id: parseInt(formData.device_type_id),
+      brand_id: parseInt(formData.brand_id),
+      active: Boolean(formData.active),
+      featured: Boolean(formData.featured),
+    };
+    
+    updateModelMutation.mutate(processedData as any);
   };
 
   const handleDeleteModel = () => {

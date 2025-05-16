@@ -750,12 +750,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(apiRouter("/device-models"), async (req: Request, res: Response) => {
     try {
       const modelData = req.body;
+      
+      // Validate required fields
+      if (!modelData.name) {
+        return res.status(400).json({ message: "Model name is required" });
+      }
+      
+      if (!modelData.image) {
+        return res.status(400).json({ message: "Model image is required" });
+      }
+      
+      if (!modelData.brand_id) {
+        return res.status(400).json({ message: "Brand is required" });
+      }
+      
+      if (!modelData.device_type_id) {
+        return res.status(400).json({ message: "Device type is required" });
+      }
+      
+      // Generate slug if not provided
+      if (!modelData.slug) {
+        modelData.slug = modelData.name.toLowerCase().replace(/\s+/g, '-');
+      }
+      
       // Convert string IDs to numbers
       if (modelData.brand_id) modelData.brand_id = Number(modelData.brand_id);
       if (modelData.device_type_id) modelData.device_type_id = Number(modelData.device_type_id);
       
-      const newModel = await storage.createDeviceModel(modelData);
-      res.status(201).json(newModel);
+      // Handle variants as JSON string for PostgreSQL
+      if (modelData.variants && Array.isArray(modelData.variants)) {
+        modelData.variants = JSON.stringify(modelData.variants);
+      }
+      
+      // Use direct SQL to create the model to avoid ORM field mapping issues
+      const { pool } = await import('./db');
+      
+      const insertQuery = `
+        INSERT INTO device_models (
+          name, slug, image, brand_id, device_type_id, 
+          active, featured, variants, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        ) RETURNING *
+      `;
+      
+      const now = new Date();
+      const insertValues = [
+        modelData.name,
+        modelData.slug,
+        modelData.image,
+        modelData.brand_id,
+        modelData.device_type_id,
+        modelData.active !== undefined ? modelData.active : true,
+        modelData.featured !== undefined ? modelData.featured : false,
+        modelData.variants || null,
+        now,
+        now
+      ];
+      
+      console.log("Creating device model with values:", insertValues);
+      const result = await pool.query(insertQuery, insertValues);
+      
+      if (!result.rows || result.rows.length === 0) {
+        return res.status(500).json({ message: "Failed to create device model" });
+      }
+      
+      res.status(201).json(result.rows[0]);
     } catch (error: any) {
       console.error("Error creating device model:", error);
       res.status(500).json({ message: error.message || "Failed to create device model" });
