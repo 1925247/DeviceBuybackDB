@@ -1559,6 +1559,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // DELETE endpoint for product-question mappings
+  app.delete(apiRouter("/product-question-mappings/:id"), async (req: Request, res: Response) => {
+    try {
+      const mappingId = parseInt(req.params.id);
+      
+      // Use direct SQL to delete the mapping
+      const result = await pool.query(
+        `DELETE FROM product_question_mappings WHERE id = $1 RETURNING *`,
+        [mappingId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Product-question mapping not found" });
+      }
+      
+      res.json({ message: "Product-question mapping deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting product-question mapping:", error);
+      res.status(500).json({ message: error.message || "Failed to delete product-question mapping" });
+    }
+  });
+  
+  // Create a product-question mapping  
   app.post(apiRouter("/product-question-mappings"), async (req: Request, res: Response) => {
     try {
       console.log("Received mapping data:", req.body);

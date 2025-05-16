@@ -220,7 +220,7 @@ export default function AdminProductMapping() {
       setIsCopying(true);
 
       // Filter the mappings to only include the selected ones
-      const mappingsToSend = productMappings.filter(
+      const mappingsToSend = sourceProductMappings.filter(
         (mapping: ProductQuestionMapping) =>
           selectedMappings.includes(mapping.id),
       );
@@ -375,9 +375,74 @@ export default function AdminProductMapping() {
 
       <Tabs value={currentTab} onValueChange={setCurrentTab}>
         <TabsList>
+          <TabsTrigger value="view">View Mappings</TabsTrigger>
           <TabsTrigger value="add">Add New Mapping</TabsTrigger>
           <TabsTrigger value="copy">Copy Mappings Between Products</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="view" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>View Product-Question Group Mappings</CardTitle>
+              <CardDescription>
+                See which question groups are assigned to each product
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAllMappings || isLoadingProducts ? (
+                <div className="flex justify-center items-center py-10">
+                  <LoaderCircle className="h-10 w-10 animate-spin text-gray-400" />
+                </div>
+              ) : allProductMappings && allProductMappings.length > 0 ? (
+                <div className="space-y-6">
+                  {getMappingsByProduct().map((product: any) => (
+                    <Card key={product.id} className="border-gray-200">
+                      <CardHeader className="bg-gray-50">
+                        <CardTitle className="text-xl">{product.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4">
+                        <div className="space-y-2">
+                          <h3 className="text-md font-medium mb-2">Associated Question Groups:</h3>
+                          {product.mappings.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {product.mappings.map((mapping: any) => (
+                                <div key={mapping.id} className="flex items-center justify-between bg-white p-3 border rounded-md">
+                                  <div>
+                                    <div className="font-medium">{mapping.groupName}</div>
+                                    <div className="text-sm text-gray-500">
+                                      Questions: {mapping.count}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                    onClick={() => deleteMapping(mapping.id)}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500">No question groups mapped to this product.</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <h3 className="text-lg font-medium mb-2">No mappings found</h3>
+                  <p className="text-gray-500">
+                    Use the "Add New Mapping" tab to create product-question group mappings.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="add" className="mt-6">
           <Card>
