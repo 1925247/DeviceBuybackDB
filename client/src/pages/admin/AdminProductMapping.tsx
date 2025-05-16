@@ -33,12 +33,11 @@ interface ProductQuestionMapping {
   id: number;
   productId: number;
   actionType: string;
-  groupId: number;
+  questionId: number;
   overrides?: Record<string, any> | null;
   createdAt: string;
   updatedAt: string;
-  groupName?: string;
-  groupIcon?: string | null;
+  questionText?: string;
 }
 
 const formSchema = z.object({
@@ -211,11 +210,11 @@ export default function AdminProductMapping() {
     );
   };
 
-  // Get question group name by ID
-  const getGroupName = (groupId: number) => {
-    if (!questionGroups) return "Loading...";
-    const group = questionGroups.find((g: QuestionGroup) => g.id === groupId);
-    return group ? group.name : "Unknown Group";
+  // Get question text by ID
+  const getQuestionText = (questionId: number) => {
+    if (!questions) return "Loading...";
+    const question = questions.find((q: any) => q.id === questionId);
+    return question ? question.questionText : "Unknown Question";
   };
 
   // Get product name by ID
@@ -460,7 +459,7 @@ export default function AdminProductMapping() {
                                     htmlFor={`mapping-${mapping.id}`}
                                     className="text-sm font-medium cursor-pointer"
                                   >
-                                    {getGroupName(mapping.groupId)}
+                                    {getQuestionText(mapping.questionId)}
                                   </label>
                                   <p className="text-xs text-gray-500 mt-1">
                                     Action: {mapping.actionType}
