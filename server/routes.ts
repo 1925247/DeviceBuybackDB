@@ -1030,6 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           statement: groupData.statement,
           deviceTypeId: groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
           icon: groupData.icon || null,
+          active: groupData.active !== undefined ? !!groupData.active : true,
           updatedAt: new Date()
         })
         .where(eq(questionGroups.id, groupId))
