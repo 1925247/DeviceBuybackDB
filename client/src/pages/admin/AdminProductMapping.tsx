@@ -44,7 +44,7 @@ interface ProductQuestionMapping {
 const formSchema = z.object({
   productId: z.string().min(1, "Please select a product"),
   actionType: z.string().min(1, "Please select an action type"),
-  groupId: z.string().min(1, "Please select a question group")
+  questionId: z.string().min(1, "Please select a question")
 });
 
 // Also create a form schema for the copy form
@@ -71,6 +71,12 @@ export default function AdminProductMapping() {
     queryKey: ["/api/question-groups"],
     retry: false
   });
+  
+  // Fetch questions from API
+  const { data: questions, isLoading: isLoadingQuestions } = useQuery({
+    queryKey: ["/api/questions"],
+    retry: false
+  });
 
   // Form for adding new mappings
   const form = useForm<z.infer<typeof formSchema>>({
@@ -78,7 +84,7 @@ export default function AdminProductMapping() {
     defaultValues: {
       productId: "",
       actionType: "",
-      groupId: ""
+      questionId: ""
     }
   });
 
@@ -114,7 +120,7 @@ export default function AdminProductMapping() {
     try {
       const response = await apiRequest("POST", "/api/product-question-mappings", {
         productId: parseInt(values.productId),
-        questionId: parseInt(values.groupId), // Changed from groupId to questionId to match schema
+        questionId: parseInt(values.questionId),
         actionType: values.actionType
       });
 
@@ -303,24 +309,24 @@ export default function AdminProductMapping() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="groupId"
+                        name="questionId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Question Group</FormLabel>
+                            <FormLabel>Question</FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              disabled={isLoadingGroups}
+                              disabled={isLoadingQuestions}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select a question group" />
+                                  <SelectValue placeholder="Select a question" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {questionGroups?.map((group: QuestionGroup) => (
-                                  <SelectItem key={group.id} value={group.id.toString()}>
-                                    {group.name}
+                                {questions?.map((question: any) => (
+                                  <SelectItem key={question.id} value={question.id.toString()}>
+                                    {question.questionText}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
