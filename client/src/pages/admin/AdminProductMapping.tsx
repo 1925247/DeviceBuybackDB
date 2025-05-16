@@ -50,12 +50,16 @@ interface QuestionGroup {
 interface ProductQuestionMapping {
   id: number;
   productId: number;
-  actionType: string;
+  productTitle?: string;
+  actionType: string | null;
   questionId: number;
-  overrides?: Record<string, any> | null;
+  questionText?: string;
+  groupId?: number;
+  groupName?: string;
+  impactMultiplier?: number;
+  required?: boolean;
   createdAt: string;
   updatedAt: string;
-  questionText?: string;
 }
 
 const formSchema = z.object({
@@ -72,9 +76,10 @@ const copyFormSchema = z.object({
 export default function AdminProductMapping() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [currentTab, setCurrentTab] = useState("add");
+  const [currentTab, setCurrentTab] = useState("view");
   const [selectedMappings, setSelectedMappings] = useState<number[]>([]);
   const [isCopying, setIsCopying] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<string>("");
 
   // Fetch products from API
   const { data: products, isLoading: isLoadingProducts } = useQuery({
@@ -115,13 +120,13 @@ export default function AdminProductMapping() {
   // Get source product ID from copy form
   const sourceProductId = copyForm.watch("sourceProductId");
 
-  // Fetch product question mappings when source product changes
-  const { data: productMappings, isLoading: isLoadingMappings } = useQuery({
+  // Fetch product question mappings when source product changes (for copy functionality)
+  const { data: sourceProductMappings, isLoading: isLoadingSourceMappings } = useQuery({
     queryKey: ["/api/product-question-mappings", sourceProductId],
     queryFn: async () => {
       if (!sourceProductId) return [];
       const response = await fetch(
-        `/api/product-question-mappings?product_id=${sourceProductId}`,
+        `/api/product-question-mappings?productId=${sourceProductId}`,
       );
       if (!response.ok) {
         throw new Error("Failed to fetch product question mappings");
@@ -129,6 +134,36 @@ export default function AdminProductMapping() {
       return response.json();
     },
     enabled: !!sourceProductId,
+    retry: false,
+  });
+  
+  // Fetch all product question mappings for the view tab
+  const { data: allProductMappings, isLoading: isLoadingAllMappings } = useQuery({
+    queryKey: ["/api/product-question-mappings", "all"],
+    queryFn: async () => {
+      const response = await fetch('/api/product-question-mappings');
+      if (!response.ok) {
+        throw new Error("Failed to fetch all product question mappings");
+      }
+      return response.json();
+    },
+    retry: false,
+  });
+  
+  // Fetch specific product question mappings for the selected product
+  const { data: selectedProductMappings, isLoading: isLoadingSelectedProductMappings } = useQuery({
+    queryKey: ["/api/product-question-mappings", selectedProduct],
+    queryFn: async () => {
+      if (!selectedProduct) return [];
+      const response = await fetch(
+        `/api/product-question-mappings?productId=${selectedProduct}`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch selected product question mappings");
+      }
+      return response.json();
+    },
+    enabled: !!selectedProduct,
     retry: false,
   });
 
@@ -252,6 +287,84 @@ export default function AdminProductMapping() {
     if (!products) return "Loading...";
     const product = products.find((p: Product) => p.id === productId);
     return product ? product.title : "Unknown Product";
+  };
+  
+  // Group mappings by product
+  const getMappingsByProduct = () => {
+    if (!allProductMappings || !products) return [];
+    
+    // Create a map of products with their associated group mappings
+    const productMap = new Map();
+    
+    // Group mappings by product
+    allProductMappings.forEach((mapping: ProductQuestionMapping) => {
+      if (!productMap.has(mapping.productId)) {
+        const product = products.find((p: any) => p.id === mapping.productId);
+        if (product) {
+          productMap.set(mapping.productId, {
+            id: mapping.productId,
+            title: product.title,
+            mappings: []
+          });
+        }
+      }
+      
+      if (productMap.has(mapping.productId)) {
+        const productData = productMap.get(mapping.productId);
+        
+        // Check if we already have this group added (avoid duplicates)
+        const existingGroupIndex = productData.mappings.findIndex(
+          (m: any) => m.groupId === mapping.groupId
+        );
+        
+        if (existingGroupIndex === -1) {
+          productData.mappings.push({
+            id: mapping.id,
+            groupId: mapping.groupId,
+            groupName: mapping.groupName,
+            count: 1
+          });
+        } else {
+          // Increment count of questions in this group
+          productData.mappings[existingGroupIndex].count++;
+        }
+      }
+    });
+    
+    return Array.from(productMap.values());
+  };
+  
+  // Delete a product-question mapping
+  const deleteMapping = async (mappingId: number) => {
+    try {
+      const response = await apiRequest(
+        "DELETE",
+        `/api/product-question-mappings/${mappingId}`
+      );
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Mapping deleted successfully",
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/product-question-mappings"],
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete mapping",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -1419,34 +1419,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product-Question Mappings API Endpoints
   app.get(apiRouter("/product-question-mappings"), async (req: Request, res: Response) => {
     try {
-      const productId = req.query.product_id ? parseInt(req.query.product_id as string) : undefined;
+      const productId = req.query.productId ? parseInt(req.query.productId as string) : undefined;
       
-      // Only select columns that actually exist in the database
-      const mappings = await db.select({
-        id: productQuestionMappings.id,
-        productId: productQuestionMappings.productId,
-        questionId: productQuestionMappings.questionId,
-        required: productQuestionMappings.required,
-        overrides: productQuestionMappings.overrides,
-        createdAt: productQuestionMappings.createdAt,
-        updatedAt: productQuestionMappings.updatedAt
-      }).from(productQuestionMappings)
-        .where(productId ? eq(productQuestionMappings.productId, productId) : undefined);
+      // Use direct SQL query to avoid column name mismatches
+      console.log("Fetching product-question mappings...");
       
-      // Enrich with question information
-      const enrichedMappings = await Promise.all(
-        mappings.map(async (mapping) => {
-          const [question] = await db.select().from(questions)
-            .where(eq(questions.id, mapping.questionId));
-          
-          return {
-            ...mapping,
-            questionText: question?.questionText || 'Unknown Question'
-          };
-        })
-      );
+      // Build query based on whether a productId was provided
+      let queryText = `
+        SELECT 
+          pqm.id, 
+          pqm.product_id, 
+          pqm.group_id, 
+          pqm.question_id,
+          pqm.required, 
+          pqm.action_type,
+          pqm.impact_multiplier,
+          pqm.created_at, 
+          pqm.updated_at,
+          p.title as product_title,
+          qg.name as group_name,
+          q.question_text
+        FROM product_question_mappings pqm
+        LEFT JOIN products p ON pqm.product_id = p.id
+        LEFT JOIN question_groups qg ON pqm.group_id = qg.id
+        LEFT JOIN questions q ON pqm.question_id = q.id
+      `;
       
-      res.json(enrichedMappings);
+      // Add WHERE clause if productId is provided
+      const params = [];
+      if (productId) {
+        queryText += ` WHERE pqm.product_id = $1`;
+        params.push(productId);
+      }
+      
+      // Group by product for easier display
+      queryText += ` ORDER BY pqm.product_id, qg.name`;
+      
+      // Execute the query
+      const result = await pool.query(queryText, params);
+      
+      // Format the response
+      const mappings = result.rows.map(row => ({
+        id: row.id,
+        productId: row.product_id,
+        productTitle: row.product_title,
+        groupId: row.group_id,
+        groupName: row.group_name,
+        questionId: row.question_id,
+        questionText: row.question_text,
+        required: row.required,
+        actionType: row.action_type,
+        impactMultiplier: row.impact_multiplier,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+      
+      console.log(`Found ${mappings.length} product-question mappings`);
+      res.json(mappings);
     } catch (error: any) {
       console.error("Error fetching product-question mappings:", error);
       res.status(500).json({ message: error.message || "Failed to fetch product-question mappings" });
