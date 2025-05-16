@@ -23,7 +23,32 @@
 --destructive-foreground: 60 9.1% 97.8%;
 --ring: 20 14.3% 4.1%;
 --radius: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
   }
+
+  .text-center, .grid {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .text-3xl {
+    font-size: 1.75rem; /* Adjust for smaller screens */
+  }
+
+  .grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)); /* Stack columns */
+  }
+
+  a.inline-flex {
+    width: 100%;
+    justify-content: center; /* Center align buttons */
+  }
+}
   .dark {
       --background: 240 10% 3.9%;
 --foreground: 0 0% 98%;
