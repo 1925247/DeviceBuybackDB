@@ -938,7 +938,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(deviceTypeId ? eq(questionGroups.deviceTypeId, deviceTypeId) : undefined)
         .orderBy(asc(questionGroups.name));
       
-      res.json(groups);
+      // Get question counts for each group using a more efficient approach
+      const result = await Promise.all(groups.map(async (group) => {
+        // Query to count questions for this group
+        const countQuery = `
+          SELECT COUNT(*) as count 
+          FROM questions 
+          WHERE group_id = $1
+        `;
+        const countResult = await pool.query(countQuery, [group.id]);
+        const questionsCount = parseInt(countResult.rows[0].count);
+        
+        // Return enhanced group with count
+        return {
+          ...group,
+          questionsCount: questionsCount
+        };
+      }));
+      
+      res.json(result);
     } catch (error: any) {
       console.error("Error fetching question groups:", error);
       res.status(500).json({ message: error.message || "Failed to fetch question groups" });
