@@ -970,37 +970,53 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateDeviceModel(id: number, modelData: any): Promise<any | undefined> {
-    // Validate the model exists
-    const existingModel = await this.getDeviceModel(id);
-    if (!existingModel) {
-      return undefined;
-    }
-    
-    // Prepare update data with only valid fields
-    const updateData: any = {
-      updatedAt: new Date()
-    };
-    
-    // Only include fields that are present and match the database schema
-    if (modelData.name !== undefined) updateData.name = modelData.name;
-    if (modelData.slug !== undefined) updateData.slug = modelData.slug;
-    if (modelData.description !== undefined) updateData.description = modelData.description;
-    // Using 'image' instead of 'imageUrl' to match the schema
-    if (modelData.image !== undefined) updateData.image = modelData.image;
-    if (modelData.brandId !== undefined) updateData.brandId = modelData.brandId;
-    if (modelData.deviceTypeId !== undefined) updateData.deviceTypeId = modelData.deviceTypeId;
-    if (modelData.active !== undefined) updateData.active = modelData.active;
-    if (modelData.specifications !== undefined) updateData.specifications = modelData.specifications;
-    
-    console.log("Updating device model with data:", updateData);
-    
-    // Update the model
-    const [updatedModel] = await db.update(deviceModels)
-      .set(updateData)
-      .where(eq(deviceModels.id, id))
-      .returning();
+    try {
+      // Validate the model exists
+      const existingModel = await this.getDeviceModel(id);
+      if (!existingModel) {
+        return undefined;
+      }
       
-    return updatedModel;
+      // Prepare update data with only valid database schema fields
+      const updateData: any = {
+        updated_at: new Date() // Use snake_case for database column names
+      };
+      
+      // Map the fields using the actual database column names
+      if (modelData.name !== undefined) updateData.name = modelData.name;
+      if (modelData.slug !== undefined) updateData.slug = modelData.slug;
+      if (modelData.image !== undefined) updateData.image = modelData.image;
+      // Map camelCase to snake_case field names
+      if (modelData.brandId !== undefined) updateData.brand_id = modelData.brandId;
+      if (modelData.brand_id !== undefined) updateData.brand_id = modelData.brand_id;
+      if (modelData.deviceTypeId !== undefined) updateData.device_type_id = modelData.deviceTypeId;
+      if (modelData.device_type_id !== undefined) updateData.device_type_id = modelData.device_type_id;
+      if (modelData.active !== undefined) updateData.active = modelData.active;
+      if (modelData.featured !== undefined) updateData.featured = modelData.featured;
+      if (modelData.variants !== undefined) updateData.variants = modelData.variants;
+      
+      console.log("Updating device model with data:", updateData);
+      
+      // Perform a raw SQL update to avoid drizzle-orm issues
+      const query = `
+        UPDATE device_models
+        SET ${Object.entries(updateData).map(([key, _]) => `${key} = $${key}`).join(', ')}
+        WHERE id = $id
+        RETURNING *
+      `;
+      
+      const params = { ...updateData, id };
+      const result = await db.execute(query, params);
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0];
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error("Error in updateDeviceModel:", error);
+      throw error;
+    }
   }
   
   async deleteDeviceModel(id: number): Promise<boolean> {

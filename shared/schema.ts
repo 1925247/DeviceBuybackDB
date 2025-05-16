@@ -258,18 +258,16 @@ export const brands = pgTable("brands", {
 export const deviceModels = pgTable("device_models", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  slug: text("slug").notNull(),
-  description: text("description"),
-  image: text("image"), // Fixed field name to match database
-  brandId: integer("brand_id").references(() => brands.id),
-  deviceTypeId: integer("device_type_id").references(() => deviceTypes.id),
-  active: boolean("active").default(true),
-  specifications: jsonb("specifications"),
+  slug: text("slug").notNull().unique(),
+  image: text("image").notNull(),
+  brand_id: integer("brand_id").notNull().references(() => brands.id),
+  device_type_id: integer("device_type_id").notNull().references(() => deviceTypes.id),
+  active: boolean("active").default(true).notNull(),
+  featured: boolean("featured").default(false).notNull(),
+  variants: json("variants"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => ({
-  uniqueModelPerBrandDeviceType: unique().on(table.slug, table.brandId, table.deviceTypeId),
-}));
+});
 
 // Brand Device Types (relation table between brands and device types)
 export const brandDeviceTypes = pgTable("brand_device_types", {
