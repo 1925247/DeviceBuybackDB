@@ -974,27 +974,59 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getDeviceModels(): Promise<DeviceModel[]> {
-    const models = await db.select({
-      id: deviceModels.id,
-      name: deviceModels.name,
-      slug: deviceModels.slug,
-      brand_id: deviceModels.brand_id,
-      device_type_id: deviceModels.device_type_id,
-      image: deviceModels.image,
-      active: deviceModels.active,
-      featured: deviceModels.featured,
-      variants: deviceModels.variants,
-      brand: brands,
-      deviceType: deviceTypes,
-      created_at: deviceModels.created_at,
-      updated_at: deviceModels.updated_at
-    })
-      .from(deviceModels)
-      .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
-      .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
-      .orderBy(deviceModels.name);
-    
-    return models;
+    try {
+      // First, fetch device models without complex joins
+      const models = await db.select({
+        id: deviceModels.id,
+        name: deviceModels.name,
+        slug: deviceModels.slug,
+        brand_id: deviceModels.brand_id,
+        device_type_id: deviceModels.device_type_id,
+        image: deviceModels.image,
+        active: deviceModels.active,
+        featured: deviceModels.featured,
+        variants: deviceModels.variants,
+        created_at: deviceModels.created_at,
+        updated_at: deviceModels.updated_at
+      })
+        .from(deviceModels)
+        .orderBy(deviceModels.name);
+
+      // For each model, fetch brand and device type separately
+      const enhancedModels = await Promise.all(
+        models.map(async (model) => {
+          let brandData = null;
+          let deviceTypeData = null;
+          
+          if (model.brand_id) {
+            const [brand] = await db
+              .select()
+              .from(brands)
+              .where(eq(brands.id, model.brand_id));
+            brandData = brand;
+          }
+          
+          if (model.device_type_id) {
+            const [deviceType] = await db
+              .select()
+              .from(deviceTypes)
+              .where(eq(deviceTypes.id, model.device_type_id));
+            deviceTypeData = deviceType;
+          }
+          
+          return {
+            ...model,
+            brand: brandData,
+            deviceType: deviceTypeData
+          };
+        })
+      );
+      
+      return enhancedModels;
+    } catch (error) {
+      console.error("Error fetching device models:", error);
+      throw error;
+    }
   }
 
   async getConditionQuestions(deviceTypeId?: number): Promise<any[]> {
