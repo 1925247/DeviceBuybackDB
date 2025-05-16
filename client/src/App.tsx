@@ -1,5 +1,5 @@
 // src/App.tsx
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
