@@ -62,6 +62,7 @@ import AdminDiagnostic from "./pages/admin/AdminDiagnostic";
 import AdminBuybacks from "./pages/admin/AdminBuybacks";
 import AdminBuybacksNew from "./pages/admin/AdminBuybacksNew";
 import ConditionQuestionsAdmin from "./pages/admin/ConditionQuestionsAdmin";
+import AdminInvoiceTemplates from "./pages/admin/AdminInvoiceTemplates";
 import RegionsManagement from "./pages/admin/RegionsManagement";
 import UserRoleManagement from "./pages/admin/UserRoleManagement";
 import RouteManagement from "./pages/admin/RouteManagement";
@@ -531,7 +532,7 @@ function App() {
                   <Route path="store-themes" element={<AdminDashboard />} />
                   <Route
                     path="invoice-templates"
-                    element={<AdminDashboard />}
+                    element={<AdminInvoiceTemplates />}
                   />
 
                   {/* User Management */}
