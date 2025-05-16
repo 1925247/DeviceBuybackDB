@@ -2,7 +2,8 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and, asc, desc } from "drizzle-orm";
+import { questionGroups, questions, answerChoices, productQuestionMappings } from "../shared/schema";
 import { 
   insertUserSchema, insertRouteRuleSchema, insertBuybackRequestSchema,
   type InsertUser, type InsertRouteRule, type InsertBuybackRequest,
@@ -929,7 +930,429 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Condition questions API endpoint
+  // Q&A Management System - Question Groups API Endpoints
+  app.get(apiRouter("/question-groups"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = req.query.device_type_id ? parseInt(req.query.device_type_id as string) : undefined;
+      const groups = await db.select().from(questionGroups)
+        .where(deviceTypeId ? eq(questionGroups.deviceTypeId, deviceTypeId) : undefined)
+        .orderBy(asc(questionGroups.name));
+      
+      res.json(groups);
+    } catch (error: any) {
+      console.error("Error fetching question groups:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch question groups" });
+    }
+  });
+  
+  app.get(apiRouter("/question-groups/:id"), async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const [group] = await db.select().from(questionGroups).where(eq(questionGroups.id, groupId));
+      
+      if (!group) {
+        return res.status(404).json({ message: "Question group not found" });
+      }
+      
+      // Get questions for this group
+      const groupQuestions = await db.select().from(questions)
+        .where(eq(questions.groupId, groupId))
+        .orderBy(asc(questions.order));
+      
+      // Get answer choices for each question
+      const enrichedQuestions = await Promise.all(
+        groupQuestions.map(async (question) => {
+          const choices = await db.select().from(answerChoices)
+            .where(eq(answerChoices.questionId, question.id))
+            .orderBy(asc(answerChoices.order));
+          
+          return {
+            ...question,
+            answerChoices: choices
+          };
+        })
+      );
+      
+      res.json({
+        ...group,
+        questions: enrichedQuestions
+      });
+    } catch (error: any) {
+      console.error("Error fetching question group:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch question group" });
+    }
+  });
+  
+  app.post(apiRouter("/question-groups"), async (req: Request, res: Response) => {
+    try {
+      const groupData = req.body;
+      
+      if (!groupData.name) {
+        return res.status(400).json({ message: "Group name is required" });
+      }
+      
+      if (!groupData.statement) {
+        return res.status(400).json({ message: "Group statement is required" });
+      }
+      
+      const [newGroup] = await db.insert(questionGroups)
+        .values({
+          name: groupData.name,
+          statement: groupData.statement,
+          deviceTypeId: groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
+          icon: groupData.icon,
+          active: groupData.active !== undefined ? groupData.active : true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      res.status(201).json(newGroup);
+    } catch (error: any) {
+      console.error("Error creating question group:", error);
+      res.status(500).json({ message: error.message || "Failed to create question group" });
+    }
+  });
+  
+  app.put(apiRouter("/question-groups/:id"), async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const groupData = req.body;
+      
+      // Check if the group is mapped to any products
+      const mappings = await db.select().from(productQuestionMappings)
+        .where(eq(productQuestionMappings.groupId, groupId));
+      
+      const [updatedGroup] = await db.update(questionGroups)
+        .set({
+          name: groupData.name,
+          statement: groupData.statement,
+          deviceTypeId: groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
+          icon: groupData.icon,
+          active: groupData.active,
+          updatedAt: new Date()
+        })
+        .where(eq(questionGroups.id, groupId))
+        .returning();
+      
+      if (!updatedGroup) {
+        return res.status(404).json({ message: "Question group not found" });
+      }
+      
+      res.json({
+        ...updatedGroup,
+        isMapped: mappings.length > 0
+      });
+    } catch (error: any) {
+      console.error("Error updating question group:", error);
+      res.status(500).json({ message: error.message || "Failed to update question group" });
+    }
+  });
+  
+  app.delete(apiRouter("/question-groups/:id"), async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      
+      // Check if the group is mapped to any products
+      const mappings = await db.select().from(productQuestionMappings)
+        .where(eq(productQuestionMappings.groupId, groupId));
+      
+      if (mappings.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete this question group as it is mapped to products",
+          mappings
+        });
+      }
+      
+      // Get questions for this group
+      const groupQuestions = await db.select().from(questions)
+        .where(eq(questions.groupId, groupId));
+      
+      // Delete all answer choices for questions in this group
+      for (const question of groupQuestions) {
+        await db.delete(answerChoices)
+          .where(eq(answerChoices.questionId, question.id));
+      }
+      
+      // Delete all questions in this group
+      await db.delete(questions)
+        .where(eq(questions.groupId, groupId));
+      
+      // Delete the group
+      const result = await db.delete(questionGroups)
+        .where(eq(questionGroups.id, groupId))
+        .returning();
+      
+      if (!result.length) {
+        return res.status(404).json({ message: "Question group not found" });
+      }
+      
+      res.json({ message: "Question group deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting question group:", error);
+      res.status(500).json({ message: error.message || "Failed to delete question group" });
+    }
+  });
+  
+  // Questions API Endpoints
+  app.get(apiRouter("/questions"), async (req: Request, res: Response) => {
+    try {
+      const groupId = req.query.group_id ? parseInt(req.query.group_id as string) : undefined;
+      
+      const allQuestions = await db.select().from(questions)
+        .where(groupId ? eq(questions.groupId, groupId) : undefined)
+        .orderBy(asc(questions.order));
+      
+      res.json(allQuestions);
+    } catch (error: any) {
+      console.error("Error fetching questions:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch questions" });
+    }
+  });
+  
+  app.get(apiRouter("/questions/:id"), async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      const [question] = await db.select().from(questions).where(eq(questions.id, questionId));
+      
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      const choices = await db.select().from(answerChoices)
+        .where(eq(answerChoices.questionId, questionId))
+        .orderBy(asc(answerChoices.order));
+      
+      res.json({
+        ...question,
+        answerChoices: choices
+      });
+    } catch (error: any) {
+      console.error("Error fetching question:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch question" });
+    }
+  });
+  
+  app.post(apiRouter("/questions"), async (req: Request, res: Response) => {
+    try {
+      const questionData = req.body;
+      
+      if (!questionData.questionText) {
+        return res.status(400).json({ message: "Question text is required" });
+      }
+      
+      if (!questionData.groupId) {
+        return res.status(400).json({ message: "Question group is required" });
+      }
+      
+      const [newQuestion] = await db.insert(questions)
+        .values({
+          questionText: questionData.questionText,
+          questionType: questionData.questionType || "single_choice",
+          groupId: parseInt(questionData.groupId),
+          order: questionData.order || 0,
+          active: questionData.active !== undefined ? questionData.active : true,
+          tooltip: questionData.tooltip,
+          required: questionData.required !== undefined ? questionData.required : true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      // Create answer choices if provided
+      if (questionData.answerChoices && Array.isArray(questionData.answerChoices) && questionData.answerChoices.length > 0) {
+        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => ({
+          questionId: newQuestion.id,
+          answerText: choice.answerText,
+          icon: choice.icon,
+          weightage: choice.weightage || 0,
+          repairCost: choice.repairCost || 0,
+          isDefault: choice.isDefault || false,
+          order: index,
+          followUpAction: choice.followUpAction || null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        const choices = await db.insert(answerChoices).values(choiceValues).returning();
+        
+        res.status(201).json({
+          ...newQuestion,
+          answerChoices: choices
+        });
+      } else {
+        res.status(201).json(newQuestion);
+      }
+    } catch (error: any) {
+      console.error("Error creating question:", error);
+      res.status(500).json({ message: error.message || "Failed to create question" });
+    }
+  });
+  
+  app.put(apiRouter("/questions/:id"), async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      const questionData = req.body;
+      
+      // Update the question
+      const [updatedQuestion] = await db.update(questions)
+        .set({
+          questionText: questionData.questionText,
+          questionType: questionData.questionType,
+          groupId: parseInt(questionData.groupId),
+          order: questionData.order,
+          active: questionData.active,
+          tooltip: questionData.tooltip,
+          required: questionData.required,
+          updatedAt: new Date()
+        })
+        .where(eq(questions.id, questionId))
+        .returning();
+      
+      if (!updatedQuestion) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      // Handle answer choices updates if provided
+      if (questionData.answerChoices && Array.isArray(questionData.answerChoices)) {
+        // Delete existing choices
+        await db.delete(answerChoices)
+          .where(eq(answerChoices.questionId, questionId));
+        
+        // Create new choices
+        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => ({
+          questionId: questionId,
+          answerText: choice.answerText,
+          icon: choice.icon,
+          weightage: choice.weightage || 0,
+          repairCost: choice.repairCost || 0,
+          isDefault: choice.isDefault || false,
+          order: index,
+          followUpAction: choice.followUpAction || null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        if (choiceValues.length > 0) {
+          const choices = await db.insert(answerChoices).values(choiceValues).returning();
+          
+          res.json({
+            ...updatedQuestion,
+            answerChoices: choices
+          });
+        } else {
+          res.json(updatedQuestion);
+        }
+      } else {
+        res.json(updatedQuestion);
+      }
+    } catch (error: any) {
+      console.error("Error updating question:", error);
+      res.status(500).json({ message: error.message || "Failed to update question" });
+    }
+  });
+  
+  app.delete(apiRouter("/questions/:id"), async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      
+      // Delete all answer choices for this question
+      await db.delete(answerChoices)
+        .where(eq(answerChoices.questionId, questionId));
+      
+      // Delete the question
+      const result = await db.delete(questions)
+        .where(eq(questions.id, questionId))
+        .returning();
+      
+      if (!result.length) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      res.json({ message: "Question deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting question:", error);
+      res.status(500).json({ message: error.message || "Failed to delete question" });
+    }
+  });
+  
+  // Product-Question Mappings API Endpoints
+  app.get(apiRouter("/product-question-mappings"), async (req: Request, res: Response) => {
+    try {
+      const productId = req.query.product_id ? parseInt(req.query.product_id as string) : undefined;
+      
+      const mappings = await db.select().from(productQuestionMappings)
+        .where(productId ? eq(productQuestionMappings.productId, productId) : undefined);
+      
+      // Enrich with group information
+      const enrichedMappings = await Promise.all(
+        mappings.map(async (mapping) => {
+          const [group] = await db.select().from(questionGroups)
+            .where(eq(questionGroups.id, mapping.groupId));
+          
+          return {
+            ...mapping,
+            groupName: group?.name || 'Unknown Group',
+            groupIcon: group?.icon || null
+          };
+        })
+      );
+      
+      res.json(enrichedMappings);
+    } catch (error: any) {
+      console.error("Error fetching product-question mappings:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch product-question mappings" });
+    }
+  });
+  
+  app.post(apiRouter("/product-question-mappings"), async (req: Request, res: Response) => {
+    try {
+      const mappingData = req.body;
+      
+      if (!mappingData.productId) {
+        return res.status(400).json({ message: "Product ID is required" });
+      }
+      
+      if (!mappingData.actionType) {
+        return res.status(400).json({ message: "Action type is required" });
+      }
+      
+      if (!mappingData.groupId) {
+        return res.status(400).json({ message: "Question group is required" });
+      }
+      
+      // Check if mapping already exists
+      const existingMapping = await db.select().from(productQuestionMappings)
+        .where(and(
+          eq(productQuestionMappings.productId, parseInt(mappingData.productId)),
+          eq(productQuestionMappings.actionType, mappingData.actionType),
+          eq(productQuestionMappings.groupId, parseInt(mappingData.groupId))
+        ));
+      
+      if (existingMapping.length > 0) {
+        return res.status(400).json({ message: "This product-question mapping already exists" });
+      }
+      
+      const [newMapping] = await db.insert(productQuestionMappings)
+        .values({
+          productId: parseInt(mappingData.productId),
+          actionType: mappingData.actionType,
+          groupId: parseInt(mappingData.groupId),
+          active: mappingData.active !== undefined ? mappingData.active : true,
+          overrides: mappingData.overrides || null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      res.status(201).json(newMapping);
+    } catch (error: any) {
+      console.error("Error creating product-question mapping:", error);
+      res.status(500).json({ message: error.message || "Failed to create product-question mapping" });
+    }
+  });
+  
+  // Legacy condition questions API endpoint
   // Define interfaces for condition questions and options
   interface ConditionOption {
     id: number;
