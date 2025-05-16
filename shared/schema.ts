@@ -237,6 +237,8 @@ export const deviceTypes = pgTable("device_types", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+
+
 export const insertDeviceTypeSchema = createInsertSchema(deviceTypes);
 export type InsertDeviceType = z.infer<typeof insertDeviceTypeSchema>;
 export type DeviceType = typeof deviceTypes.$inferSelect;
