@@ -42,6 +42,13 @@ export const questionTypeEnum = pgEnum("question_type", [
   "text_input",
 ]);
 
+export const productStatusEnum = pgEnum("product_status", [
+  "active",
+  "inactive",
+  "draft",
+  "archived",
+]);
+
 // Sessions for auth
 export const sessions = pgTable(
   "sessions",
@@ -492,6 +499,32 @@ export const answerChoices = pgTable("answer_choices", {
   followUpAction: jsonb("follow_up_action"), // For conditional logic
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Products table
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  slug: text("slug").unique().notNull(),
+  sku: text("sku").unique(),
+  price: real("price"),
+  compareAtPrice: real("compare_at_price"),
+  cost: real("cost"),
+  device_model_id: integer("device_model_id").references(() => deviceModels.id),
+  condition: text("condition"),
+  status: productStatusEnum("status").default("active"),
+  featured: boolean("featured").default(false),
+  inventoryCount: integer("inventory_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+export const insertProductSchema = createInsertSchema(products, {
+  title: (schema) => schema.title.min(1),
+  slug: (schema) => schema.slug.min(1),
 });
 
 // Product-Question mappings
