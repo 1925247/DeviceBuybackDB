@@ -68,6 +68,7 @@ import UserRoleManagement from "./pages/admin/UserRoleManagement";
 import RouteManagement from "./pages/admin/RouteManagement";
 import ManageRouteRules from "./pages/admin/ManageRouteRules";
 import PartnersManagement from "./pages/admin/PartnersManagement";
+import PartnerStaffManagement from "./pages/admin/PartnerStaffManagement";
 import PartnerWallets from "./pages/admin/PartnerWallets";
 import PinCodeAssignment from "./pages/admin/PinCodeAssignment";
 import PartnerOnboarding from "./pages/admin/PartnerOnboarding";
@@ -517,7 +518,7 @@ function App() {
                   {/* Region & Partner Management */}
                   <Route path="regions" element={<RegionsManagement />} />
                   <Route path="partners" element={<PartnersManagement />} />
-                  <Route path="partner-staff" element={<PartnersManagement />} />
+                  <Route path="partner-staff" element={<PartnerStaffManagement />} />
                   <Route path="pin-codes" element={<PinCodeAssignment />} />
                   <Route path="partners-onboarding" element={<PartnerOnboarding />} />
                   <Route path="partner-wallets" element={<PartnerWallets />} />
