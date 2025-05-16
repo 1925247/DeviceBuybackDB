@@ -64,6 +64,7 @@ const AdminCQS = lazy(() => import("./pages/admin/AdminCQS"));
 const AdminDiagnostic = lazy(() => import("./pages/admin/AdminDiagnostic"));
 const AdminBuybacks = lazy(() => import("./pages/admin/AdminBuybacks"));
 const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
+const AdminFeatureToggles = lazy(() => import("./pages/admin/AdminFeatureToggles"));
 const ConditionQuestionsAdmin = lazy(() => import("./pages/admin/ConditionQuestionsAdmin"));
 const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
 const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
@@ -735,6 +736,11 @@ function App() {
                   <Route path="settings" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminSettings />
+                    </Suspense>
+                  } />
+                  <Route path="feature-toggles" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminFeatureToggles />
                     </Suspense>
                   } />
                   <Route path="config" element={
