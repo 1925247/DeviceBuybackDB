@@ -1532,6 +1532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post(apiRouter("/product-question-mappings"), async (req: Request, res: Response) => {
     try {
+      console.log("Received mapping data:", req.body);
       const mappingData = req.body;
       
       if (!mappingData.productId) {
@@ -1542,60 +1543,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Question Group ID is required" });
       }
       
-      // Get connection to database using the imported pg package
-      const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+      console.log("Creating mapping between product ID:", mappingData.productId, "and group ID:", mappingData.groupId);
       
+      // Get connection to database using the pool from db.ts to ensure proper connection
       try {
-        await client.connect();
+        console.log("Executing direct SQL query to create mapping");
         
-        // Check if mapping already exists with direct SQL
-        const checkExisting = await client.query(`
-          SELECT * FROM product_question_mappings 
-          WHERE product_id = $1 AND group_id = $2
-        `, [parseInt(mappingData.productId), parseInt(mappingData.groupId)]);
+        // Check if the database has the columns we expect
+        const checkTableQuery = await pool.query(`
+          SELECT column_name, data_type 
+          FROM information_schema.columns 
+          WHERE table_name = 'product_question_mappings'
+        `);
+        
+        console.log("Table columns:", checkTableQuery.rows);
+        
+        // Check if mapping already exists using prepared statement
+        const checkExisting = await pool.query(
+          'SELECT * FROM product_question_mappings WHERE product_id = $1 AND group_id = $2',
+          [parseInt(mappingData.productId), parseInt(mappingData.groupId)]
+        );
         
         if (checkExisting.rows.length > 0) {
-          await client.end();
+          console.log("Mapping already exists");
           return res.status(400).json({ message: "This product-question group mapping already exists" });
         }
         
         // Get action type from request if available
         const actionType = mappingData.actionType || null;
+        console.log("Using action type:", actionType);
         
-        // Insert new mapping with direct SQL
-        const result = await client.query(`
-          INSERT INTO product_question_mappings
-            (product_id, group_id, action_type, required, impact_multiplier, created_at, updated_at)
-          VALUES
-            ($1, $2, $3, $4, $5, $6, $7)
-          RETURNING *
-        `, [
-          parseInt(mappingData.productId),
-          parseInt(mappingData.groupId),
-          actionType,
-          true,
-          1.0,
-          new Date(),
-          new Date()
-        ]);
+        // Insert new mapping with prepared statement
+        const result = await pool.query(
+          `INSERT INTO product_question_mappings
+              (product_id, group_id, action_type, required, impact_multiplier, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [
+            parseInt(mappingData.productId),
+            parseInt(mappingData.groupId),
+            actionType,
+            true,
+            1.0,
+            new Date(),
+            new Date()
+          ]
+        );
         
-        const newMapping = result.rows[0];
-        await client.end();
+        console.log("Mapping created successfully:", result.rows[0]);
+        res.status(201).json(result.rows[0]);
+      } catch (error: any) {
+        console.error("Database error details:", error);
         
-        res.status(201).json(newMapping);
-      } catch (error) {
-        if (client) {
-          try {
-            await client.end();
-          } catch (closeError) {
-            console.error("Error closing database connection:", closeError);
-          }
+        // Check if error relates to missing columns or constraints
+        if (error.code === '42703') {
+          console.error("Column does not exist in table. Available columns listed above.");
+        } else if (error.code === '23503') {
+          console.error("Foreign key constraint failed. Check that product_id and group_id exist in their respective tables.");
         }
+        
         throw error;
       }
     } catch (error: any) {
       console.error("Error creating product-question mapping:", error);
-      res.status(500).json({ message: error.message || "Failed to create product-question mapping" });
+      res.status(500).json({ 
+        message: "Failed to create product-question mapping", 
+        error: error.message,
+        code: error.code
+      });
     }
   });
   
