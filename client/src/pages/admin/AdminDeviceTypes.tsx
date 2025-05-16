@@ -141,7 +141,7 @@ const AdminDeviceTypes: React.FC = () => {
       });
     },
   });
-
+  
   const updateDeviceTypeMutation = useMutation({
     mutationFn: async (data: typeof formData & { id: number }) => {
       return apiRequest('PUT', `/api/device-types/${data.id}`, data);
@@ -163,7 +163,7 @@ const AdminDeviceTypes: React.FC = () => {
       });
     },
   });
-
+  
   const deleteDeviceTypeMutation = useMutation({
     mutationFn: async (id: number) => {
       return apiRequest('DELETE', `/api/device-types/${id}`);

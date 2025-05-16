@@ -680,7 +680,7 @@ export class DatabaseStorage implements IStorage {
       const [modelCount] = await db
         .select({ count: sql`count(*)` })
         .from(deviceModels)
-        .where(eq(deviceModels.device_type_id, id));
+        .where(eq(deviceModels.deviceTypeId, id));
       
       if (Number(modelCount?.count || 0) > 0) {
         return { 
@@ -689,10 +689,18 @@ export class DatabaseStorage implements IStorage {
         };
       }
       
-      const result = await db.delete(deviceTypes).where(eq(deviceTypes.id, id));
-      if (!result.length) {
-        return { success: false, error: 'Device type not found' };
+      // Check if there are any brand relationships for this device type
+      try {
+        // First, remove any brand-device type associations
+        await db.delete(brandDeviceTypes)
+          .where(eq(brandDeviceTypes.device_type_id, id));
+      } catch (err) {
+        console.error('Error deleting brand-device type associations:', err);
+        // Continue with delete attempt even if this fails
       }
+      
+      // Now delete the device type
+      await db.delete(deviceTypes).where(eq(deviceTypes.id, id));
       
       return { success: true };
     } catch (error) {
