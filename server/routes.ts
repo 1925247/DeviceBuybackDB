@@ -1542,11 +1542,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Question Group ID is required" });
       }
       
-      // Get connection to database
+      // Get connection to database using the imported pg package
       const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
-      await client.connect();
       
       try {
+        await client.connect();
+        
         // Check if mapping already exists with direct SQL
         const checkExisting = await client.query(`
           SELECT * FROM product_question_mappings 
@@ -1583,7 +1584,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.status(201).json(newMapping);
       } catch (error) {
-        await client.end();
+        if (client) {
+          try {
+            await client.end();
+          } catch (closeError) {
+            console.error("Error closing database connection:", closeError);
+          }
+        }
         throw error;
       }
     } catch (error: any) {
