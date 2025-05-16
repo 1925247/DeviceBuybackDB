@@ -15,6 +15,13 @@ import {
   brandDeviceTypes, type BrandDeviceType, type InsertBrandDeviceType,
   valuations, type Valuation, type InsertValuation,
   featureToggles, type FeatureToggle, type InsertFeatureToggle,
+  // Question Management
+  questionGroups, type QuestionGroup, type InsertQuestionGroup,
+  questions, type Question, type InsertQuestion,
+  answerChoices, type AnswerChoice, type InsertAnswerChoice,
+  productQuestionMappings, type ProductQuestionMapping, type InsertProductQuestionMapping,
+  // Legacy condition questions
+  conditionQuestions, conditionAnswers,
   // Indian database tables
   indianStates, type IndianState, type InsertIndianState,
   indianCities, type IndianCity, type InsertIndianCity,

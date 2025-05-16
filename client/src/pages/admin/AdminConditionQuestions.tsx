@@ -133,7 +133,7 @@ export default function AdminConditionQuestions() {
         <TabsList className="mb-8 flex-wrap">
           <TabsTrigger value="all">All Groups</TabsTrigger>
           <TabsTrigger value="general">General Questions</TabsTrigger>
-          {deviceTypes?.map((deviceType) => (
+          {deviceTypes && Array.isArray(deviceTypes) && deviceTypes.map((deviceType) => (
             <TabsTrigger key={deviceType.id} value={deviceType.id.toString()}>
               {deviceType.name}
             </TabsTrigger>
