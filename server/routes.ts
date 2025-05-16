@@ -22,6 +22,7 @@ import indianDataRoutes from "./api/indianData";
 import { featureToggleRouter } from "./api/featureToggleApi";
 import deviceModelsRoutes from "./api/deviceModels";
 import brandsRoutes from "./api/brands";
+import deviceTypesRoutes from "./api/deviceTypes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
@@ -32,6 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/indian', indianDataRoutes);
   app.use('/api/device-models', deviceModelsRoutes);
   app.use('/api/brands', brandsRoutes);
+  app.use('/api/device-types', deviceTypesRoutes);
   
   // Feature toggles API routes
   try {
