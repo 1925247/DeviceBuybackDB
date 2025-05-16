@@ -1,7 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { sql, eq, and, asc, desc } from "drizzle-orm";
 import { questionGroups, questions, answerChoices, productQuestionMappings } from "../shared/schema";
 import { 
@@ -1023,31 +1023,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mappings = await db.select().from(productQuestionMappings)
         .where(eq(productQuestionMappings.groupId, groupId));
       
-      // Using raw SQL with parameterized queries for better safety
-      const updateQuery = `
-        UPDATE question_groups 
-        SET name = $1, 
-            statement = $2, 
-            device_type_id = $3,
-            icon = $4,
-            active = $5,
-            updated_at = $6
-        WHERE id = $7
-        RETURNING *
-      `;
-      
-      const params = [
-        groupData.name, 
-        groupData.statement, 
-        groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
-        groupData.icon || null,
-        groupData.active === undefined ? true : !!groupData.active,
-        new Date(),
-        groupId
-      ];
-      
-      const result = await pool.query(updateQuery, params);
-      const updatedGroup = result.rows && result.rows.length > 0 ? result.rows[0] : null;
+      // Update the question group using drizzle ORM to avoid SQL issues
+      const [updatedGroup] = await db.update(questionGroups)
+        .set({
+          name: groupData.name,
+          statement: groupData.statement,
+          deviceTypeId: groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
+          icon: groupData.icon || null,
+          updatedAt: new Date()
+        })
+        .where(eq(questionGroups.id, groupId))
+        .returning();
       
       if (!updatedGroup) {
         return res.status(404).json({ message: "Question group not found" });
@@ -1068,31 +1054,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupId = parseInt(req.params.id);
       console.log(`Attempting to delete question group with ID: ${groupId}`);
       
-      // Simple direct SQL approach to avoid any potential syntax issues
+      // First check if the group is mapped to any products
+      const mappings = await db.select().from(productQuestionMappings)
+        .where(eq(productQuestionMappings.groupId, groupId));
       
-      // 1. Get all related questions first
-      const getQuestionsQuery = `SELECT id FROM questions WHERE group_id = $1`;
-      const questionsResult = await pool.query(getQuestionsQuery, [groupId]);
-      const questions = questionsResult.rows || [];
-      console.log(`Found ${questions.length} questions to delete for group ID: ${groupId}`);
+      if (mappings.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete question group because it is mapped to one or more products" 
+        });
+      }
       
-      // 2. Delete answer choices for each question
-      for (const question of questions) {
-        const deleteChoicesQuery = `DELETE FROM answer_choices WHERE question_id = $1`;
-        await pool.query(deleteChoicesQuery, [question.id]);
+      // Get all questions in this group using ORM
+      const groupQuestions = await db.select().from(questions)
+        .where(eq(questions.groupId, groupId));
+      
+      console.log(`Found ${groupQuestions.length} questions to delete for group ID: ${groupId}`);
+      
+      // Delete all answer choices for all questions in this group
+      for (const question of groupQuestions) {
+        await db.delete(answerChoices)
+          .where(eq(answerChoices.questionId, question.id));
         console.log(`Deleted answer choices for question ID: ${question.id}`);
       }
       
-      // 3. Delete all questions for this group
-      const deleteQuestionsQuery = `DELETE FROM questions WHERE group_id = $1`;
-      await pool.query(deleteQuestionsQuery, [groupId]);
+      // Delete all questions in this group
+      await db.delete(questions)
+        .where(eq(questions.groupId, groupId));
       console.log(`Deleted all questions for group ID: ${groupId}`);
       
-      // 4. Delete the question group itself
-      const deleteGroupQuery = `DELETE FROM question_groups WHERE id = $1`;
-      const result = await pool.query(deleteGroupQuery, [groupId]);
+      // Delete the question group itself
+      const result = await db.delete(questionGroups)
+        .where(eq(questionGroups.id, groupId))
+        .returning();
       
-      if (result.rowCount > 0) {
+      if (result && result.length > 0) {
         console.log(`Successfully deleted question group with ID: ${groupId}`);
         res.json({ message: "Question group deleted successfully" });
       } else {
