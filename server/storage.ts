@@ -2020,7 +2020,7 @@ export class DatabaseStorage implements IStorage {
         .update(partnerWallets)
         .set({
           balance: sql`${partnerWallets.balance} + ${amount}`,
-          updated_at: new Date(),
+          updatedAt: new Date(),
         })
         .where(eq(partnerWallets.id, wallet.id))
         .returning();
@@ -2029,11 +2029,11 @@ export class DatabaseStorage implements IStorage {
       const [transaction] = await tx
         .insert(walletTransactions)
         .values({
-          wallet_id: wallet.id,
+          walletId: wallet.id,
           amount: amount.toString(),
           type: 'credit',
           description,
-          reference_id: reference || null,
+          referenceId: reference || null,
           status: 'completed',
         })
         .returning();
@@ -2276,6 +2276,419 @@ export class DatabaseStorage implements IStorage {
     });
     
     return result;
+  }
+
+  // Indian States methods
+  async getIndianStates(): Promise<IndianState[]> {
+    try {
+      return await db.select().from(indianStates).orderBy(indianStates.name);
+    } catch (error) {
+      console.error("Error fetching Indian states:", error);
+      return [];
+    }
+  }
+
+  async getIndianStateByCode(code: string): Promise<IndianState | undefined> {
+    try {
+      const [state] = await db
+        .select()
+        .from(indianStates)
+        .where(eq(indianStates.code, code));
+      return state;
+    } catch (error) {
+      console.error("Error fetching Indian state by code:", error);
+      return undefined;
+    }
+  }
+
+  async createIndianState(state: InsertIndianState): Promise<IndianState> {
+    try {
+      const [newState] = await db
+        .insert(indianStates)
+        .values(state)
+        .returning();
+      return newState;
+    } catch (error) {
+      console.error("Error creating Indian state:", error);
+      throw error;
+    }
+  }
+
+  async updateIndianState(code: string, state: Partial<InsertIndianState>): Promise<IndianState | undefined> {
+    try {
+      const [updatedState] = await db
+        .update(indianStates)
+        .set({
+          ...state,
+          updatedAt: new Date()
+        })
+        .where(eq(indianStates.code, code))
+        .returning();
+      return updatedState;
+    } catch (error) {
+      console.error("Error updating Indian state:", error);
+      return undefined;
+    }
+  }
+  
+  // Indian Cities methods
+  async getIndianCities(stateCode?: string): Promise<IndianCity[]> {
+    try {
+      if (stateCode) {
+        return await db
+          .select()
+          .from(indianCities)
+          .where(eq(indianCities.stateCode, stateCode))
+          .orderBy(indianCities.name);
+      }
+      return await db.select().from(indianCities).orderBy(indianCities.name);
+    } catch (error) {
+      console.error("Error fetching Indian cities:", error);
+      return [];
+    }
+  }
+
+  async getIndianCity(id: number): Promise<IndianCity | undefined> {
+    try {
+      const [city] = await db
+        .select()
+        .from(indianCities)
+        .where(eq(indianCities.id, id));
+      return city;
+    } catch (error) {
+      console.error("Error fetching Indian city by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createIndianCity(city: InsertIndianCity): Promise<IndianCity> {
+    try {
+      const [newCity] = await db
+        .insert(indianCities)
+        .values(city)
+        .returning();
+      return newCity;
+    } catch (error) {
+      console.error("Error creating Indian city:", error);
+      throw error;
+    }
+  }
+
+  async updateIndianCity(id: number, city: Partial<InsertIndianCity>): Promise<IndianCity | undefined> {
+    try {
+      const [updatedCity] = await db
+        .update(indianCities)
+        .set({
+          ...city,
+          updatedAt: new Date()
+        })
+        .where(eq(indianCities.id, id))
+        .returning();
+      return updatedCity;
+    } catch (error) {
+      console.error("Error updating Indian city:", error);
+      return undefined;
+    }
+  }
+
+  // Indian Postal Codes methods
+  async getIndianPostalCodes(stateCode?: string, cityId?: number): Promise<IndianPostalCode[]> {
+    try {
+      let query = db.select().from(indianPostalCodes);
+      
+      if (stateCode) {
+        query = query.where(eq(indianPostalCodes.stateCode, stateCode));
+      }
+      
+      if (cityId) {
+        query = query.where(eq(indianPostalCodes.cityId, cityId));
+      }
+      
+      return await query.orderBy(indianPostalCodes.pincode);
+    } catch (error) {
+      console.error("Error fetching Indian postal codes:", error);
+      return [];
+    }
+  }
+
+  async getIndianPostalCodeByCode(code: string): Promise<IndianPostalCode | undefined> {
+    try {
+      const [postalCode] = await db
+        .select()
+        .from(indianPostalCodes)
+        .where(eq(indianPostalCodes.pincode, code));
+      return postalCode;
+    } catch (error) {
+      console.error("Error fetching Indian postal code by code:", error);
+      return undefined;
+    }
+  }
+
+  async createIndianPostalCode(postalCode: InsertIndianPostalCode): Promise<IndianPostalCode> {
+    try {
+      const [newPostalCode] = await db
+        .insert(indianPostalCodes)
+        .values(postalCode)
+        .returning();
+      return newPostalCode;
+    } catch (error) {
+      console.error("Error creating Indian postal code:", error);
+      throw error;
+    }
+  }
+
+  async updateIndianPostalCode(code: string, postalCode: Partial<InsertIndianPostalCode>): Promise<IndianPostalCode | undefined> {
+    try {
+      const [updatedPostalCode] = await db
+        .update(indianPostalCodes)
+        .set({
+          ...postalCode,
+          updatedAt: new Date()
+        })
+        .where(eq(indianPostalCodes.pincode, code))
+        .returning();
+      return updatedPostalCode;
+    } catch (error) {
+      console.error("Error updating Indian postal code:", error);
+      return undefined;
+    }
+  }
+
+  // GST Configuration methods
+  async getGstConfigurations(): Promise<GstConfiguration[]> {
+    try {
+      return await db.select().from(gstConfiguration).orderBy(gstConfiguration.category);
+    } catch (error) {
+      console.error("Error fetching GST configurations:", error);
+      return [];
+    }
+  }
+
+  async getGstConfigurationById(id: number): Promise<GstConfiguration | undefined> {
+    try {
+      const [config] = await db
+        .select()
+        .from(gstConfiguration)
+        .where(eq(gstConfiguration.id, id));
+      return config;
+    } catch (error) {
+      console.error("Error fetching GST configuration by ID:", error);
+      return undefined;
+    }
+  }
+
+  async getGstConfigurationByHsnCode(hsnCode: string): Promise<GstConfiguration | undefined> {
+    try {
+      const [config] = await db
+        .select()
+        .from(gstConfiguration)
+        .where(eq(gstConfiguration.hsnCode, hsnCode));
+      return config;
+    } catch (error) {
+      console.error("Error fetching GST configuration by HSN code:", error);
+      return undefined;
+    }
+  }
+
+  async createGstConfiguration(config: InsertGstConfiguration): Promise<GstConfiguration> {
+    try {
+      const [newConfig] = await db
+        .insert(gstConfiguration)
+        .values(config)
+        .returning();
+      return newConfig;
+    } catch (error) {
+      console.error("Error creating GST configuration:", error);
+      throw error;
+    }
+  }
+
+  async updateGstConfiguration(id: number, config: Partial<InsertGstConfiguration>): Promise<GstConfiguration | undefined> {
+    try {
+      const [updatedConfig] = await db
+        .update(gstConfiguration)
+        .set({
+          ...config,
+          updatedAt: new Date()
+        })
+        .where(eq(gstConfiguration.id, id))
+        .returning();
+      return updatedConfig;
+    } catch (error) {
+      console.error("Error updating GST configuration:", error);
+      return undefined;
+    }
+  }
+
+  // KYC Document Type methods
+  async getKycDocumentTypes(): Promise<KycDocumentType[]> {
+    try {
+      return await db.select().from(kycDocumentTypes);
+    } catch (error) {
+      console.error("Error fetching KYC document types:", error);
+      return [];
+    }
+  }
+
+  async getKycDocumentTypeByCode(code: string): Promise<KycDocumentType | undefined> {
+    try {
+      const [docType] = await db
+        .select()
+        .from(kycDocumentTypes)
+        .where(eq(kycDocumentTypes.code, code));
+      return docType;
+    } catch (error) {
+      console.error("Error fetching KYC document type by code:", error);
+      return undefined;
+    }
+  }
+
+  async createKycDocumentType(docType: InsertKycDocumentType): Promise<KycDocumentType> {
+    try {
+      const [newDocType] = await db
+        .insert(kycDocumentTypes)
+        .values(docType)
+        .returning();
+      return newDocType;
+    } catch (error) {
+      console.error("Error creating KYC document type:", error);
+      throw error;
+    }
+  }
+
+  async updateKycDocumentType(code: string, docType: Partial<InsertKycDocumentType>): Promise<KycDocumentType | undefined> {
+    try {
+      const [updatedDocType] = await db
+        .update(kycDocumentTypes)
+        .set({
+          ...docType,
+          updatedAt: new Date()
+        })
+        .where(eq(kycDocumentTypes.code, code))
+        .returning();
+      return updatedDocType;
+    } catch (error) {
+      console.error("Error updating KYC document type:", error);
+      return undefined;
+    }
+  }
+
+  // KYC Document methods
+  async getKycDocuments(partnerId?: number, userId?: number): Promise<KycDocument[]> {
+    try {
+      let query = db.select().from(kycDocuments);
+      
+      if (partnerId) {
+        query = query.where(eq(kycDocuments.partnerId, partnerId));
+      }
+      
+      if (userId) {
+        query = query.where(eq(kycDocuments.userId, userId));
+      }
+      
+      return await query.orderBy(kycDocuments.createdAt);
+    } catch (error) {
+      console.error("Error fetching KYC documents:", error);
+      return [];
+    }
+  }
+
+  async getKycDocument(id: number): Promise<KycDocument | undefined> {
+    try {
+      const [document] = await db
+        .select()
+        .from(kycDocuments)
+        .where(eq(kycDocuments.id, id));
+      return document;
+    } catch (error) {
+      console.error("Error fetching KYC document by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createKycDocument(document: InsertKycDocument): Promise<KycDocument> {
+    try {
+      const [newDocument] = await db
+        .insert(kycDocuments)
+        .values(document)
+        .returning();
+      return newDocument;
+    } catch (error) {
+      console.error("Error creating KYC document:", error);
+      throw error;
+    }
+  }
+
+  async updateKycDocument(id: number, document: Partial<InsertKycDocument>): Promise<KycDocument | undefined> {
+    try {
+      const [updatedDocument] = await db
+        .update(kycDocuments)
+        .set({
+          ...document,
+          updatedAt: new Date()
+        })
+        .where(eq(kycDocuments.id, id))
+        .returning();
+      return updatedDocument;
+    } catch (error) {
+      console.error("Error updating KYC document:", error);
+      return undefined;
+    }
+  }
+
+  // Partner Service Area methods
+  async getPartnerServiceAreas(partnerId: number): Promise<PartnerServiceArea[]> {
+    try {
+      return await db
+        .select()
+        .from(partnerServiceAreas)
+        .where(eq(partnerServiceAreas.partnerId, partnerId));
+    } catch (error) {
+      console.error("Error fetching partner service areas:", error);
+      return [];
+    }
+  }
+
+  async createPartnerServiceArea(serviceArea: InsertPartnerServiceArea): Promise<PartnerServiceArea> {
+    try {
+      const [newServiceArea] = await db
+        .insert(partnerServiceAreas)
+        .values(serviceArea)
+        .returning();
+      return newServiceArea;
+    } catch (error) {
+      console.error("Error creating partner service area:", error);
+      throw error;
+    }
+  }
+
+  async updatePartnerServiceArea(id: number, serviceArea: Partial<InsertPartnerServiceArea>): Promise<PartnerServiceArea | undefined> {
+    try {
+      const [updatedServiceArea] = await db
+        .update(partnerServiceAreas)
+        .set({
+          ...serviceArea,
+          updatedAt: new Date()
+        })
+        .where(eq(partnerServiceAreas.id, id))
+        .returning();
+      return updatedServiceArea;
+    } catch (error) {
+      console.error("Error updating partner service area:", error);
+      return undefined;
+    }
+  }
+
+  async deletePartnerServiceArea(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(partnerServiceAreas)
+        .where(eq(partnerServiceAreas.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting partner service area:", error);
+      return false;
+    }
   }
 }
 
