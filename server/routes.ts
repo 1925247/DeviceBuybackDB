@@ -1164,21 +1164,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create answer choices if provided
       if (questionData.answerChoices && Array.isArray(questionData.answerChoices) && questionData.answerChoices.length > 0) {
-        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => ({
-          questionId: newQuestion.id,
-          text: choice.answerText, // For backward compatibility with older schema
-          answerText: choice.answerText,
-          value: choice.value || String(index),
-          icon: choice.icon || null,
-          impact: choice.weightage || 0, // For backward compatibility with older schema
-          weightage: choice.weightage || 0,
-          repairCost: choice.repairCost || 0,
-          isDefault: choice.isDefault || false,
-          order: index,
-          followUpAction: choice.followUpAction || null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }));
+        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => {
+          // Ensure we have a value for the required 'text' column
+          const answerTextValue = choice.answerText || `Option ${index + 1}`;
+          
+          return {
+            questionId: newQuestion.id,
+            text: answerTextValue, // Required field
+            answerText: answerTextValue, // Mirror the value
+            value: choice.value || String(index),
+            icon: choice.icon || null,
+            impact: choice.weightage || 0, // For backward compatibility with older schema
+            weightage: choice.weightage || 0,
+            repairCost: choice.repairCost || 0,
+            isDefault: choice.isDefault || false,
+            order: index,
+            followUpAction: choice.followUpAction || null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        });
         
         const choices = await db.insert(answerChoices).values(choiceValues).returning();
         
