@@ -393,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(apiRouter("/partners/:partnerId/wallet/add-funds"), async (req: Request, res: Response) => {
     try {
       const partnerId = parseInt(req.params.partnerId);
-      const { amount, description, reference } = req.body;
+      const { amount, description, reference, paymentMethod, transactionId } = req.body;
       
       if (!amount || !description) {
         return res.status(400).json({ message: "Amount and description are required" });
@@ -403,7 +403,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partnerId,
         parseFloat(amount),
         description,
-        reference
+        reference,
+        paymentMethod || 'online',
+        transactionId
       );
       
       res.json({

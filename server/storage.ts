@@ -2009,7 +2009,7 @@ export class DatabaseStorage implements IStorage {
     return updatedWallet;
   }
 
-  async addFundsToWallet(partnerId: number, amount: number, description: string, reference?: string): Promise<WalletTransaction> {
+  async addFundsToWallet(partnerId: number, amount: number, description: string, reference?: string, paymentMethod: string = 'online', transactionId?: string): Promise<WalletTransaction> {
     // Get wallet
     const wallet = await this.getPartnerWallet(partnerId);
     if (!wallet) {

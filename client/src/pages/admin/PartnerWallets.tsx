@@ -623,6 +623,42 @@ const PartnerWallets: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="paymentMethod" className="text-right">
+                  Payment Method
+                </Label>
+                <Select
+                  value={fundPaymentMethod}
+                  onValueChange={(value) => setFundPaymentMethod(value)}
+                >
+                  <SelectTrigger id="paymentMethod" className="col-span-3">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="online">Online Payment</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {fundPaymentMethod !== 'online' && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="transactionId" className="text-right">
+                    Transaction ID
+                  </Label>
+                  <Input
+                    id="transactionId"
+                    placeholder="Enter transaction ID"
+                    className="col-span-3"
+                    value={fundTransactionId}
+                    onChange={(e) => setFundTransactionId(e.target.value)}
+                  />
+                </div>
+              )}
+              
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="reference" className="text-right">
                   Reference
                 </Label>
