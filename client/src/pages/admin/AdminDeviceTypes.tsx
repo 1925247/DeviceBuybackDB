@@ -450,7 +450,8 @@ const AdminDeviceTypes: React.FC = () => {
   ];
   
   const displayBrands = brands || [];
-  const displayBrandDeviceTypes = brandDeviceTypes || [];
+  // Fix for the new API response format - extract rows from the response
+  const displayBrandDeviceTypes = brandDeviceTypes && brandDeviceTypes.rows ? brandDeviceTypes.rows : [];
 
   // Render functions
   const renderAddModal = () => (
