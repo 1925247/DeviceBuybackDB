@@ -60,6 +60,8 @@ const PartnerWallets: React.FC = () => {
   const [fundAmount, setFundAmount] = useState('');
   const [fundDescription, setFundDescription] = useState('');
   const [fundReference, setFundReference] = useState('');
+  const [fundPaymentMethod, setFundPaymentMethod] = useState('online');
+  const [fundTransactionId, setFundTransactionId] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [withdrawalStatusFilter, setWithdrawalStatusFilter] = useState('all');
   const [isProcessWithdrawalOpen, setIsProcessWithdrawalOpen] = useState(false);
@@ -105,6 +107,8 @@ const PartnerWallets: React.FC = () => {
         amount: parseFloat(fundAmount),
         description: fundDescription,
         reference: fundReference || undefined,
+        paymentMethod: fundPaymentMethod,
+        transactionId: fundTransactionId || undefined,
       }).then(res => res.json());
     },
     onSuccess: () => {
