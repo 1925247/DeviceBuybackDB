@@ -6,7 +6,7 @@ async function main() {
   const migrationQueries: SQL[] = [];
 
   // Add Indian States table
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS indian_states (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -19,7 +19,7 @@ async function main() {
   `);
 
   // Add Indian Cities table with state reference
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS indian_cities (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -33,7 +33,7 @@ async function main() {
   `);
 
   // Add Indian Postal Codes table with extended data
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS indian_postal_codes (
       id SERIAL PRIMARY KEY,
       pincode TEXT NOT NULL UNIQUE,
@@ -53,7 +53,7 @@ async function main() {
   `);
 
   // Add GST configuration table
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS gst_configuration (
       id SERIAL PRIMARY KEY,
       tax_rate REAL NOT NULL,
@@ -69,7 +69,7 @@ async function main() {
   `);
 
   // Add KYC document types table
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS kyc_document_types (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -85,7 +85,7 @@ async function main() {
   `);
 
   // Add KYC documents table for storing user documents
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS kyc_documents (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id),
@@ -104,7 +104,7 @@ async function main() {
   `);
 
   // Add Partner Service Areas table (specific to Indian geography)
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS partner_service_areas (
       id SERIAL PRIMARY KEY,
       partner_id INTEGER NOT NULL REFERENCES partners(id),
@@ -120,7 +120,7 @@ async function main() {
   `);
 
   // Add multi-tenant configuration table
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS tenant_configurations (
       id SERIAL PRIMARY KEY,
       partner_id INTEGER NOT NULL REFERENCES partners(id) UNIQUE,
