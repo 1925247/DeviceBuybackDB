@@ -240,6 +240,14 @@ export interface IStorage {
   deleteValuation(id: number): Promise<boolean>;
   deleteValuationsByModel(modelId: number): Promise<boolean>;
   
+  // Feature Toggles operations
+  getFeatureToggles(category?: string): Promise<FeatureToggle[]>;
+  getFeatureToggle(id: number): Promise<FeatureToggle | undefined>;
+  getFeatureToggleByKey(featureKey: string): Promise<FeatureToggle | undefined>;
+  createFeatureToggle(toggle: InsertFeatureToggle): Promise<FeatureToggle>;
+  updateFeatureToggle(id: number, toggle: Partial<InsertFeatureToggle>): Promise<FeatureToggle | undefined>;
+  deleteFeatureToggle(id: number): Promise<boolean>;
+  
   // Database status
   getDatabaseStatus(): Promise<{
     connected: boolean;
