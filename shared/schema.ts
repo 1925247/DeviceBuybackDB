@@ -524,7 +524,8 @@ export const products = pgTable("products", {
 export const productQuestionMappings = pgTable("product_question_mappings", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").notNull().references(() => products.id),
-  questionId: integer("question_id").notNull().references(() => questions.id),
+  questionId: integer("question_id").references(() => questions.id),
+  groupId: integer("group_id").references(() => questionGroups.id),
   required: boolean("required").default(true),
   active: boolean("active").default(true),
   order: integer("order").default(0),
