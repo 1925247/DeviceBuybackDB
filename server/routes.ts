@@ -1225,29 +1225,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log what's coming in from the frontend to debug
         console.log("Creating answer choices with data:", JSON.stringify(questionData.answerChoices));
         
-        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => {
-          // Get the text from multiple possible sources to ensure we have a value
-          const textValue = choice.text || choice.answerText || choice.label || `Option ${index + 1}`;
-          
-          // Construct a complete object with all required fields
-          return {
-            questionId: newQuestion.id,
-            text: textValue, // Primary required field
-            answerText: textValue, // Secondary field that mirrors text
-            value: choice.value || String(index),
-            icon: choice.icon || null,
-            impact: choice.impact || choice.weightage || 0,
-            weightage: choice.weightage || 0,
-            repairCost: choice.repairCost || 0,
-            isDefault: choice.isDefault || false,
-            order: index,
-            followUpAction: choice.followUpAction || null,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-        });
+        // Use direct SQL for inserting answer choices to avoid ORM mapping issues
+        const insertResults = [];
         
-        const choices = await db.insert(answerChoices).values(choiceValues).returning();
+        for (let i = 0; i < questionData.answerChoices.length; i++) {
+          const choice = questionData.answerChoices[i];
+          const textValue = choice.text || choice.answerText || choice.label || `Option ${i + 1}`;
+          
+          const insertQuery = `
+            INSERT INTO answer_choices (
+              question_id, text, answer_text, value, icon, impact, 
+              weightage, repair_cost, is_default, "order", 
+              created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+            ) RETURNING *
+          `;
+          
+          const now = new Date();
+          const insertValues = [
+            newQuestion.id,
+            textValue,                                           // text
+            textValue,                                           // answer_text
+            choice.value || String(i),                           // value
+            choice.icon || null,                                 // icon
+            choice.impact || choice.weightage || 0,              // impact
+            choice.weightage || 0,                               // weightage
+            choice.repairCost || 0,                              // repair_cost
+            choice.isDefault || false,                           // is_default
+            i,                                                  // order
+            now,                                                // created_at
+            now                                                 // updated_at
+          ];
+          
+          const result = await pool.query(insertQuery, insertValues);
+          if (result.rows && result.rows.length > 0) {
+            insertResults.push(result.rows[0]);
+          }
+        }
+        
+        const choices = insertResults;
         
         res.status(201).json({
           ...newQuestion,
