@@ -1444,6 +1444,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Copy product question mappings between products
+  app.post(apiRouter("/product-question-mappings/copy"), async (req: Request, res: Response) => {
+    try {
+      const { sourceProductId, targetProductId, mappings, overrides } = req.body;
+      
+      if (!sourceProductId || !targetProductId) {
+        return res.status(400).json({ message: "Source and target product IDs are required" });
+      }
+      
+      if (!mappings || !Array.isArray(mappings) || mappings.length === 0) {
+        return res.status(400).json({ message: "At least one mapping must be selected for copying" });
+      }
+      
+      // Track created/updated mappings
+      const results = [];
+      
+      // Process each mapping
+      for (const mapping of mappings) {
+        // Check if a mapping with the same group and action type already exists for the target
+        const existingMappings = await db.select().from(productQuestionMappings)
+          .where(and(
+            eq(productQuestionMappings.productId, targetProductId),
+            eq(productQuestionMappings.actionType, mapping.actionType),
+            eq(productQuestionMappings.groupId, mapping.groupId)
+          ));
+        
+        // Apply any overrides specified for this mapping
+        const mappingOverrides = overrides && overrides[mapping.id] 
+          ? overrides[mapping.id] 
+          : mapping.overrides;
+        
+        if (existingMappings.length > 0) {
+          // Update the existing mapping
+          const [updatedMapping] = await db.update(productQuestionMappings)
+            .set({
+              active: mapping.active,
+              overrides: mappingOverrides,
+              updatedAt: new Date()
+            })
+            .where(eq(productQuestionMappings.id, existingMappings[0].id))
+            .returning();
+          
+          results.push({ 
+            id: updatedMapping.id, 
+            action: 'updated', 
+            groupId: mapping.groupId 
+          });
+        } else {
+          // Create a new mapping
+          const [newMapping] = await db.insert(productQuestionMappings)
+            .values({
+              productId: targetProductId,
+              actionType: mapping.actionType,
+              groupId: mapping.groupId,
+              active: mapping.active,
+              overrides: mappingOverrides,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
+            .returning();
+          
+          results.push({ 
+            id: newMapping.id, 
+            action: 'created', 
+            groupId: mapping.groupId 
+          });
+        }
+      }
+      
+      res.status(200).json({
+        message: `Successfully copied ${results.length} questionnaire mappings`,
+        results
+      });
+    } catch (error: any) {
+      console.error("Error copying product-question mappings:", error);
+      res.status(500).json({ message: error.message || "Failed to copy product-question mappings" });
+    }
+  });
+  
   app.post(apiRouter("/product-question-mappings"), async (req: Request, res: Response) => {
     try {
       const mappingData = req.body;
