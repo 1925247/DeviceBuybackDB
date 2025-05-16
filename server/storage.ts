@@ -40,6 +40,14 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
+  // Valuation operations for buyback system
+  getValuations(modelId?: number, brandId?: number, regionId?: number): Promise<Valuation[]>;
+  getValuation(id: number): Promise<Valuation | undefined>;
+  getValuationByModelBrandRegion(modelId: number, brandId: number, regionId?: number): Promise<Valuation | undefined>;
+  createValuation(valuation: InsertValuation): Promise<Valuation>;
+  updateValuation(id: number, valuation: Partial<InsertValuation>): Promise<Valuation | undefined>;
+  deleteValuation(id: number): Promise<boolean>;
+  
   // Indian States operations
   getIndianStates(active?: boolean): Promise<IndianState[]>;
   getIndianStateByCode(code: string): Promise<IndianState | undefined>;
@@ -2879,6 +2887,116 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting partner service area:", error);
+      return false;
+    }
+  }
+
+  // Device Valuation methods for buyback system
+  async getValuations(modelId?: number, brandId?: number, regionId?: number): Promise<Valuation[]> {
+    try {
+      let query = db.select().from(valuations).where(eq(valuations.active, true));
+      
+      // Apply filters if provided
+      if (modelId) {
+        query = query.where(eq(valuations.deviceModelId, modelId));
+      }
+      
+      if (brandId) {
+        query = query.where(eq(valuations.brandId, brandId));
+      }
+      
+      if (regionId) {
+        query = query.where(eq(valuations.regionId, regionId));
+      }
+      
+      return await query.orderBy(desc(valuations.updatedAt));
+    } catch (error) {
+      console.error("Error fetching valuations:", error);
+      return [];
+    }
+  }
+  
+  async getValuation(id: number): Promise<Valuation | undefined> {
+    try {
+      const [valuation] = await db
+        .select()
+        .from(valuations)
+        .where(eq(valuations.id, id));
+      return valuation;
+    } catch (error) {
+      console.error("Error fetching valuation by ID:", error);
+      return undefined;
+    }
+  }
+  
+  async getValuationByModelBrandRegion(
+    modelId: number, 
+    brandId: number, 
+    regionId?: number
+  ): Promise<Valuation | undefined> {
+    try {
+      let query = db
+        .select()
+        .from(valuations)
+        .where(
+          and(
+            eq(valuations.deviceModelId, modelId),
+            eq(valuations.brandId, brandId),
+            eq(valuations.active, true)
+          )
+        );
+      
+      // Add region filter if provided
+      if (regionId) {
+        query = query.where(eq(valuations.regionId, regionId));
+      } else {
+        query = query.where(isNull(valuations.regionId));
+      }
+      
+      const [valuation] = await query;
+      return valuation;
+    } catch (error) {
+      console.error("Error fetching valuation by model/brand/region:", error);
+      return undefined;
+    }
+  }
+  
+  async createValuation(valuation: InsertValuation): Promise<Valuation> {
+    try {
+      const [created] = await db
+        .insert(valuations)
+        .values(valuation)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating valuation:", error);
+      throw error;
+    }
+  }
+  
+  async updateValuation(id: number, valuation: Partial<InsertValuation>): Promise<Valuation | undefined> {
+    try {
+      const [updated] = await db
+        .update(valuations)
+        .set({ 
+          ...valuation, 
+          updatedAt: new Date() 
+        })
+        .where(eq(valuations.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating valuation:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteValuation(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(valuations).where(eq(valuations.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting valuation:", error);
       return false;
     }
   }

@@ -2446,6 +2446,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get invoice templates" });
     }
   });
+  
+  // Device Valuations for Buyback System
+  app.get(apiRouter("/valuations"), async (req: Request, res: Response) => {
+    try {
+      const modelId = req.query.model_id ? parseInt(req.query.model_id as string) : undefined;
+      const brandId = req.query.brand_id ? parseInt(req.query.brand_id as string) : undefined;
+      const regionId = req.query.region_id ? parseInt(req.query.region_id as string) : undefined;
+      
+      const valuations = await storage.getValuations(modelId, brandId, regionId);
+      res.json(valuations);
+    } catch (error) {
+      console.error("Error fetching valuations:", error);
+      res.status(500).json({ message: "Failed to fetch valuations" });
+    }
+  });
+  
+  app.get(apiRouter("/valuations/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const valuation = await storage.getValuation(id);
+      
+      if (!valuation) {
+        return res.status(404).json({ message: "Valuation not found" });
+      }
+      
+      res.json(valuation);
+    } catch (error) {
+      console.error(`Error fetching valuation ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to fetch valuation" });
+    }
+  });
+  
+  app.get(apiRouter("/valuations/lookup"), async (req: Request, res: Response) => {
+    try {
+      const { model_id, brand_id, region_id } = req.query;
+      
+      if (!model_id || !brand_id) {
+        return res.status(400).json({ message: "model_id and brand_id are required" });
+      }
+      
+      const modelId = parseInt(model_id as string, 10);
+      const brandId = parseInt(brand_id as string, 10);
+      const regionId = region_id ? parseInt(region_id as string, 10) : undefined;
+      
+      const valuation = await storage.getValuationByModelBrandRegion(modelId, brandId, regionId);
+      
+      if (!valuation) {
+        return res.status(404).json({ message: "No valuation found for this device configuration" });
+      }
+      
+      res.json(valuation);
+    } catch (error) {
+      console.error("Error looking up valuation:", error);
+      res.status(500).json({ message: "Failed to lookup valuation" });
+    }
+  });
+  
+  app.post(apiRouter("/valuations"), async (req: Request, res: Response) => {
+    try {
+      const valuationData = req.body;
+      
+      // Basic validation
+      if (!valuationData.deviceModelId || !valuationData.brandId || !valuationData.basePrice) {
+        return res.status(400).json({ 
+          message: "Required fields missing - deviceModelId, brandId, and basePrice are required" 
+        });
+      }
+      
+      // Set defaults if not provided
+      if (!valuationData.conditionMultipliers) {
+        valuationData.conditionMultipliers = {
+          "excellent": 1.0,
+          "good": 0.8,
+          "fair": 0.6,
+          "poor": 0.4
+        };
+      }
+      
+      const newValuation = await storage.createValuation(valuationData);
+      res.status(201).json(newValuation);
+    } catch (error) {
+      console.error("Error creating valuation:", error);
+      res.status(500).json({ message: "Failed to create valuation" });
+    }
+  });
+  
+  app.put(apiRouter("/valuations/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const valuationData = req.body;
+      
+      const updated = await storage.updateValuation(id, valuationData);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Valuation not found" });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      console.error(`Error updating valuation ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to update valuation" });
+    }
+  });
+  
+  app.delete(apiRouter("/valuations/:id"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const success = await storage.deleteValuation(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Valuation not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error(`Error deleting valuation ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to delete valuation" });
+    }
+  });
 
   app.get(apiRouter("/invoice-templates/:id"), async (req: Request, res: Response) => {
     try {
