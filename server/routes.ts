@@ -20,6 +20,8 @@ import { getConditionQuestions } from "./conditionQuestionsHandler";
 import partnerStaffRoutes from "./api/partnerStaff";
 import indianDataRoutes from "./api/indianData";
 import { featureToggleRouter } from "./api/featureToggleApi";
+import deviceModelsRoutes from "./api/deviceModels";
+import brandsRoutes from "./api/brands";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
@@ -28,6 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Use API routes
   app.use('/api/partner-staff', partnerStaffRoutes);
   app.use('/api/indian', indianDataRoutes);
+  app.use('/api/device-models', deviceModelsRoutes);
+  app.use('/api/brands', brandsRoutes);
   
   // Feature toggles API routes
   try {
