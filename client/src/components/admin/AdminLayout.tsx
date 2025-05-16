@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import PageTransition from "../ui/PageTransition";
 import {
   BarChart3,
   Users,
@@ -521,7 +522,9 @@ const AdminLayout: React.FC = () => {
               onClick={() => setIsSidebarOpen(false)}
             ></div>
           )}
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
     </div>
