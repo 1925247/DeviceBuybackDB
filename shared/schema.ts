@@ -269,6 +269,21 @@ export const deviceModels = pgTable("device_models", {
   uniqueModelPerBrandDeviceType: unique().on(table.slug, table.brandId, table.deviceTypeId),
 }));
 
+// Brand Device Types (relation table between brands and device types)
+export const brandDeviceTypes = pgTable("brand_device_types", {
+  id: serial("id").primaryKey(),
+  brand_id: integer("brand_id").notNull().references(() => brands.id),
+  device_type_id: integer("device_type_id").notNull().references(() => deviceTypes.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueBrandDeviceType: unique().on(table.brand_id, table.device_type_id)
+}));
+
+export const insertBrandDeviceTypeSchema = createInsertSchema(brandDeviceTypes);
+export type InsertBrandDeviceType = z.infer<typeof insertBrandDeviceTypeSchema>;
+export type BrandDeviceType = typeof brandDeviceTypes.$inferSelect;
+
 // Define schemas
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email(),
