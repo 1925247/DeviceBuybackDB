@@ -969,27 +969,30 @@ export class DatabaseStorage implements IStorage {
     return newModel;
   }
   
-  async updateDeviceModel(id: number, modelData: Partial<DeviceModel>): Promise<DeviceModel | undefined> {
+  async updateDeviceModel(id: number, modelData: any): Promise<any | undefined> {
     // Validate the model exists
     const existingModel = await this.getDeviceModel(id);
     if (!existingModel) {
       return undefined;
     }
     
-    // Prepare update data - make sure we only include valid schema fields
+    // Prepare update data with only valid fields
     const updateData: any = {
-      updatedAt: new Date() // Use camelCase for Drizzle
+      updatedAt: new Date()
     };
     
-    // Only include fields that are present
+    // Only include fields that are present and match the database schema
     if (modelData.name !== undefined) updateData.name = modelData.name;
     if (modelData.slug !== undefined) updateData.slug = modelData.slug;
     if (modelData.description !== undefined) updateData.description = modelData.description;
-    if (modelData.imageUrl !== undefined) updateData.imageUrl = modelData.imageUrl;
+    // Using 'image' instead of 'imageUrl' to match the schema
+    if (modelData.image !== undefined) updateData.image = modelData.image;
     if (modelData.brandId !== undefined) updateData.brandId = modelData.brandId;
     if (modelData.deviceTypeId !== undefined) updateData.deviceTypeId = modelData.deviceTypeId;
     if (modelData.active !== undefined) updateData.active = modelData.active;
     if (modelData.specifications !== undefined) updateData.specifications = modelData.specifications;
+    
+    console.log("Updating device model with data:", updateData);
     
     // Update the model
     const [updatedModel] = await db.update(deviceModels)

@@ -260,7 +260,7 @@ export const deviceModels = pgTable("device_models", {
   name: text("name").notNull(),
   slug: text("slug").notNull(),
   description: text("description"),
-  imageUrl: text("image_url"),
+  image: text("image"), // Fixed field name to match database
   brandId: integer("brand_id").references(() => brands.id),
   deviceTypeId: integer("device_type_id").references(() => deviceTypes.id),
   active: boolean("active").default(true),

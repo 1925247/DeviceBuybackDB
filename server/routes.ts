@@ -789,7 +789,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: requestData.name,
         slug: requestData.slug,
         description: requestData.description,
-        imageUrl: requestData.image || requestData.imageUrl,
+        // Use 'image' field name to match schema and database
+        image: requestData.image || requestData.imageUrl,
         brandId: requestData.brandId || (requestData.brand_id ? Number(requestData.brand_id) : undefined),
         deviceTypeId: requestData.deviceTypeId || (requestData.device_type_id ? Number(requestData.device_type_id) : undefined),
         active: requestData.active,
