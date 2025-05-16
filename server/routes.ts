@@ -2,10 +2,11 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { 
   insertUserSchema, insertRouteRuleSchema, insertBuybackRequestSchema,
-  type InsertUser, type InsertRouteRule, type InsertBuybackRequest
+  type InsertUser, type InsertRouteRule, type InsertBuybackRequest,
+  deviceModels
 } from "@shared/schema";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
