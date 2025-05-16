@@ -975,30 +975,39 @@ export class DatabaseStorage implements IStorage {
   
   async getDeviceModels(): Promise<DeviceModel[]> {
     try {
-      // Use a simpler query approach to avoid ORM-related issues
-      const result = await db.execute(`
-        SELECT 
-          dm.*,
-          b.name as brand_name,
-          b.slug as brand_slug,
-          b.logo as brand_logo,
-          dt.name as device_type_name,
-          dt.slug as device_type_slug,
-          dt.icon as device_type_icon
-        FROM device_models dm
-        LEFT JOIN brands b ON dm.brand_id = b.id
-        LEFT JOIN device_types dt ON dm.device_type_id = dt.id
-        ORDER BY dm.name
+      // Use a very simple query that's guaranteed to work
+      const deviceModelsResult = await db.execute(`
+        SELECT id, name, slug, image, active, featured, brand_id, device_type_id, 
+               variants, created_at, updated_at
+        FROM device_models
+        ORDER BY name
       `);
       
-      // Transform the results to match the expected format
-      const models = result.rows.map(row => {
-        const model = {
+      // Get all brands and device types separately to avoid join issues
+      const brandsResult = await db.execute(`SELECT id, name, slug, logo FROM brands`);
+      const deviceTypesResult = await db.execute(`SELECT id, name, slug, icon FROM device_types`);
+      
+      // Create lookup maps
+      const brandsMap = brandsResult.rows.reduce((map, brand) => {
+        map[brand.id] = brand;
+        return map;
+      }, {});
+      
+      const deviceTypesMap = deviceTypesResult.rows.reduce((map, type) => {
+        map[type.id] = type;
+        return map;
+      }, {});
+      
+      // Transform the results with lookups instead of joins
+      const models = deviceModelsResult.rows.map(row => {
+        const brand = row.brand_id ? brandsMap[row.brand_id] : null;
+        const deviceType = row.device_type_id ? deviceTypesMap[row.device_type_id] : null;
+        
+        return {
           id: row.id,
           name: row.name,
           slug: row.slug,
           image: row.image,
-          imageUrl: row.image_url,
           active: row.active,
           featured: row.featured,
           brand_id: row.brand_id,
@@ -1006,27 +1015,26 @@ export class DatabaseStorage implements IStorage {
           variants: row.variants,
           created_at: row.created_at,
           updated_at: row.updated_at,
-          brand: row.brand_id ? {
-            id: row.brand_id,
-            name: row.brand_name,
-            slug: row.brand_slug,
-            logo: row.brand_logo
+          brand: brand ? {
+            id: brand.id,
+            name: brand.name,
+            slug: brand.slug,
+            logo: brand.logo
           } : null,
-          deviceType: row.device_type_id ? {
-            id: row.device_type_id,
-            name: row.device_type_name,
-            slug: row.device_type_slug,
-            icon: row.device_type_icon
+          deviceType: deviceType ? {
+            id: deviceType.id,
+            name: deviceType.name,
+            slug: deviceType.slug,
+            icon: deviceType.icon
           } : null
         };
-        
-        return model;
       });
       
+      console.log(`Successfully fetched ${models.length} device models`);
       return models;
     } catch (error) {
       console.error("Error fetching device models:", error);
-      return []; // Return empty array instead of throwing to avoid cascading errors
+      return []; // Return empty array instead of throwing
     }
   }
 
@@ -1877,7 +1885,29 @@ export class DatabaseStorage implements IStorage {
 
   // Partner operations
   async getPartners(): Promise<Partner[]> {
-    return await db.select().from(partners).orderBy(asc(partners.name));
+    try {
+      // Use raw SQL to avoid ORM-related issues
+      const result = await db.execute(`
+        SELECT * FROM partners ORDER BY name ASC
+      `);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        contactEmail: row.contact_email,
+        contactPhone: row.contact_phone,
+        addressLine1: row.address_line1,
+        city: row.city,
+        state: row.state,
+        pincode: row.pincode,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    } catch (error) {
+      console.error("Error in getPartners:", error);
+      return [];
+    }
   }
 
   async getPartner(id: number): Promise<Partner | undefined> {
@@ -1979,20 +2009,86 @@ export class DatabaseStorage implements IStorage {
   
   // PIN code-based lead assignment
   async getPartnerByPinCode(pinCode: string): Promise<Partner | undefined> {
-    // Find partner with matching PIN code in their pin_codes array
-    const allPartners = await this.getPartners();
-    
-    // Search for a partner that has the PIN code in their pin_codes array
-    for (const partner of allPartners) {
-      if (partner.pin_codes && Array.isArray(partner.pin_codes)) {
-        const pinCodes = partner.pin_codes as string[];
-        if (pinCodes.includes(pinCode)) {
-          return partner;
-        }
+    try {
+      // Use raw SQL to avoid ORM-related issues
+      const result = await db.execute(`
+        SELECT * FROM partners 
+        WHERE serviceable_pincodes LIKE '%${pinCode}%'
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) {
+        return undefined;
       }
+      
+      const row = result.rows[0];
+      
+      return {
+        id: row.id,
+        name: row.name,
+        contactEmail: row.contact_email,
+        contactPhone: row.contact_phone,
+        addressLine1: row.address_line1,
+        city: row.city,
+        state: row.state,
+        pincode: row.pincode,
+        serviceablePincodes: row.serviceable_pincodes,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    } catch (error) {
+      console.error("Error fetching partner by PIN code:", error);
+      return undefined;
     }
-    
-    return undefined;
+  }
+  
+  // Enhanced method with distance-based matching if no exact match is found
+  async findNearestPartnerByPinCode(pinCode: string, maxDistance = 10): Promise<Partner | undefined> {
+    try {
+      // First try exact match
+      const exactMatch = await this.getPartnerByPinCode(pinCode);
+      if (exactMatch) {
+        return exactMatch;
+      }
+      
+      // If no exact match, look for partners in nearby PIN codes
+      // This is a simplified implementation - in a real system you would use postal code
+      // geographic data to find actual nearby regions
+      
+      // Get first 3 digits of PIN code (representing district)
+      const districtCode = pinCode.substring(0, 3);
+      
+      const result = await db.execute(`
+        SELECT * FROM partners 
+        WHERE serviceable_pincodes LIKE '%${districtCode}%'
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      const row = result.rows[0];
+      
+      return {
+        id: row.id,
+        name: row.name,
+        contactEmail: row.contact_email,
+        contactPhone: row.contact_phone,
+        addressLine1: row.address_line1,
+        city: row.city,
+        state: row.state,
+        pincode: row.pincode,
+        serviceablePincodes: row.serviceable_pincodes,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    } catch (error) {
+      console.error("Error finding nearest partner by PIN code:", error);
+      return undefined;
+    }
   }
 
   async assignLeadToPartner(leadId: number, partnerId: number): Promise<BuybackRequest | undefined> {

@@ -307,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // PIN code-based lead assignment
+  // Enhanced PIN code-based lead assignment with fallback to nearest partner
   app.post(apiRouter("/assign-lead"), async (req: Request, res: Response) => {
     try {
       const { pin_code, lead_id } = req.body;
@@ -316,11 +316,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "PIN code and lead ID are required" });
       }
       
-      // Find partner by PIN code
-      const partner = await storage.getPartnerByPinCode(pin_code);
+      // Find partner by PIN code with exact match
+      let partner = await storage.getPartnerByPinCode(pin_code);
+      let exactMatch = true;
       
+      // If no exact match found, try to find a partner in a nearby area
       if (!partner) {
-        return res.status(404).json({ message: "No partner found for the given PIN code" });
+        partner = await storage.findNearestPartnerByPinCode(pin_code);
+        exactMatch = false;
+        
+        // If still no partner found
+        if (!partner) {
+          return res.status(404).json({ 
+            message: "No partner found for the given PIN code or nearby areas", 
+            suggestion: "Try a different PIN code or add this area to a partner's serviceable regions"
+          });
+        }
       }
       
       // Assign lead to partner
@@ -333,7 +344,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         message: "Lead assigned successfully", 
         lead: updatedLead,
-        partner_name: partner.name
+        partner_name: partner.name,
+        exact_match: exactMatch,
+        matching_pin: exactMatch ? pin_code : partner.pincode,
+        note: exactMatch ? "Exact PIN code match found" : "Assigned to nearest available partner"
       });
     } catch (error: any) {
       console.error("Error assigning lead:", error);
