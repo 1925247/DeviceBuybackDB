@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { LoaderCircle, Save, Copy, ArrowRight } from "lucide-react";
+import { LoaderCircle, Save, ArrowRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Product {
@@ -155,8 +154,8 @@ export default function AdminProductMapping() {
       );
 
       const response = await apiRequest("POST", "/api/product-question-mappings/copy", {
-        sourceProductId: parseInt(selectedSourceProduct),
-        targetProductId: parseInt(selectedTargetProduct),
+        source_product_id: parseInt(selectedSourceProduct),
+        target_product_id: parseInt(selectedTargetProduct),
         mappings: mappingsToSend
       });
 
@@ -216,261 +215,253 @@ export default function AdminProductMapping() {
         <h1 className="text-3xl font-bold">Product-Question Mappings</h1>
       </div>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList>
-            <TabsTrigger value="add">Add New Mapping</TabsTrigger>
-            <TabsTrigger value="copy">Copy Mappings Between Products</TabsTrigger>
-          </TabsList>
+      <Tabs value={currentTab} onValueChange={setCurrentTab}>
+        <TabsList>
+          <TabsTrigger value="add">Add New Mapping</TabsTrigger>
+          <TabsTrigger value="copy">Copy Mappings Between Products</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="add" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Product-Question Mapping</CardTitle>
-                <CardDescription>
-                  Create a new mapping between a product and question group
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="productId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Product</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={isLoadingProducts}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a product" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {products?.map((product: Product) => (
-                                  <SelectItem key={product.id} value={product.id.toString()}>
-                                    {product.title}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="actionType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Action Type</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select action type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="sell">Sell</SelectItem>
-                                <SelectItem value="trade-in">Trade-in</SelectItem>
-                                <SelectItem value="recycle">Recycle</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="groupId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Question Group</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={isLoadingGroups}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a question group" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {questionGroups?.map((group: QuestionGroup) => (
-                                  <SelectItem key={group.id} value={group.id.toString()}>
-                                    {group.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* No active field required */}
-                    </div>
-
-                    <Button type="submit" disabled={form.formState.isSubmitting} className="mt-4">
-                      {form.formState.isSubmitting ? (
-                        <>
-                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Mapping
-                        </>
+        <TabsContent value="add" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Add New Product-Question Mapping</CardTitle>
+              <CardDescription>
+                Create a new mapping between a product and question group
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="productId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Product</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isLoadingProducts}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a product" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {products?.map((product: Product) => (
+                                <SelectItem key={product.id} value={product.id.toString()}>
+                                  {product.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    />
 
-          <TabsContent value="copy" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Copy Mappings Between Products</CardTitle>
-                <CardDescription>
-                  Copy question mappings from one product to another
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <div>
-                    <FormLabel>Source Product</FormLabel>
-                    <Select
-                      onValueChange={setSelectedSourceProduct}
-                      value={selectedSourceProduct}
-                      disabled={isLoadingProducts}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select source product" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products?.map((product: Product) => (
-                          <SelectItem key={product.id} value={product.id.toString()}>
-                            {product.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormField
+                      control={form.control}
+                      name="actionType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Action Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select action type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="sell">Sell</SelectItem>
+                              <SelectItem value="trade-in">Trade-in</SelectItem>
+                              <SelectItem value="recycle">Recycle</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
-                  <div className="flex items-center justify-center">
-                    <ArrowRight className="h-6 w-6 text-gray-400" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="groupId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Question Group</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isLoadingGroups}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a question group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {questionGroups?.map((group: QuestionGroup) => (
+                                <SelectItem key={group.id} value={group.id.toString()}>
+                                  {group.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
-                  <div>
-                    <FormLabel>Target Product</FormLabel>
-                    <Select
-                      onValueChange={setSelectedTargetProduct}
-                      value={selectedTargetProduct}
-                      disabled={isLoadingProducts}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select target product" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products?.map((product: Product) => (
-                          <SelectItem key={product.id} value={product.id.toString()}>
-                            {product.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Button type="submit" disabled={form.formState.isSubmitting} className="mt-4">
+                    {form.formState.isSubmitting ? (
+                      <>
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Mapping
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="copy" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Copy Mappings Between Products</CardTitle>
+              <CardDescription>
+                Copy question mappings from one product to another
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div>
+                  <FormLabel>Source Product</FormLabel>
+                  <Select
+                    onValueChange={setSelectedSourceProduct}
+                    value={selectedSourceProduct}
+                    disabled={isLoadingProducts}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select source product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products?.map((product: Product) => (
+                        <SelectItem key={product.id} value={product.id.toString()}>
+                          {product.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {selectedSourceProduct && (
-                  <>
-                    <div className="mb-4">
-                      <h3 className="text-lg font-medium mb-2">Available Mappings</h3>
-                      <p className="text-sm text-gray-500 mb-4">
-                        Select the mappings you want to copy to the target product
-                      </p>
-                      
-                      {isLoadingMappings ? (
-                        <div className="flex justify-center py-8">
-                          <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                      ) : productMappings?.length > 0 ? (
-                        <ScrollArea className="h-[300px] rounded-md border p-4">
-                          {productMappings.map((mapping: ProductQuestionMapping) => (
-                            <div key={mapping.id} className="mb-4">
-                              <div className="flex items-start space-x-3">
-                                <Checkbox
-                                  id={`mapping-${mapping.id}`}
-                                  checked={selectedMappings.includes(mapping.id)}
-                                  onCheckedChange={() => toggleMapping(mapping.id)}
-                                />
-                                <div>
-                                  <label
-                                    htmlFor={`mapping-${mapping.id}`}
-                                    className="text-sm font-medium cursor-pointer"
-                                  >
-                                    {getGroupName(mapping.groupId)}
-                                  </label>
-                                  <p className="text-xs text-gray-500">
-                                    Action: <span className="font-medium">{mapping.actionType}</span>
-                                  </p>
-                                </div>
-                              </div>
-                              <Separator className="my-2" />
-                            </div>
-                          ))}
-                        </ScrollArea>
-                      ) : (
-                        <p className="text-center py-8 text-gray-500">
-                          No mappings found for the selected product
-                        </p>
-                      )}
-                    </div>
+                <div className="flex items-center justify-center">
+                  <ArrowRight className="h-6 w-6 text-gray-400" />
+                </div>
 
-                    <Button
-                      onClick={handleCopyMappings}
-                      disabled={
-                        isCopying ||
-                        !selectedSourceProduct ||
-                        !selectedTargetProduct ||
-                        selectedMappings.length === 0
-                      }
-                      className="w-full"
-                    >
-                      {isCopying ? (
-                        <>
-                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                          Copying...
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy Selected Mappings
-                        </>
-                      )}
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </AdminLayout>
+                <div>
+                  <FormLabel>Target Product</FormLabel>
+                  <Select
+                    onValueChange={setSelectedTargetProduct}
+                    value={selectedTargetProduct}
+                    disabled={isLoadingProducts}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select target product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products?.map((product: Product) => (
+                        <SelectItem key={product.id} value={product.id.toString()}>
+                          {product.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {selectedSourceProduct && (
+                <>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">Available Mappings</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Select the mappings you want to copy to the target product
+                    </p>
+                    
+                    {isLoadingMappings ? (
+                      <div className="flex justify-center py-8">
+                        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : productMappings?.length > 0 ? (
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        {productMappings.map((mapping: ProductQuestionMapping) => (
+                          <div key={mapping.id} className="mb-4">
+                            <div className="flex items-start space-x-3">
+                              <Checkbox 
+                                id={`mapping-${mapping.id}`}
+                                checked={selectedMappings.includes(mapping.id)}
+                                onCheckedChange={() => toggleMapping(mapping.id)}
+                              />
+                              <div>
+                                <label 
+                                  htmlFor={`mapping-${mapping.id}`}
+                                  className="text-sm font-medium cursor-pointer"
+                                >
+                                  {getGroupName(mapping.groupId)}
+                                </label>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Action: {mapping.actionType}
+                                </p>
+                              </div>
+                            </div>
+                            <Separator className="my-2" />
+                          </div>
+                        ))}
+                      </ScrollArea>
+                    ) : (
+                      <div className="text-center py-8 border rounded-md bg-gray-50">
+                        <p className="text-gray-500">No mappings found for this product</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button 
+                    onClick={handleCopyMappings} 
+                    disabled={isCopying || selectedMappings.length === 0 || !selectedTargetProduct}
+                    className="mt-4"
+                  >
+                    {isCopying ? (
+                      <>
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        Copying...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Copy Selected Mappings
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
