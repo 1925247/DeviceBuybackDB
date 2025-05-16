@@ -73,6 +73,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import StaffManagement from "./pages/partner/StaffManagement";
+import StaffManagementDemo from "./pages/partner/StaffManagementDemo";
 
 // E-commerce Admin Pages
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -441,7 +442,7 @@ function App() {
               />
               <Route
                 path="/partner/staff"
-                element={<StaffManagement />}
+                element={<StaffManagementDemo />}
               />
 
               {/* Admin Routes */}
