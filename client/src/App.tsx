@@ -45,44 +45,49 @@ import ProductDetails from "./pages/Shop/ProductDetails";
 // Alias BuyHome as ShopPage
 const ShopPage = BuyHome;
 
-// Admin Panel Pages
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminDevices from "./pages/admin/AdminDevices";
-import AdminDeviceTypes from "./pages/admin/AdminDeviceTypes";
-import AdminBrands from "./pages/admin/AdminBrands";
-import AdminModels from "./pages/admin/AdminModels";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminPricing from "./pages/admin/AdminPricing";
-import AdminConfig from "./pages/admin/AdminConfig";
-import AdminCQS from "./pages/admin/AdminCQS";
-import AdminDiagnostic from "./pages/admin/AdminDiagnostic";
-import AdminBuybacks from "./pages/admin/AdminBuybacks";
-import AdminBuybacksNew from "./pages/admin/AdminBuybacksNew";
-import ConditionQuestionsAdmin from "./pages/admin/ConditionQuestionsAdmin";
-import AdminInvoiceTemplates from "./pages/admin/AdminInvoiceTemplates";
-import RegionsManagement from "./pages/admin/RegionsManagement";
-import UserRoleManagement from "./pages/admin/UserRoleManagement";
-import RouteManagement from "./pages/admin/RouteManagement";
-import ManageRouteRules from "./pages/admin/ManageRouteRules";
-import PartnersManagement from "./pages/admin/PartnersManagement";
-import PartnerStaffManagement from "./pages/admin/PartnerStaffManagement";
-import PartnerWallets from "./pages/admin/PartnerWallets";
-import PinCodeAssignment from "./pages/admin/PinCodeAssignment";
-import PartnerOnboarding from "./pages/admin/PartnerOnboarding";
+// Admin Panel Pages - Lazy loaded to improve performance
 import AdminLayout from "./components/admin/AdminLayout";
+import AdminLogin from "./pages/admin/AdminLogin";
+
+// Lazy loaded admin components
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminDevices = lazy(() => import("./pages/admin/AdminDevices"));
+const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypes"));
+const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
+const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminPricing = lazy(() => import("./pages/admin/AdminPricing"));
+const AdminConfig = lazy(() => import("./pages/admin/AdminConfig"));
+const AdminCQS = lazy(() => import("./pages/admin/AdminCQS"));
+const AdminDiagnostic = lazy(() => import("./pages/admin/AdminDiagnostic"));
+const AdminBuybacks = lazy(() => import("./pages/admin/AdminBuybacks"));
+const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
+const ConditionQuestionsAdmin = lazy(() => import("./pages/admin/ConditionQuestionsAdmin"));
+const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
+const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
+const UserRoleManagement = lazy(() => import("./pages/admin/UserRoleManagement"));
+const RouteManagement = lazy(() => import("./pages/admin/RouteManagement"));
+const ManageRouteRules = lazy(() => import("./pages/admin/ManageRouteRules"));
+const PartnersManagement = lazy(() => import("./pages/admin/PartnersManagement"));
+const PartnerStaffManagement = lazy(() => import("./pages/admin/PartnerStaffManagement"));
+const PartnerWallets = lazy(() => import("./pages/admin/PartnerWallets"));
+const PinCodeAssignment = lazy(() => import("./pages/admin/PinCodeAssignment"));
+const PartnerOnboarding = lazy(() => import("./pages/admin/PartnerOnboarding"));
 
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import StaffManagement from "./pages/partner/StaffManagement";
 import StaffManagementDemo from "./pages/partner/StaffManagementDemo";
 
-// E-commerce Admin Pages
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminCategories from "./pages/admin/AdminCategories";
-import AdminMarketplaceSettings from "./pages/admin/AdminMarketplaceSettings";
+// E-commerce Admin Pages - Lazy loaded
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminMarketplaceSettings = lazy(() => import("./pages/admin/AdminMarketplaceSettings"));
+
+// Import Loading Spinner
+import LoadingSpinner from "./components/ui/LoadingSpinner";
 
 // Not Found Page
 import NotFound from "./pages/NotFound";
@@ -460,14 +465,50 @@ function App() {
                     </ModelsProvider>
                   }
                 >
-                  <Route index element={<AdminDashboard />} />
+                  <Route index element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
 
                   {/* Device Management */}
-                  <Route path="device-types" element={<AdminDeviceTypes />} />
-                  <Route path="brands" element={<AdminBrands />} />
-                  <Route path="models" element={<AdminModels />} />
-                  <Route path="device-models" element={<AdminModels />} />
-                  <Route path="devices" element={<AdminDevices />} />
+                  <Route path="device-types" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <AdminDeviceTypes />
+                    </Suspense>
+                  } />
+                  <Route path="brands" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <AdminBrands />
+                    </Suspense>
+                  } />
+                  <Route path="models" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <AdminModels />
+                    </Suspense>
+                  } />
+                  <Route path="device-models" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <AdminModels />
+                    </Suspense>
+                  } />
+                  <Route path="devices" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <AdminDevices />
+                    </Suspense>
+                  } />
 
                   {/* Buyback Program */}
                   <Route path="buyback" element={<AdminBuybacksNew />} />
@@ -519,8 +560,20 @@ function App() {
                   <Route path="regions" element={<RegionsManagement />} />
                   <Route path="partners" element={<PartnersManagement />} />
                   <Route path="partner-staff" element={<PartnerStaffManagement />} />
-                  <Route path="pin-codes" element={<PinCodeAssignment />} />
-                  <Route path="partners-onboarding" element={<PartnerOnboarding />} />
+                  <Route path="pin-codes" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <PinCodeAssignment />
+                    </Suspense>
+                  } />
+                  <Route path="partners-onboarding" element={
+                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>}>
+                      <PartnerOnboarding />
+                    </Suspense>
+                  } />
                   <Route path="partner-wallets" element={<PartnerWallets />} />
 
                   {/* Questionnaires */}
