@@ -1,0 +1,87 @@
+Below is a single, streamlined “correct” workflow for your Condition Questions Management module—combining groups, questions, mappings, workflows, and copy/paste into one coherent flow:
+
+---
+
+## 1. Question Groups
+
+* **Create**
+
+  * **Path**: Admin → Q\&A Mgmt → Groups → New
+  * **Fields**:
+
+    * **Name** (unique)
+    * **Statement** (short description)
+    * **Device Type** (Smartphone/Laptop/Tablet/Watch)
+    * **Icon** (optional image)
+  * **Actions**: Save → adds to list
+* **Edit/Delete**
+
+  * Inline ✏️/🗑️ icons in the list
+  * **Edit**: change any field; warn “Affects all mapped products.”
+  * **Delete**: confirm; block if any active mapping exists
+
+## 2. Questions & Answers
+
+* **Add Question**
+
+  * **Path**: Q\&A Mgmt → Questions → New
+  * **Fields**:
+
+    * **Text** (question prompt)
+    * **Type**: Single Choice / Multiple Choice / Text Input
+    * **Assigned Group**
+  * **Answer Choices** (for choice types):
+
+    * **Label**, **Icon**, **Weight %**, **Repair Cost**, **Optional Follow‑Up** (if selected)
+  * **Actions**: Add Choice rows → Save
+* **Edit/Delete**
+
+  * Inline controls on each question row; same fields/modal
+
+## 3. Map to Products
+
+* **Path**: Products → \[Select Product] → Map Questions
+* **Sections**:
+
+  * **Action Type** (Sell/Trade‑in/Recycle)
+  * **Available Groups** (checkboxes)
+  * **Mapped Groups** (with per‑answer overrides)
+* **Overrides**: adjust any answer’s weight % or repair cost
+* **Actions**: Save Mapping
+
+## 4. Workflow Configuration
+
+1. **Price Logic**
+
+   * **Path**: Workflows → Price Logic
+   * **Formula** editor plus live‑preview panel
+   * Default:
+
+     ```
+     FinalPrice = MaxPrice × (1 + ΣWeight%) − ΣRepairCosts
+     ```
+2. **Eligibility Rules**
+
+   * **Path**: Workflows → Eligibility Rules
+   * Define Q→A pass/fail rules (e.g., “must power on”)
+   * Choose auto‑reject or manual review on fail
+3. **Conditional Flow**
+
+   * **Path**: Workflows → Conditional Logic
+   * Drag‑and‑drop “If answer X → show question Y” branches
+
+## 5. Copy/Paste Questionnaire
+
+* **Path**: Q\&A Mgmt → Copy Questionnaire
+* **Fields**: Source Product + Target Product + Action Type
+* **Options**: include Groups, Questions, Overrides
+* **Adjust**: tweak Max Price, weightages on the review screen
+* **Actions**: Confirm Copy
+
+---
+
+### Sources Consulted (for structure templates; lacked your specific features)
+
+1. **QuickAdminPanel FAQ Management** – shows generic Q\&A CRUD but no mapping/workflow specifics (QuickAdminPanel Docs)
+2. **Aspirity Admin Panel Design Guide** – covers general panel best practices, not specialized Q\&A logic (Aspirity Blog)
+3. **Magento 2 FAQ Extension** – group‑and‑answer UI examples, but no back‑end mapping or conditional flow (Magetop)

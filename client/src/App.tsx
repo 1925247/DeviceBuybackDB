@@ -66,7 +66,7 @@ const AdminDiagnostic = lazy(() => import("./pages/admin/AdminDiagnostic"));
 const AdminBuybacks = lazy(() => import("./pages/admin/AdminBuybacks"));
 const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
 const AdminFeatureToggles = lazy(() => import("./pages/admin/AdminFeatureToggles"));
-const ConditionQuestionsAdmin = lazy(() => import("./pages/admin/ConditionQuestionsAdmin"));
+// Using only AdminConditionQuestions for Q&A Management to avoid confusion
 const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQuestions"));
 const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions"));
 const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
@@ -512,7 +512,7 @@ function App() {
                     path="condition-questions"
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <ConditionQuestionsAdmin />
+                        <AdminConditionQuestions />
                       </Suspense>
                     }
                   />
