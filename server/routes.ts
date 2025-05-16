@@ -1052,43 +1052,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete(apiRouter("/question-groups/:id"), async (req: Request, res: Response) => {
     try {
       const groupId = parseInt(req.params.id);
-      
-      // Check if the group is mapped to any products (commented out since the column doesn't exist yet)
-      // We'll skip this check for now to allow deletion to proceed
-      /*
-      const mappings = await db.select().from(productQuestionMappings)
-        .where(eq(productQuestionMappings.groupId, groupId));
-      
-      if (mappings.length > 0) {
-        return res.status(400).json({ 
-          message: "Cannot delete this question group as it is mapped to products",
-          mappings
-        });
-      }
-      */
+      console.log(`Attempting to delete question group with ID: ${groupId}`);
       
       // Get questions for this group using the column name in the database
       const groupQuestions = await db.select().from(questions)
         .where(eq(questions.group_id, groupId));
       
+      console.log(`Found ${groupQuestions.length} questions in this group to delete`);
+      
       // Delete all answer choices for questions in this group
       for (const question of groupQuestions) {
-        await db.delete(answerChoices)
-          .where(eq(answerChoices.question_id, question.id));
+        console.log(`Deleting answer choices for question ID: ${question.id}`);
+        await db.execute(sql`DELETE FROM answer_choices WHERE question_id = ${question.id}`);
       }
       
       // Delete all questions in this group
-      await db.delete(questions)
-        .where(eq(questions.group_id, groupId));
+      console.log(`Deleting all questions for group ID: ${groupId}`);
+      await db.execute(sql`DELETE FROM questions WHERE group_id = ${groupId}`);
       
       // Delete the group
-      const result = await db.delete(questionGroups)
-        .where(eq(questionGroups.id, groupId))
-        .returning();
-      
-      if (!result.length) {
-        return res.status(404).json({ message: "Question group not found" });
-      }
+      console.log(`Deleting question group ID: ${groupId}`);
+      await db.execute(sql`DELETE FROM question_groups WHERE id = ${groupId}`);
       
       res.json({ message: "Question group deleted successfully" });
     } catch (error: any) {
@@ -1231,18 +1215,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(answerChoices.questionId, questionId));
         
         // Create new choices
-        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => ({
-          questionId: questionId,
-          answerText: choice.answerText,
-          icon: choice.icon,
-          weightage: choice.weightage || 0,
-          repairCost: choice.repairCost || 0,
-          isDefault: choice.isDefault || false,
-          order: index,
-          followUpAction: choice.followUpAction || null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }));
+        const choiceValues = questionData.answerChoices.map((choice: any, index: number) => {
+          // Ensure we have a value for the required text field
+          const answerTextValue = choice.answerText || `Option ${index + 1}`;
+          
+          return {
+            questionId: questionId,
+            text: answerTextValue, // Required field for DB
+            answerText: answerTextValue,
+            value: choice.value || String(index),
+            icon: choice.icon || null,
+            impact: choice.weightage || 0, // For backward compatibility
+            weightage: choice.weightage || 0,
+            repairCost: choice.repairCost || 0,
+            isDefault: choice.isDefault || false,
+            order: index,
+            followUpAction: choice.followUpAction || null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        });
         
         if (choiceValues.length > 0) {
           const choices = await db.insert(answerChoices).values(choiceValues).returning();
