@@ -12,13 +12,15 @@ import { uploadSingleImage, getFileUrl } from "./middleware/upload";
 
 // Import API routes
 import partnerStaffRoutes from "./api/partnerStaff";
+import indianDataRoutes from "./api/indianData";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
   const apiRouter = (path: string) => `/api${path}`;
   
   // Use API routes
-  app.use('/api', partnerStaffRoutes);
+  app.use('/api/partner-staff', partnerStaffRoutes);
+  app.use('/api/indian', indianDataRoutes);
 
   // File upload endpoints
   app.post(apiRouter("/upload"), uploadSingleImage, (req: Request, res: Response) => {
