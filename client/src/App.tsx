@@ -91,8 +91,7 @@ const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
 const AdminMarketplaceSettings = lazy(() => import("./pages/admin/AdminMarketplaceSettings"));
 
-// Import Loading Spinner
-import LoadingSpinner from "./components/ui/LoadingSpinner";
+// LoadingSpinner already imported above
 
 // Not Found Page
 import NotFound from "./pages/NotFound";
