@@ -111,98 +111,107 @@ const AdminDeviceTypes: React.FC = () => {
   // When assigning brands, we want to pre-select the ones that are already assigned
   useEffect(() => {
     if (selectedDeviceType && brandDeviceTypes) {
-      const assignedBrands = brandDeviceTypes
+      const alreadyAssignedBrands = brandDeviceTypes
         .filter(relation => relation.device_type_id === selectedDeviceType.id)
         .map(relation => relation.brand_id);
-      setSelectedBrands(assignedBrands);
-    } else if (selectedDeviceType) {
-      // Reset to empty array if no brand-device relationships found
-      setSelectedBrands([]);
+      
+      setSelectedBrands(alreadyAssignedBrands);
     }
   }, [selectedDeviceType, brandDeviceTypes]);
 
-  // Mutation hooks
+  // For display purposes - non-null versions of data
+  const displayDeviceTypes = deviceTypes || [];
+  const displayBrands = brands || [];
+  const displayBrandDeviceTypes = brandDeviceTypes || [];
+
+  // Mutation hooks for API operations
   const createDeviceTypeMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      return apiRequest('POST', '/api/device-types', data);
+    mutationFn: async (deviceType: typeof formData) => {
+      return await apiRequest('POST', '/api/device-types', deviceType);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/device-types'] });
-      setIsAddModalOpen(false);
-      resetForm();
       toast({
         title: 'Success',
         description: 'Device type created successfully',
       });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
+      setIsAddModalOpen(false);
+      setFormData({
+        name: '',
+        slug: '',
+        icon: '',
+        active: true,
       });
-    },
-  });
-  
-  const updateDeviceTypeMutation = useMutation({
-    mutationFn: async (data: typeof formData & { id: number }) => {
-      return apiRequest('PUT', `/api/device-types/${data.id}`, data);
-    },
-    onSuccess: () => {
+      setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ['/api/device-types'] });
-      setIsEditModalOpen(false);
-      resetForm();
-      toast({
-        title: 'Success',
-        description: 'Device type updated successfully',
-      });
     },
     onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  const deleteDeviceTypeMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/device-types/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/device-types'] });
-      setIsDeleteModalOpen(false);
-      setSelectedDeviceType(null);
-      toast({
-        title: 'Success',
-        description: 'Device type deleted successfully',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
+        description: `Failed to create device type: ${error.message}`,
         variant: 'destructive',
       });
     },
   });
 
-  const createBrandDeviceTypeMutation = useMutation({
-    mutationFn: async (data: { brand_id: number; device_type_id: number }) => {
-      return apiRequest('POST', '/api/brand-device-types', data);
+  const updateDeviceTypeMutation = useMutation({
+    mutationFn: async (deviceType: typeof formData & { id: number }) => {
+      return await apiRequest('PUT', `/api/device-types/${deviceType.id}`, deviceType);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/brand-device-types'] });
       toast({
         title: 'Success',
-        description: 'Brand associated with device type successfully',
+        description: 'Device type updated successfully',
       });
+      setIsEditModalOpen(false);
+      setSelectedDeviceType(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/device-types'] });
     },
     onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: `Failed to update device type: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteDeviceTypeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest('DELETE', `/api/device-types/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Device type deleted successfully',
+      });
+      setIsDeleteModalOpen(false);
+      setSelectedDeviceType(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/device-types'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to delete device type: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const assignBrandMutation = useMutation({
+    mutationFn: async (data: { brand_id: number; device_type_id: number }) => {
+      return await apiRequest('POST', '/api/brand-device-types', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Brand assigned successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/brand-device-types'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to assign brand: ${error.message}`,
         variant: 'destructive',
       });
     },
@@ -210,98 +219,63 @@ const AdminDeviceTypes: React.FC = () => {
 
   const deleteBrandDeviceTypeMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/brand-device-types/${id}`);
+      return await apiRequest('DELETE', `/api/brand-device-types/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/brand-device-types'] });
       toast({
         title: 'Success',
-        description: 'Brand removed from device type successfully',
+        description: 'Brand association removed successfully',
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/brand-device-types'] });
     },
     onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: `Failed to remove brand association: ${error.message}`,
         variant: 'destructive',
       });
     },
   });
 
-  // Upload icon mutation
-  const uploadImageMutation = useMutation({
+  const uploadFileMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('image', file);
-      
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload image');
-      }
-      
-      return await response.json();
+      return await apiRequest('POST', '/api/upload', formData);
     },
     onSuccess: (data) => {
-      setFormData(prev => ({ ...prev, icon: data.url }));
+      setFormData(prev => ({
+        ...prev,
+        icon: data.url,
+      }));
       toast({
         title: 'Success',
-        description: 'Icon uploaded successfully',
+        description: 'File uploaded successfully',
       });
     },
     onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: error.message,
+        description: `Failed to upload file: ${error.message}`,
         variant: 'destructive',
       });
     },
   });
 
-  // Helper functions
-  const resetForm = () => {
+  // Event handlers
+  const handleFileUpload = (file: File) => {
+    setSelectedFile(file);
+    uploadFileMutation.mutate(file);
+  };
+
+  const openAddModal = () => {
     setFormData({
       name: '',
       slug: '',
       icon: '',
       active: true,
     });
-    setSelectedFile(null);
-  };
-  
-  const handleFileUpload = (file: File) => {
-    setSelectedFile(file);
-    uploadImageMutation.mutate(file);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
-    }));
-  };
-
-  const handleAddDeviceType = (e: React.FormEvent) => {
-    e.preventDefault();
-    createDeviceTypeMutation.mutate(formData);
-  };
-
-  const handleEditDeviceType = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedDeviceType) {
-      updateDeviceTypeMutation.mutate({ ...formData, id: selectedDeviceType.id });
-    }
-  };
-
-  const handleDeleteDeviceType = () => {
-    if (selectedDeviceType) {
-      deleteDeviceTypeMutation.mutate(selectedDeviceType.id);
-    }
+    setIsAddModalOpen(true);
   };
 
   const openEditModal = (deviceType: DeviceType) => {
@@ -309,7 +283,7 @@ const AdminDeviceTypes: React.FC = () => {
     setFormData({
       name: deviceType.name,
       slug: deviceType.slug,
-      icon: deviceType.icon || '',
+      icon: deviceType.icon,
       active: deviceType.active,
     });
     setIsEditModalOpen(true);
@@ -325,206 +299,133 @@ const AdminDeviceTypes: React.FC = () => {
     setIsAssignBrandsModalOpen(true);
   };
 
+  const handleCreateDeviceType = (e: React.FormEvent) => {
+    e.preventDefault();
+    createDeviceTypeMutation.mutate(formData);
+  };
+
+  const handleUpdateDeviceType = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedDeviceType) {
+      updateDeviceTypeMutation.mutate({
+        ...formData,
+        id: selectedDeviceType.id,
+      });
+    }
+  };
+
+  const handleDeleteDeviceType = () => {
+    if (selectedDeviceType) {
+      deleteDeviceTypeMutation.mutate(selectedDeviceType.id);
+    }
+  };
+
   const handleAssignBrand = (brandId: number) => {
     if (selectedDeviceType) {
-      createBrandDeviceTypeMutation.mutate({
+      assignBrandMutation.mutate({
         brand_id: brandId,
-        device_type_id: selectedDeviceType.id
+        device_type_id: selectedDeviceType.id,
       });
     }
   };
 
-  const handleRemoveBrand = (relationId: number) => {
-    deleteBrandDeviceTypeMutation.mutate(relationId);
-  };
-
-  const toggleBrandSelection = (brandId: number) => {
-    setSelectedBrands(prev => {
-      if (prev.includes(brandId)) {
-        return prev.filter(id => id !== brandId);
-      } else {
-        return [...prev, brandId];
-      }
-    });
-  };
-
-  const saveSelectedBrands = () => {
-    if (!selectedDeviceType) return;
-    
-    // Use safe defaults if brandDeviceTypes is undefined
-    const safeDisplayBrandDeviceTypes = displayBrandDeviceTypes || [];
-    
-    // Get current relations for this device type
-    const currentRelations = safeDisplayBrandDeviceTypes.filter(
-      relation => relation.device_type_id === selectedDeviceType.id
-    );
-    
-    // Brands to remove - they exist in current relations but not in selectedBrands
-    const brandsToRemove = currentRelations.filter(
-      relation => !selectedBrands.includes(relation.brand_id)
-    );
-    
-    // Brands to add - they exist in selectedBrands but not in current relations
-    const currentBrandIds = currentRelations.map(relation => relation.brand_id);
-    const brandsToAdd = selectedBrands.filter(
-      brandId => !currentBrandIds.includes(brandId)
-    );
-    
-    // Remove first, then add
-    Promise.all(
-      brandsToRemove.map(relation => 
-        deleteBrandDeviceTypeMutation.mutateAsync(relation.id)
-      )
-    ).then(() => {
-      return Promise.all(
-        brandsToAdd.map(brandId => 
-          createBrandDeviceTypeMutation.mutateAsync({
-            brand_id: brandId,
-            device_type_id: selectedDeviceType.id
-          })
-        )
-      );
-    }).then(() => {
+  const handleAssignSelectedBrands = () => {
+    if (selectedDeviceType && selectedBrands.length > 0) {
+      // Get already assigned brands to avoid duplicates
+      const alreadyAssignedBrands = displayBrandDeviceTypes
+        .filter(relation => relation.device_type_id === selectedDeviceType.id)
+        .map(relation => relation.brand_id);
+      
+      // Filter only brands that are not already assigned
+      const brandsToAssign = selectedBrands.filter(brandId => !alreadyAssignedBrands.includes(brandId));
+      
+      // Assign each brand
+      brandsToAssign.forEach(brandId => {
+        assignBrandMutation.mutate({
+          brand_id: brandId,
+          device_type_id: selectedDeviceType.id,
+        });
+      });
+      
+      // Close modal after assigning
       setIsAssignBrandsModalOpen(false);
-      toast({
-        title: 'Success',
-        description: 'Brand assignments updated successfully',
-      });
-    }).catch(error => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    });
+    }
   };
 
-  // Loading state
-  if (isLoadingDeviceTypes || isLoadingBrands || isLoadingBrandDeviceTypes) {
-    return (
-      <div className="py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">Device Type Management</h1>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Use sample data if the real data fails to load
-  const displayDeviceTypes = deviceTypes || [
-    {
-      id: 1,
-      name: "Smartphone",
-      slug: "smartphones",
-      icon: "smartphone",
-      active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      name: "Laptop",
-      slug: "laptops",
-      icon: "laptop",
-      active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 3,
-      name: "Tablet",
-      slug: "tablets",
-      icon: "tablet",
-      active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 4,
-      name: "Smartwatch",
-      slug: "smartwatches",
-      icon: "watch",
-      active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
-  
-  const displayBrands = brands || [];
-  // Fix for the new API response format - extract rows from the response
-  const displayBrandDeviceTypes = brandDeviceTypes && brandDeviceTypes.rows ? brandDeviceTypes.rows : [];
-
-  // Render functions
   const renderAddModal = () => (
     <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-      <DialogTrigger asChild>
-        <Button className="mb-4 flex items-center gap-2">
-          <PlusCircle size={16} />
-          Add New Device Type
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Device Type</DialogTitle>
+          <DialogTitle>Add Device Type</DialogTitle>
           <DialogDescription>
-            Create a new device type for your catalog.
+            Create a new device type. Device types are used to categorize devices.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleAddDeviceType} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Device Type Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-            />
+        <form onSubmit={handleCreateDeviceType}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="slug" className="text-right">
+                Slug
+              </Label>
+              <Input
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="icon" className="text-right">
+                Icon
+              </Label>
+              <div className="col-span-3">
+                <FileUpload onUpload={handleFileUpload} />
+                {formData.icon && (
+                  <div className="mt-2 flex items-center">
+                    <img
+                      src={formData.icon}
+                      alt="Device type icon"
+                      className="h-8 w-8 object-contain"
+                    />
+                    <span className="ml-2 text-sm text-gray-500">Icon preview</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="active" className="text-right">
+                Active
+              </Label>
+              <div className="col-span-3 flex items-center">
+                <Checkbox
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, active: checked as boolean })
+                  }
+                />
+                <Label htmlFor="active" className="ml-2">
+                  Device type is active
+                </Label>
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="slug">Slug</Label>
-            <Input
-              id="slug"
-              name="slug"
-              value={formData.slug}
-              onChange={handleInputChange}
-              required
-            />
-            <p className="text-xs text-gray-500">
-              Used in URLs. Should be lowercase with hyphens instead of spaces.
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <FileUpload
-              onFileChange={handleFileUpload}
-              onUrlChange={(url) => setFormData((prev) => ({ ...prev, icon: url }))}
-              initialUrl={formData.icon}
-              label="Icon"
-              description="Upload an icon or enter a URL (recommended size: 64x64px)"
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="active"
-              name="active"
-              checked={formData.active}
-              onCheckedChange={(checked) => 
-                setFormData(prev => ({ ...prev, active: checked === true }))
-              }
-            />
-            <Label htmlFor="active">Active</Label>
-          </div>
-          
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancel
-            </Button>
             <Button type="submit" disabled={createDeviceTypeMutation.isPending}>
-              {createDeviceTypeMutation.isPending ? 'Creating...' : 'Create Device Type'}
+              {createDeviceTypeMutation.isPending ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>
         </form>
@@ -534,67 +435,78 @@ const AdminDeviceTypes: React.FC = () => {
 
   const renderEditModal = () => (
     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Device Type</DialogTitle>
           <DialogDescription>
-            Update the details of your device type.
+            Update the device type details.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleEditDeviceType} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Device Type Name</Label>
-            <Input
-              id="edit-name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-            />
+        <form onSubmit={handleUpdateDeviceType}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-slug" className="text-right">
+                Slug
+              </Label>
+              <Input
+                id="edit-slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-icon" className="text-right">
+                Icon
+              </Label>
+              <div className="col-span-3">
+                <FileUpload onUpload={handleFileUpload} />
+                {formData.icon && (
+                  <div className="mt-2 flex items-center">
+                    <img
+                      src={formData.icon}
+                      alt="Device type icon"
+                      className="h-8 w-8 object-contain"
+                    />
+                    <span className="ml-2 text-sm text-gray-500">Icon preview</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-active" className="text-right">
+                Active
+              </Label>
+              <div className="col-span-3 flex items-center">
+                <Checkbox
+                  id="edit-active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, active: checked as boolean })
+                  }
+                />
+                <Label htmlFor="edit-active" className="ml-2">
+                  Device type is active
+                </Label>
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="edit-slug">Slug</Label>
-            <Input
-              id="edit-slug"
-              name="slug"
-              value={formData.slug}
-              onChange={handleInputChange}
-              required
-            />
-            <p className="text-xs text-gray-500">
-              Used in URLs. Should be lowercase with hyphens instead of spaces.
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <FileUpload
-              onFileChange={handleFileUpload}
-              onUrlChange={(url) => setFormData((prev) => ({ ...prev, icon: url }))}
-              initialUrl={formData.icon}
-              label="Icon"
-              description="Upload an icon or enter a URL (recommended size: 64x64px)"
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="edit-active"
-              name="active"
-              checked={formData.active}
-              onCheckedChange={(checked) => 
-                setFormData(prev => ({ ...prev, active: checked === true }))
-              }
-            />
-            <Label htmlFor="edit-active">Active</Label>
-          </div>
-          
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
             <Button type="submit" disabled={updateDeviceTypeMutation.isPending}>
-              {updateDeviceTypeMutation.isPending ? 'Updating...' : 'Update Device Type'}
+              {updateDeviceTypeMutation.isPending ? 'Updating...' : 'Update'}
             </Button>
           </DialogFooter>
         </form>
@@ -603,60 +515,33 @@ const AdminDeviceTypes: React.FC = () => {
   );
 
   const renderDeleteModal = () => (
-    <Dialog open={isDeleteModalOpen} onOpenChange={(open) => {
-      if (!deleteDeviceTypeMutation.isPending) {
-        setIsDeleteModalOpen(open);
-      }
-    }}>
-      <DialogContent>
+    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Delete Device Type</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this device type? This action cannot be undone and may affect device models and buyback requests associated with this type.
+            Are you sure you want to delete this device type? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-medium text-lg">{selectedDeviceType?.name}</span>
-            {selectedDeviceType?.icon && (
-              <img 
-                src={selectedDeviceType.icon} 
-                alt={`${selectedDeviceType.name} icon`} 
-                className="h-6 w-auto"
-              />
-            )}
-          </div>
-          
-          {deleteDeviceTypeMutation.error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-              <p className="font-medium mb-1">Error:</p>
-              <p>{(deleteDeviceTypeMutation.error as Error).message}</p>
-              
-              {(deleteDeviceTypeMutation.error as Error).message.includes('models associated') && (
-                <div className="mt-2 text-xs">
-                  <p className="font-medium">Recommendation:</p>
-                  <p>Please delete all device models associated with this device type first, then try again.</p>
-                </div>
-              )}
-            </div>
-          )}
+          <p className="text-sm text-gray-500">
+            This will delete the device type <strong>{selectedDeviceType?.name}</strong> and all of its
+            associated data. This action is permanent and cannot be undone.
+          </p>
         </div>
         <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setIsDeleteModalOpen(false)}
-            disabled={deleteDeviceTypeMutation.isPending}
           >
             Cancel
           </Button>
-          <Button 
-            type="button" 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             onClick={handleDeleteDeviceType}
             disabled={deleteDeviceTypeMutation.isPending}
           >
-            {deleteDeviceTypeMutation.isPending ? 'Deleting...' : 'Delete Device Type'}
+            {deleteDeviceTypeMutation.isPending ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -665,92 +550,57 @@ const AdminDeviceTypes: React.FC = () => {
 
   const renderAssignBrandsModal = () => (
     <Dialog open={isAssignBrandsModalOpen} onOpenChange={setIsAssignBrandsModalOpen}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Assign Brands to {selectedDeviceType?.name}</DialogTitle>
           <DialogDescription>
-            Select the brands that offer this device type.
+            Select brands to associate with this device type.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <div className="mb-4">
-            <Label className="mb-2 block">Selected Brands</Label>
-            <div className="flex flex-wrap gap-2 min-h-10 p-2 border rounded-md bg-gray-50">
-              {selectedBrands.length === 0 ? (
-                <p className="text-gray-500 text-sm p-1">No brands selected</p>
-              ) : (
-                selectedBrands.map(brandId => {
-                  const brand = displayBrands.find(b => b.id === brandId);
-                  if (!brand) return null;
-                  return (
-                    <Badge key={brand.id} className="flex items-center gap-1 py-1 pl-2">
-                      {brand.logo && (
-                        <img 
-                          src={brand.logo} 
-                          alt={`${brand.name} logo`} 
-                          className="h-4 w-4 object-contain mr-1"
-                        />
-                      )}
-                      {brand.name}
-                      <button 
-                        type="button"
-                        className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
-                        onClick={() => toggleBrandSelection(brand.id)}
-                      >
-                        <X size={12} />
-                      </button>
-                    </Badge>
-                  );
-                })
-              )}
-            </div>
-          </div>
-          
-          <ScrollArea className="h-64 border rounded-md p-2">
-            <div className="space-y-2">
-              {displayBrands.map(brand => (
-                <div 
-                  key={brand.id} 
-                  className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
-                    selectedBrands.includes(brand.id) ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={() => toggleBrandSelection(brand.id)}
-                >
+            <Label htmlFor="brands">Brands</Label>
+            <div className="mt-2 space-y-2">
+              {displayBrands.map((brand) => (
+                <div key={brand.id} className="flex items-center space-x-2">
                   <Checkbox 
-                    checked={selectedBrands.includes(brand.id)} 
-                    onCheckedChange={() => toggleBrandSelection(brand.id)}
-                    className="mr-2"
+                    id={`brand-${brand.id}`}
+                    checked={selectedBrands.includes(brand.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedBrands([...selectedBrands, brand.id]);
+                      } else {
+                        setSelectedBrands(selectedBrands.filter(id => id !== brand.id));
+                      }
+                    }}
                   />
-                  <div className="flex items-center flex-1">
+                  <Label htmlFor={`brand-${brand.id}`} className="flex items-center">
                     {brand.logo && (
-                      <img 
-                        src={brand.logo} 
-                        alt={`${brand.name} logo`} 
-                        className="h-6 w-6 object-contain mr-2"
+                      <img
+                        src={brand.logo}
+                        alt={`${brand.name} logo`}
+                        className="mr-2 h-5 w-5 object-contain"
                       />
                     )}
-                    <span>{brand.name}</span>
-                  </div>
+                    {brand.name}
+                  </Label>
                 </div>
               ))}
             </div>
-            <ScrollBar />
-          </ScrollArea>
+          </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setIsAssignBrandsModalOpen(false)}>
+          <Button
+            variant="outline"
+            onClick={() => setIsAssignBrandsModalOpen(false)}
+          >
             Cancel
           </Button>
-          <Button 
-            type="button" 
-            onClick={saveSelectedBrands}
-            disabled={
-              createBrandDeviceTypeMutation.isPending || 
-              deleteBrandDeviceTypeMutation.isPending
-            }
+          <Button
+            onClick={handleAssignSelectedBrands}
+            disabled={assignBrandMutation.isPending}
           >
-            {createBrandDeviceTypeMutation.isPending || deleteBrandDeviceTypeMutation.isPending ? 
-              'Saving...' : 'Save Brand Assignments'}
+            {assignBrandMutation.isPending ? 'Assigning...' : 'Assign Brands'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -758,86 +608,80 @@ const AdminDeviceTypes: React.FC = () => {
   );
 
   return (
-    <div className="py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Device Type Management</h1>
-        {renderAddModal()}
+    <div className="container mx-auto py-8">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Device Types</h1>
+        <Button onClick={openAddModal}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Device Type
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Device Types List */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Device Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-white rounded-lg overflow-hidden">
-                <Table>
-                  <TableCaption>List of device types in your catalog</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">ID</TableHead>
-                      <TableHead>Icon</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {displayDeviceTypes.length === 0 ? (
+      {isLoadingDeviceTypes ? (
+        <div className="flex h-96 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-gray-900"></div>
+        </div>
+      ) : (
+        <>
+          {/* Device Types Table */}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Device Types</CardTitle>
+                <CardDescription>
+                  Manage device types for your marketplace.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-hidden border rounded-lg">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                          No device types found. Add your first device type using the button above.
-                        </TableCell>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Icon</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Slug</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Updated</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ) : (
-                      displayDeviceTypes.map((deviceType) => (
+                    </TableHeader>
+                    <TableBody>
+                      {displayDeviceTypes.map((deviceType) => (
                         <TableRow key={deviceType.id}>
-                          <TableCell className="font-medium">{deviceType.id}</TableCell>
+                          <TableCell>{deviceType.id}</TableCell>
                           <TableCell>
                             {deviceType.icon ? (
-                              <img 
-                                src={deviceType.icon} 
-                                alt={`${deviceType.name} icon`} 
+                              <img
+                                src={deviceType.icon}
+                                alt={`${deviceType.name} icon`}
                                 className="h-8 w-8 object-contain"
                               />
                             ) : (
-                              <div className="h-8 w-8 bg-gray-200 rounded-md flex items-center justify-center text-gray-500 text-xs">
-                                No Icon
-                              </div>
+                              <div className="h-8 w-8 rounded bg-gray-200"></div>
                             )}
                           </TableCell>
-                          <TableCell>{deviceType.name}</TableCell>
-                          <TableCell className="text-slate-500">{deviceType.slug}</TableCell>
+                          <TableCell className="font-medium">{deviceType.name}</TableCell>
+                          <TableCell>{deviceType.slug}</TableCell>
                           <TableCell>
-                            <Badge 
-                              variant={deviceType.active ? "default" : "outline"}
-                              className={deviceType.active ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
-                            >
-                              {deviceType.active ? "Active" : "Inactive"}
+                            <Badge variant={deviceType.active ? 'default' : 'secondary'}>
+                              {deviceType.active ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-8 px-2 text-xs"
-                                onClick={() => openAssignBrandsModal(deviceType)}
-                              >
-                                Assign Brands
-                              </Button>
-                              <Button 
-                                variant="ghost" 
+                          <TableCell>{new Date(deviceType.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(deviceType.updated_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="ghost"
                                 size="icon"
                                 onClick={() => openEditModal(deviceType)}
                               >
                                 <Pencil size={16} />
                               </Button>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="icon"
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
                                 onClick={() => openDeleteModal(deviceType)}
@@ -847,272 +691,164 @@ const AdminDeviceTypes: React.FC = () => {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Brand Associations By Device Type */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Brand Associations By Device Type</CardTitle>
-              <CardDescription>
-                View and manage which brands are associated with each device type
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {displayDeviceTypes.map(deviceType => (
-                  <div key={deviceType.id} className="border rounded-md p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {deviceType.icon && (
-                          <img 
-                            src={deviceType.icon} 
-                            alt={`${deviceType.name} icon`} 
-                            className="h-6 w-6 object-contain"
-                          />
-                        )}
-                        <h3 className="text-lg font-medium">{deviceType.name}</h3>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Brand Associations By Device Type */}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Brand Associations By Device Type</CardTitle>
+                <CardDescription>
+                  View and manage which brands are associated with each device type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {displayDeviceTypes.map(deviceType => (
+                    <div key={deviceType.id} className="border rounded-md p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {deviceType.icon && (
+                            <img 
+                              src={deviceType.icon} 
+                              alt={`${deviceType.name} icon`} 
+                              className="h-6 w-6 object-contain"
+                            />
+                          )}
+                          <h3 className="text-lg font-medium">{deviceType.name}</h3>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => openAssignBrandsModal(deviceType)}
+                        >
+                          <Plus size={14} className="mr-1" />
+                          Add Brands
+                        </Button>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => openAssignBrandsModal(deviceType)}
-                      >
-                        <Plus size={14} className="mr-1" />
-                        Add Brands
-                      </Button>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {!displayBrandDeviceTypes || displayBrandDeviceTypes.filter(relation => relation.device_type_id === deviceType.id).length === 0 ? (
+                          <p className="text-sm text-gray-500">No brands assigned yet</p>
+                        ) : (
+                          displayBrandDeviceTypes
+                            .filter(relation => relation.device_type_id === deviceType.id)
+                            .map(relation => {
+                              const brand = displayBrands.find(b => b.id === relation.brand_id);
+                              if (!brand) return null;
+                              
+                              return (
+                                <Badge 
+                                  key={relation.id} 
+                                  variant="secondary"
+                                  className="flex items-center gap-1 py-1 pl-2"
+                                >
+                                  {brand.logo && (
+                                    <img 
+                                      src={brand.logo} 
+                                      alt={`${brand.name} logo`} 
+                                      className="h-4 w-4 object-contain mr-1"
+                                    />
+                                  )}
+                                  {brand.name}
+                                  <button 
+                                    type="button"
+                                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                                    onClick={() => deleteBrandDeviceTypeMutation.mutate(relation.id)}
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </Badge>
+                              );
+                            })
+                        )}
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {!displayBrandDeviceTypes || displayBrandDeviceTypes.filter(relation => relation.device_type_id === deviceType.id).length === 0 ? (
-                        <p className="text-sm text-gray-500">No brands assigned yet</p>
-                      ) : (
-                        displayBrandDeviceTypes
-                          .filter(relation => relation.device_type_id === deviceType.id)
-                          .map(relation => {
-                            const brand = displayBrands.find(b => b.id === relation.brand_id);
-                            if (!brand) return null;
-                            
-                            return (
-                              <Badge 
-                                key={relation.id} 
-                                variant="secondary"
-                                className="flex items-center gap-1 py-1 pl-2"
-                              >
-                                {brand.logo && (
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* All Brand Associations Table */}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Brand Associations</CardTitle>
+                <CardDescription>
+                  View and manage all brand-device type associations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-hidden border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Device Type</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {displayBrandDeviceTypes && displayBrandDeviceTypes.length > 0 ? (
+                        displayBrandDeviceTypes.map((relation) => (
+                          <TableRow key={relation.id}>
+                            <TableCell>{relation.id}</TableCell>
+                            <TableCell className="font-medium">{relation.device_type_name}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {brands?.find(b => b.id === relation.brand_id)?.logo && (
                                   <img 
-                                    src={brand.logo} 
-                                    alt={`${brand.name} logo`} 
-                                    className="h-4 w-4 object-contain mr-1"
+                                    src={brands?.find(b => b.id === relation.brand_id)?.logo} 
+                                    alt={`${relation.brand_name} logo`} 
+                                    className="h-6 w-6 object-contain"
                                   />
                                 )}
-                                {brand.name}
-                                <button 
-                                  type="button"
-                                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
-                                  onClick={() => deleteBrandDeviceTypeMutation.mutate(relation.id)}
-                                >
-                                  <X size={12} />
-                                </button>
-                              </Badge>
-                            );
-                          })
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* All Brand Associations Table */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Brand Associations</CardTitle>
-              <CardDescription>
-                View and manage all brand-device type associations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-hidden border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Device Type</TableHead>
-                      <TableHead>Brand</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {displayBrandDeviceTypes && displayBrandDeviceTypes.length > 0 ? (
-                      displayBrandDeviceTypes.map((relation) => (
-                        <TableRow key={relation.id}>
-                          <TableCell>{relation.id}</TableCell>
-                          <TableCell className="font-medium">{relation.device_type_name}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {brands?.find(b => b.id === relation.brand_id)?.logo && (
-                                <img 
-                                  src={brands?.find(b => b.id === relation.brand_id)?.logo} 
-                                  alt={`${relation.brand_name} logo`} 
-                                  className="h-6 w-6 object-contain"
-                                />
-                              )}
-                              {relation.brand_name}
-                            </div>
-                          </TableCell>
-                          <TableCell>{new Date(relation.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                deleteBrandDeviceTypeMutation.mutate(relation.id);
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
+                                {relation.brand_name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{new Date(relation.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  deleteBrandDeviceTypeMutation.mutate(relation.id);
+                                }}
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-4">
+                            No brand associations found
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          No brand associations found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Add New Brand Association */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add New Brand Association</CardTitle>
-              <CardDescription>
-                Create new associations between device types and brands
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="new-device-type" className="mb-2 block">Device Type</Label>
-                  <Select 
-                    onValueChange={(value) => {
-                      const selectedId = Number(value);
-                      setSelectedDeviceType(displayDeviceTypes.find(dt => dt.id === selectedId) || null);
-                    }}
-                  >
-                    <SelectTrigger id="new-device-type">
-                      <SelectValue placeholder="Select device type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {displayDeviceTypes.map(deviceType => (
-                        <SelectItem key={deviceType.id} value={deviceType.id.toString()}>
-                          {deviceType.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex-1">
-                  <Label htmlFor="new-brand" className="mb-2 block">Brand</Label>
-                  <Select 
-                    onValueChange={(value) => {
-                      const selectedId = Number(value);
-                      setSelectedBrands([selectedId]);
-                    }}
-                  >
-                    <SelectTrigger id="new-brand">
-                      <SelectValue placeholder="Select brand" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {displayBrands.map(brand => (
-                        <SelectItem key={brand.id} value={brand.id.toString()}>
-                          {brand.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button
-                  onClick={() => {
-                    if (selectedDeviceType && selectedBrands.length > 0) {
-                      handleAssignBrand(selectedBrands[0]);
-                    } else {
-                      toast({
-                        title: "Missing selection",
-                        description: "Please select both a device type and a brand",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                >
-                  Create Association
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-                          .filter(relation => relation.device_type_id === deviceType.id)
-                          .map(relation => {
-                            const brand = displayBrands.find(b => b.id === relation.brand_id);
-                            if (!brand) return null;
-                            
-                            return (
-                              <Badge 
-                                key={relation.id} 
-                                variant="secondary"
-                                className="flex items-center gap-1 py-1 pl-2"
-                              >
-                                {brand.logo && (
-                                  <img 
-                                    src={brand.logo} 
-                                    alt={`${brand.name} logo`} 
-                                    className="h-4 w-4 object-contain mr-1"
-                                  />
-                                )}
-                                {brand.name}
-                                <button 
-                                  type="button"
-                                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
-                                  onClick={() => handleRemoveBrand(relation.id)}
-                                >
-                                  <X size={12} />
-                                </button>
-                              </Badge>
-                            );
-                          })
                       )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
 
+      {/* Render modals */}
+      {renderAddModal()}
       {renderEditModal()}
       {renderDeleteModal()}
       {renderAssignBrandsModal()}
