@@ -2,6 +2,7 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db, pool } from "./db";
+import pg from "pg";
 import { sql, eq, and, asc, desc } from "drizzle-orm";
 import { questionGroups, questions, answerChoices, productQuestionMappings } from "../shared/schema";
 import { 
@@ -1541,33 +1542,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Question Group ID is required" });
       }
       
-      // Check if mapping already exists
-      const existingMapping = await db.select().from(productQuestionMappings)
-        .where(and(
-          eq(productQuestionMappings.product_id, parseInt(mappingData.productId)),
-          eq(productQuestionMappings.group_id, parseInt(mappingData.groupId))
-        ));
+      // Get connection to database
+      const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+      await client.connect();
       
-      if (existingMapping.length > 0) {
-        return res.status(400).json({ message: "This product-question group mapping already exists" });
+      try {
+        // Check if mapping already exists with direct SQL
+        const checkExisting = await client.query(`
+          SELECT * FROM product_question_mappings 
+          WHERE product_id = $1 AND group_id = $2
+        `, [parseInt(mappingData.productId), parseInt(mappingData.groupId)]);
+        
+        if (checkExisting.rows.length > 0) {
+          await client.end();
+          return res.status(400).json({ message: "This product-question group mapping already exists" });
+        }
+        
+        // Get action type from request if available
+        const actionType = mappingData.actionType || null;
+        
+        // Insert new mapping with direct SQL
+        const result = await client.query(`
+          INSERT INTO product_question_mappings
+            (product_id, group_id, action_type, required, impact_multiplier, created_at, updated_at)
+          VALUES
+            ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING *
+        `, [
+          parseInt(mappingData.productId),
+          parseInt(mappingData.groupId),
+          actionType,
+          true,
+          1.0,
+          new Date(),
+          new Date()
+        ]);
+        
+        const newMapping = result.rows[0];
+        await client.end();
+        
+        res.status(201).json(newMapping);
+      } catch (error) {
+        await client.end();
+        throw error;
       }
-      
-      // Insert new mapping with columns that match the actual database table
-      // Get action type from request if available
-      const actionType = mappingData.actionType || null;
-      
-      // Insert only fields that actually exist in the database
-      const [newMapping] = await db.insert(productQuestionMappings)
-        .values({
-          productId: parseInt(mappingData.productId),
-          groupId: parseInt(mappingData.groupId),
-          required: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning();
-      
-      res.status(201).json(newMapping);
     } catch (error: any) {
       console.error("Error creating product-question mapping:", error);
       res.status(500).json({ message: error.message || "Failed to create product-question mapping" });
