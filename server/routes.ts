@@ -15,6 +15,7 @@ import partnerStaffRoutes from "./api/partnerStaff";
 import indianDataRoutes from "./api/indianData";
 import tenantRoutes from "./routes/tenantRoutes";
 import tenantConfigurationRoutes from "./api/tenantConfiguration";
+import tenantApiRoutes from "./api/tenantApi";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
@@ -25,6 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/indian', indianDataRoutes);
   app.use('/api', tenantRoutes); // Add tenant routes
   app.use('/api', tenantConfigurationRoutes); // Add tenant configuration routes
+  app.use('/api/tenant', tenantApiRoutes); // Add tenant-specific API routes
 
   // File upload endpoints
   app.post(apiRouter("/upload"), uploadSingleImage, (req: Request, res: Response) => {
