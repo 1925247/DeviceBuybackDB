@@ -411,6 +411,47 @@ export const kycDocuments = pgTable("kyc_documents", {
   uniqueDocumentPerUser: unique().on(table.userId, table.documentTypeId),
 }));
 
+// Device Valuations for Buyback System
+export const valuations = pgTable("valuations", {
+  id: serial("id").primaryKey(),
+  deviceModelId: integer("device_model_id").notNull().references(() => deviceModels.id),
+  brandId: integer("brand_id").notNull().references(() => brands.id),
+  basePrice: real("base_price").notNull(),
+  conditionMultipliers: jsonb("condition_multipliers").notNull(), // JSON with condition keys and multiplier values
+  regionId: integer("region_id").references(() => regions.id),
+  lastUpdatedBy: integer("last_updated_by").references(() => users.id),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueModelBrandRegion: unique().on(table.deviceModelId, table.brandId, table.regionId || "null"),
+}));
+
+export const insertValuationSchema = createInsertSchema(valuations);
+export type InsertValuation = z.infer<typeof insertValuationSchema>;
+export type Valuation = typeof valuations.$inferSelect;
+
+// System Feature Toggles - Admin-controlled feature flags
+export const featureToggles = pgTable("feature_toggles", {
+  id: serial("id").primaryKey(),
+  featureKey: text("feature_key").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description").notNull(),
+  isEnabled: boolean("is_enabled").default(false),
+  category: text("category").notNull(), // e.g., 'marketplace', 'buyback', 'partners', 'general'
+  scope: text("scope").notNull(), // 'global', 'tenant', 'partner', 'region'
+  scopeId: integer("scope_id"), // Used for tenant/partner/region-specific toggles
+  requiredPermission: text("required_permission"), // Permission required to modify this toggle
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  lastModifiedAt: timestamp("last_modified_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertFeatureToggleSchema = createInsertSchema(featureToggles);
+export type InsertFeatureToggle = z.infer<typeof insertFeatureToggleSchema>;
+export type FeatureToggle = typeof featureToggles.$inferSelect;
+
 // Partner Service Areas
 export const partnerServiceAreas = pgTable("partner_service_areas", {
   id: serial("id").primaryKey(),

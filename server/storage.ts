@@ -12,6 +12,8 @@ import {
   deviceTypes,
   brands,
   deviceModels,
+  valuations, type Valuation, type InsertValuation,
+  featureToggles, type FeatureToggle, type InsertFeatureToggle,
   // Indian database tables
   indianStates, type IndianState, type InsertIndianState,
   indianCities, type IndianCity, type InsertIndianCity,
