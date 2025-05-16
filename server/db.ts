@@ -19,9 +19,12 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create connection pool
+// Create connection pool with proper SSL configuration for Neon database
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Required for some cloud environments
+  }
 });
 
 // Create Drizzle ORM instance with proper type options
