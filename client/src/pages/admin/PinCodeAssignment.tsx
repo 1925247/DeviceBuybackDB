@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { getLocationFromPincode } from '../../api/pincode';
 import { 
   Card, 
   CardContent, 
@@ -127,7 +128,30 @@ const PinCodeAssignment: React.FC = () => {
         return;
       }
       
-      // Try to fetch from our Indian Postal Code API
+      // Try to fetch from the reliable public postal PIN code API
+      try {
+        const location = await getLocationFromPincode(pincode);
+        if (location && location.city && location.state) {
+          setNewPincode(prev => ({
+            ...prev,
+            city: location.city,
+            state: location.state,
+            // Most major cities are metro areas in India (Delhi, Mumbai, etc.)
+            isMetro: ['Delhi', 'Mumbai', 'Kolkata', 'Chennai', 'Bangalore', 
+                      'Hyderabad', 'Pune', 'Ahmedabad'].includes(location.city) || prev.isMetro
+          }));
+          
+          toast({
+            title: 'PIN Code Found',
+            description: `Address details loaded for ${pincode}`,
+          });
+          return;
+        }
+      } catch (apiError) {
+        console.error('Public PIN code API error:', apiError);
+      }
+      
+      // Fallback to our internal API if public API fails
       const response = await fetch(`/api/indian/postal-codes/${pincode}`);
       
       if (response.ok) {
