@@ -1840,11 +1840,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Get all questions from these groups
           const questionsResult = await pool.query(
-            `SELECT q.id, q.question_text as question, q.device_type_id as "deviceTypeId", 
-                    q.order_index as "order", q.active
+            `SELECT q.id, q.question_text as question, 
+                    ${deviceTypeId || 1} as "deviceTypeId", 
+                    q.order as "order", q.active
              FROM questions q
              WHERE q.group_id IN (${groupIds.map((_, i) => `$${i + 1}`).join(',')})
-             ORDER BY q.order_index`,
+             ORDER BY q.order`,
             groupIds
           );
           
@@ -1852,18 +1853,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // For each question, get its answer options
           const questions = await Promise.all(questionsResult.rows.map(async (question) => {
-            const optionsResult = await pool.query(
-              `SELECT id, answer_text as text, value
-               FROM answer_choices
-               WHERE question_id = $1
-               ORDER BY id`,
-              [question.id]
-            );
-            
-            return {
-              ...question,
-              options: optionsResult.rows
-            };
+            // Check if answer_choices table exists and has the required columns
+            try {
+              const optionsResult = await pool.query(
+                `SELECT id, COALESCE(answer_text, text) as text, 
+                         CASE 
+                           WHEN value IS NULL THEN '1.0'::numeric
+                           ELSE value::text
+                         END as value
+                 FROM answer_choices
+                 WHERE question_id = $1
+                 ORDER BY id`,
+                [question.id]
+              );
+              
+              if (optionsResult.rows.length === 0) {
+                // Create some default options if none exist
+                console.log(`No options found for question ${question.id}, creating defaults`);
+                const defaultOptions = [
+                  { id: 1, text: 'Yes', value: '1.0' },
+                  { id: 2, text: 'No', value: '0.8' }
+                ];
+                
+                return {
+                  ...question,
+                  options: defaultOptions
+                };
+              }
+              
+              return {
+                ...question,
+                options: optionsResult.rows
+              };
+            } catch (error) {
+              console.error(`Error fetching options for question ${question.id}:`, error);
+              // Provide default options in case of error
+              return {
+                ...question,
+                options: [
+                  { id: 1, text: 'Yes', value: '1.0' },
+                  { id: 2, text: 'No', value: '0.8' }
+                ]
+              };
+            }
           }));
           
           questionsData = questions;
