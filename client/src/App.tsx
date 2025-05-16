@@ -466,78 +466,118 @@ function App() {
                   }
                 >
                   <Route index element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <AdminDashboard />
                     </Suspense>
                   } />
 
                   {/* Device Management */}
                   <Route path="device-types" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <AdminDeviceTypes />
                     </Suspense>
                   } />
                   <Route path="brands" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <AdminBrands />
                     </Suspense>
                   } />
                   <Route path="models" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <AdminModels />
                     </Suspense>
                   } />
                   <Route path="device-models" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <AdminModels />
                     </Suspense>
                   } />
                   <Route path="devices" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <AdminDevices />
                     </Suspense>
                   } />
 
                   {/* Buyback Program */}
-                  <Route path="buyback" element={<AdminBuybacksNew />} />
+                  <Route path="buyback" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminBuybacksNew />
+                    </Suspense>
+                  } />
                   <Route
                     path="condition-questions"
-                    element={<ConditionQuestionsAdmin />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <ConditionQuestionsAdmin />
+                      </Suspense>
+                    }
                   />
-                  <Route path="price-conditions" element={<AdminPricing />} />
-                  <Route path="valuations" element={<AdminPricing />} />
-                  <Route path="partner-program" element={<AdminBuybacks />} />
+                  <Route path="price-conditions" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminPricing />
+                    </Suspense>
+                  } />
+                  <Route path="valuations" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminPricing />
+                    </Suspense>
+                  } />
+                  <Route path="partner-program" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminBuybacks />
+                    </Suspense>
+                  } />
 
                   {/* E-commerce */}
-                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="products" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminProducts />
+                    </Suspense>
+                  } />
                   <Route
                     path="product-categories"
-                    element={<AdminCategories />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminCategories />
+                      </Suspense>
+                    }
                   />
-                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="categories" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminCategories />
+                    </Suspense>
+                  } />
                   <Route
                     path="marketplace"
-                    element={<AdminMarketplaceSettings />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminMarketplaceSettings />
+                      </Suspense>
+                    }
                   />
                   <Route
                     path="marketplace-settings"
-                    element={<AdminMarketplaceSettings />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminMarketplaceSettings />
+                      </Suspense>
+                    }
                   />
-                  <Route path="orders" element={<AdminOrders />} />
-                  <Route path="discounts" element={<AdminDashboard />} />
-                  <Route path="inventory" element={<AdminProducts />} />
+                  <Route path="orders" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminOrders />
+                    </Suspense>
+                  } />
+                  <Route path="discounts" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="inventory" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminProducts />
+                    </Suspense>
+                  } />
                   <Route
                     path="shipping"
                     element={<AdminMarketplaceSettings />}
@@ -561,16 +601,12 @@ function App() {
                   <Route path="partners" element={<PartnersManagement />} />
                   <Route path="partner-staff" element={<PartnerStaffManagement />} />
                   <Route path="pin-codes" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <PinCodeAssignment />
                     </Suspense>
                   } />
                   <Route path="partners-onboarding" element={
-                    <Suspense fallback={<div className="w-full h-40 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>}>
+                    <Suspense fallback={<LoadingSpinner />}>
                       <PartnerOnboarding />
                     </Suspense>
                   } />
