@@ -1380,7 +1380,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: question.id.toString(),
         question: question.question,
         device_type_id: question.deviceTypeId,
-        tooltip: `Answer accurately to get the best price estimate.`,
+        // Add a default tooltip instead of looking for it in the database
+        tooltip: "Answer accurately to get the best price estimate.",
         order: question.order,
         active: question.active,
         multiSelect: false, // Default to false
@@ -1413,7 +1414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: question.id.toString(),
         question: question.question,
         device_type_id: question.deviceTypeId,
-        tooltip: question.tooltip || `Answer accurately to get the best price estimate.`,
+        tooltip: "Answer accurately to get the best price estimate.",
         order: question.order,
         active: question.active,
         options: question.options.map((option: ConditionOption) => ({
