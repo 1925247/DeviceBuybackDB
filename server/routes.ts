@@ -1024,7 +1024,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(productQuestionMappings.groupId, groupId));
       
       // Update using direct SQL to avoid ORM mapping issues
-      const query = `
+      // First check if the column exists
+      const columnCheckQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'question_groups' AND column_name = 'active'`;
+      
+      const columnCheck = await pool.query(columnCheckQuery);
+      const hasActiveColumn = columnCheck.rows.length > 0;
+      
+      // Construct query based on whether 'active' column exists
+      const query = hasActiveColumn ? `
         UPDATE question_groups 
         SET name = $1, 
             statement = $2, 
@@ -1033,14 +1043,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             active = $5,
             updated_at = $6
         WHERE id = $7
+        RETURNING *`
+      : `
+        UPDATE question_groups 
+        SET name = $1, 
+            statement = $2, 
+            device_type_id = $3,
+            icon = $4,
+            updated_at = $5
+        WHERE id = $6
         RETURNING *`;
       
-      const values = [
+      const values = hasActiveColumn ? [
         groupData.name,
         groupData.statement,
         groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
         groupData.icon || null,
         groupData.active !== undefined ? groupData.active : true,
+        new Date(),
+        groupId
+      ] : [
+        groupData.name,
+        groupData.statement,
+        groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
+        groupData.icon || null,
         new Date(),
         groupId
       ];
@@ -1196,17 +1222,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create answer choices if provided
       if (questionData.answerChoices && Array.isArray(questionData.answerChoices) && questionData.answerChoices.length > 0) {
+        // Log what's coming in from the frontend to debug
+        console.log("Creating answer choices with data:", JSON.stringify(questionData.answerChoices));
+        
         const choiceValues = questionData.answerChoices.map((choice: any, index: number) => {
-          // Ensure we have a value for the required 'text' column
-          const answerTextValue = choice.answerText || `Option ${index + 1}`;
+          // Get the text from multiple possible sources to ensure we have a value
+          const textValue = choice.text || choice.answerText || choice.label || `Option ${index + 1}`;
           
+          // Construct a complete object with all required fields
           return {
             questionId: newQuestion.id,
-            text: answerTextValue, // Required field
-            answerText: answerTextValue, // Mirror the value
+            text: textValue, // Primary required field
+            answerText: textValue, // Secondary field that mirrors text
             value: choice.value || String(index),
             icon: choice.icon || null,
-            impact: choice.weightage || 0, // For backward compatibility with older schema
+            impact: choice.impact || choice.weightage || 0,
             weightage: choice.weightage || 0,
             repairCost: choice.repairCost || 0,
             isDefault: choice.isDefault || false,
