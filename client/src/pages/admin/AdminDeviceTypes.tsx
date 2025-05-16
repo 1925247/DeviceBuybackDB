@@ -669,7 +669,7 @@ const AdminDeviceTypes: React.FC = () => {
                 <p className="text-gray-500 text-sm p-1">No brands selected</p>
               ) : (
                 selectedBrands.map(brandId => {
-                  const brand = brands.find(b => b.id === brandId);
+                  const brand = displayBrands.find(b => b.id === brandId);
                   if (!brand) return null;
                   return (
                     <Badge key={brand.id} className="flex items-center gap-1 py-1 pl-2">
@@ -697,7 +697,7 @@ const AdminDeviceTypes: React.FC = () => {
           
           <ScrollArea className="h-64 border rounded-md p-2">
             <div className="space-y-2">
-              {brands.map(brand => (
+              {displayBrands.map(brand => (
                 <div 
                   key={brand.id} 
                   className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
@@ -878,13 +878,13 @@ const AdminDeviceTypes: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-wrap gap-2">
-                      {brandDeviceTypes.filter(relation => relation.device_type_id === deviceType.id).length === 0 ? (
+                      {!displayBrandDeviceTypes || displayBrandDeviceTypes.filter(relation => relation.device_type_id === deviceType.id).length === 0 ? (
                         <p className="text-sm text-gray-500">No brands assigned yet</p>
                       ) : (
-                        brandDeviceTypes
+                        displayBrandDeviceTypes
                           .filter(relation => relation.device_type_id === deviceType.id)
                           .map(relation => {
-                            const brand = brands.find(b => b.id === relation.brand_id);
+                            const brand = displayBrands.find(b => b.id === relation.brand_id);
                             if (!brand) return null;
                             
                             return (
