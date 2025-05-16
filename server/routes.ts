@@ -1370,124 +1370,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const status = req.query.status as string | undefined;
       
-      // Mock buyback requests data for admin dashboard
-      const mockBuybackRequests = [
-        {
-          id: 1,
-          user_id: 1,
-          device_type: "Phone",
-          manufacturer: "Apple",
-          model: "iPhone 13 Pro",
-          condition: "Good",
-          status: "pending",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          partner_id: null,
-          questionnaire_answers: {
-            "Screen Condition": "No cracks, light scratches",
-            "Battery Health": "85%",
-            "Functions Properly": "Yes",
-            "Water Damage": "No"
-          },
-          imei: "123456789012345",
-          estimated_value: "450.00"
-        },
-        {
-          id: 2,
-          user_id: 2,
-          device_type: "Laptop",
-          manufacturer: "Dell",
-          model: "XPS 15",
-          condition: "Like New",
-          status: "approved",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-          partner_id: 1,
-          questionnaire_answers: {
-            "Screen Condition": "Perfect",
-            "Battery Health": "95%",
-            "Functions Properly": "Yes",
-            "Cosmetic Damage": "None"
-          },
-          serial_number: "XPS15-82721",
-          estimated_value: "800.00",
-          final_price: "780.00"
-        },
-        {
-          id: 3,
-          user_id: 3,
-          device_type: "Tablet",
-          manufacturer: "Samsung",
-          model: "Galaxy Tab S7",
-          condition: "Fair",
-          status: "completed",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-          partner_id: 2,
-          questionnaire_answers: {
-            "Screen Condition": "Minor scratches",
-            "Battery Health": "75%",
-            "Functions Properly": "Yes, with minor issues",
-            "Cosmetic Damage": "Corner dents"
-          },
-          serial_number: "TBS7-928312",
-          estimated_value: "300.00",
-          final_price: "280.00"
-        },
-        {
-          id: 4,
-          user_id: 1,
-          device_type: "Watch",
-          manufacturer: "Apple",
-          model: "Watch Series 7",
-          condition: "Excellent",
-          status: "assigned",
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-          partner_id: 1,
-          questionnaire_answers: {
-            "Screen Condition": "Perfect",
-            "Battery Health": "90%",
-            "Functions Properly": "Yes",
-            "Water Damage": "No"
-          },
-          serial_number: "AWS7-78239",
-          estimated_value: "180.00"
-        },
-        {
-          id: 5,
-          user_id: 4,
-          device_type: "Phone",
-          manufacturer: "Google",
-          model: "Pixel 6",
-          condition: "Good",
-          status: "assigned",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-          updated_at: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-          partner_id: 1,
-          questionnaire_answers: {
-            "Screen Condition": "Minor scratches",
-            "Battery Health": "88%",
-            "Functions Properly": "Yes",
-            "Water Damage": "No"
-          },
-          imei: "987654321098765",
-          estimated_value: "320.00"
-        }
-      ];
+      // Get buyback requests from the database
+      const buybackRequests = await storage.getBuybackRequests(page, limit, status);
       
-      // Filter by status if provided
-      let filteredRequests = mockBuybackRequests;
-      if (status) {
-        filteredRequests = mockBuybackRequests.filter(request => request.status === status);
+      // If there are no buyback requests in the database yet and we're not filtering by status,
+      // seed the database with one sample request
+      if (buybackRequests.length === 0 && !status) {
+        try {
+          // Check if database is actually empty
+          const totalCount = await storage.getBuybackRequestsCount();
+          
+          if (totalCount === 0) {
+            console.log("No buyback requests found, creating sample data");
+            
+            // Create a sample buyback request
+            const sampleRequest: InsertBuybackRequest = {
+              userId: 1,
+              deviceType: "Phone",
+              manufacturer: "Apple",
+              model: "iPhone 13 Pro",
+              condition: "Good",
+              status: "pending",
+              questionnaireAnswers: {
+                "Screen Condition": "No cracks, light scratches",
+                "Battery Health": "85%",
+                "Functions Properly": "Yes",
+                "Water Damage": "No"
+              },
+              imei: "123456789012345",
+              estimatedValue: "450.00"
+            };
+            
+            await storage.createBuybackRequest(sampleRequest);
+            
+            // Fetch the newly created data
+            return res.json(await storage.getBuybackRequests(page, limit, status));
+          }
+        } catch (seedError) {
+          console.error("Error seeding initial buyback request data:", seedError);
+          // Continue with empty results if seeding fails
+        }
       }
       
-      // Apply pagination
-      const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
-      const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
-      
-      res.json(paginatedRequests);
+      res.json(buybackRequests);
     } catch (error: any) {
       console.error("Error fetching buyback requests:", error);
       res.status(500).json({ message: "Failed to get buyback requests" });
