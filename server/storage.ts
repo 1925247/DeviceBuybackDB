@@ -665,8 +665,11 @@ export class DatabaseStorage implements IStorage {
     const [updatedDeviceType] = await db
       .update(deviceTypes)
       .set({
-        ...data,
-        updated_at: new Date()
+        name: data.name,
+        slug: data.slug,
+        icon: data.icon,
+        active: data.active,
+        updatedAt: new Date()
       })
       .where(eq(deviceTypes.id, id))
       .returning();
