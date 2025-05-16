@@ -101,6 +101,8 @@ const PinCodeAssignment: React.FC = () => {
     isActive: true
   });
   
+  const [isLoadingPincodeData, setIsLoadingPincodeData] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const perPage = 10;
