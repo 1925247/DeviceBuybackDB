@@ -65,6 +65,7 @@ interface ProductQuestionMapping {
 const formSchema = z.object({
   productId: z.string().min(1, "Please select a product"),
   groupId: z.string().min(1, "Please select a question group"),
+  actionType: z.string().optional(),
 });
 
 // Also create a form schema for the copy form
@@ -105,6 +106,7 @@ export default function AdminProductMapping() {
     defaultValues: {
       productId: "",
       groupId: "",
+      actionType: "",
     },
   });
 
@@ -668,13 +670,13 @@ export default function AdminProductMapping() {
                       Select the mappings you want to copy to the target product
                     </p>
 
-                    {isLoadingMappings ? (
+                    {isLoadingSourceMappings ? (
                       <div className="flex justify-center py-8">
                         <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                       </div>
-                    ) : productMappings?.length > 0 ? (
+                    ) : sourceProductMappings?.length > 0 ? (
                       <ScrollArea className="h-[300px] rounded-md border p-4">
-                        {productMappings.map(
+                        {sourceProductMappings.map(
                           (mapping: ProductQuestionMapping) => (
                             <div key={mapping.id} className="mb-4">
                               <div className="flex items-start space-x-3">
