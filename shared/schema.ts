@@ -36,6 +36,12 @@ export const userStatusEnum = pgEnum("user_status", [
   "suspended",
 ]);
 
+export const questionTypeEnum = pgEnum("question_type", [
+  "single_choice",
+  "multiple_choice",
+  "text_input",
+]);
+
 // Sessions for auth
 export const sessions = pgTable(
   "sessions",
@@ -447,6 +453,62 @@ export type InsertValuation = z.infer<typeof insertValuationSchema>;
 export type Valuation = typeof valuations.$inferSelect;
 
 // Condition Questions and Answers
+// Question Groups for organizing related questions
+export const questionGroups = pgTable("question_groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  statement: text("statement").notNull(),
+  deviceTypeId: integer("device_type_id").references(() => deviceTypes.id),
+  icon: text("icon"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Questions - for device assessment, value calculation, eligibility rules
+export const questions = pgTable("questions", {
+  id: serial("id").primaryKey(),
+  questionText: text("question_text").notNull(),
+  questionType: questionTypeEnum("question_type").default("single_choice").notNull(),
+  groupId: integer("group_id").references(() => questionGroups.id),
+  order: integer("order").default(0),
+  active: boolean("active").default(true),
+  tooltip: text("tooltip"),
+  required: boolean("required").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Answer choices for questions
+export const answerChoices = pgTable("answer_choices", {
+  id: serial("id").primaryKey(),
+  questionId: integer("question_id").notNull().references(() => questions.id),
+  answerText: text("answer_text").notNull(),
+  icon: text("icon"),
+  weightage: real("weightage").default(0), // Percentage impact on final price (e.g., -30%)
+  repairCost: real("repair_cost").default(0), // Fixed deduction amount
+  isDefault: boolean("is_default").default(false),
+  order: integer("order").default(0),
+  followUpAction: jsonb("follow_up_action"), // For conditional logic
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Product-Question mappings
+export const productQuestionMappings = pgTable("product_question_mappings", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(), // Can be device model or product
+  actionType: text("action_type").notNull(), // 'sell', 'trade-in', 'recycle'
+  groupId: integer("group_id").notNull().references(() => questionGroups.id),
+  active: boolean("active").default(true),
+  overrides: jsonb("overrides"), // Override default weightages or repair costs
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueMapping: unique().on(table.productId, table.actionType, table.groupId)
+}));
+
+// Legacy condition questions (keeping for backward compatibility)
 export const conditionQuestions = pgTable("condition_questions", {
   id: serial("id").primaryKey(),
   question: text("question").notNull(),
@@ -468,6 +530,24 @@ export const conditionAnswers = pgTable("condition_answers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Q&A Management Insert Schemas
+export const insertQuestionGroupSchema = createInsertSchema(questionGroups);
+export type InsertQuestionGroup = z.infer<typeof insertQuestionGroupSchema>;
+export type QuestionGroup = typeof questionGroups.$inferSelect;
+
+export const insertQuestionSchema = createInsertSchema(questions);
+export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
+export type Question = typeof questions.$inferSelect;
+
+export const insertAnswerChoiceSchema = createInsertSchema(answerChoices);
+export type InsertAnswerChoice = z.infer<typeof insertAnswerChoiceSchema>;
+export type AnswerChoice = typeof answerChoices.$inferSelect;
+
+export const insertProductQuestionMappingSchema = createInsertSchema(productQuestionMappings);
+export type InsertProductQuestionMapping = z.infer<typeof insertProductQuestionMappingSchema>;
+export type ProductQuestionMapping = typeof productQuestionMappings.$inferSelect;
+
+// Legacy schemas
 export const insertConditionQuestionSchema = createInsertSchema(conditionQuestions);
 export type InsertConditionQuestion = z.infer<typeof insertConditionQuestionSchema>;
 export type ConditionQuestion = typeof conditionQuestions.$inferSelect;
