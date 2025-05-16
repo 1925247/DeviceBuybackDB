@@ -16,6 +16,7 @@ import { ModelsProvider } from "./contexts/ModelsContext";
 // Shared Components
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import LoadingSpinner from "./components/ui/LoadingSpinner";
 
 // Client Pages
 import HomePage from "./pages/HomePage";
@@ -66,6 +67,9 @@ const AdminBuybacks = lazy(() => import("./pages/admin/AdminBuybacks"));
 const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
 const AdminFeatureToggles = lazy(() => import("./pages/admin/AdminFeatureToggles"));
 const ConditionQuestionsAdmin = lazy(() => import("./pages/admin/ConditionQuestionsAdmin"));
+const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQuestions"));
+const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions"));
+const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
 const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
 const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
 const UserRoleManagement = lazy(() => import("./pages/admin/UserRoleManagement"));
@@ -677,6 +681,21 @@ function App() {
                   <Route path="brand-questionnaires" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminCQS />
+                    </Suspense>
+                  } />
+                  <Route path="condition-questions" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminConditionQuestions />
+                    </Suspense>
+                  } />
+                  <Route path="condition-questions/:groupId" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminQuestions />
+                    </Suspense>
+                  } />
+                  <Route path="question-groups" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminQuestionGroups />
                     </Suspense>
                   } />
 
