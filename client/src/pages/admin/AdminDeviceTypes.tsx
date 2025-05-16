@@ -98,13 +98,16 @@ const AdminDeviceTypes: React.FC = () => {
     retryDelay: 1000,
   });
 
-  const { data: brandDeviceTypes, isLoading: isLoadingBrandDeviceTypes } = useQuery<BrandDeviceType[]>({
+  const { data: brandDeviceTypesResponse, isLoading: isLoadingBrandDeviceTypes } = useQuery({
     queryKey: ['/api/brand-device-types'],
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
     retryDelay: 1000,
     refetchOnWindowFocus: false
   });
+  
+  // Extract the rows from the response to get the actual brand-device types data
+  const brandDeviceTypes = brandDeviceTypesResponse?.rows as BrandDeviceType[] | undefined;
 
   // When assigning brands, we want to pre-select the ones that are already assigned
   useEffect(() => {
