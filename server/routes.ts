@@ -1420,7 +1420,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const productId = req.query.product_id ? parseInt(req.query.product_id as string) : undefined;
       
-      const mappings = await db.select().from(productQuestionMappings)
+      // Only select columns that actually exist in the database
+      const mappings = await db.select({
+        id: productQuestionMappings.id,
+        productId: productQuestionMappings.productId,
+        questionId: productQuestionMappings.questionId,
+        required: productQuestionMappings.required,
+        overrides: productQuestionMappings.overrides,
+        createdAt: productQuestionMappings.createdAt,
+        updatedAt: productQuestionMappings.updatedAt
+      }).from(productQuestionMappings)
         .where(productId ? eq(productQuestionMappings.productId, productId) : undefined);
       
       // Enrich with question information
@@ -1542,7 +1551,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingMapping = await db.select().from(productQuestionMappings)
         .where(and(
           eq(productQuestionMappings.productId, parseInt(mappingData.productId)),
-          eq(productQuestionMappings.actionType, mappingData.actionType),
           eq(productQuestionMappings.questionId, parseInt(mappingData.questionId))
         ));
       
@@ -1550,14 +1558,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This product-question mapping already exists" });
       }
       
-      // Insert new mapping with minimal required fields
+      // Insert new mapping with columns that match the actual database table
       const [newMapping] = await db.insert(productQuestionMappings)
         .values({
           productId: parseInt(mappingData.productId),
-          actionType: mappingData.actionType,
           questionId: parseInt(mappingData.questionId),
           required: true,
-          overrides: mappingData.overrides || null,
           createdAt: new Date(),
           updatedAt: new Date()
         })

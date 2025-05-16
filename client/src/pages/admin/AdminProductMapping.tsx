@@ -41,7 +41,6 @@ interface ProductQuestionMapping {
 
 const formSchema = z.object({
   productId: z.string().min(1, "Please select a product"),
-  actionType: z.string().min(1, "Please select an action type"),
   questionId: z.string().min(1, "Please select a question")
 });
 
