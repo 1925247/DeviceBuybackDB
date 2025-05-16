@@ -1477,17 +1477,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(productQuestionMappings.groupId, mapping.groupId)
           ));
         
-        // Apply any overrides specified for this mapping
-        const mappingOverrides = overrides && overrides[mapping.id] 
-          ? overrides[mapping.id] 
-          : mapping.overrides;
+        // Get action type from mapping if available
+        const actionType = mapping.actionType || null;
         
         if (existingMappings.length > 0) {
           // Update the existing mapping
           const [updatedMapping] = await db.update(productQuestionMappings)
             .set({
               required: true, // Default to required
-              overrides: mappingOverrides,
+              action_type: actionType,
+              impact_multiplier: 1.0, // Default value
               updatedAt: new Date()
             })
             .where(eq(productQuestionMappings.id, existingMappings[0].id))
@@ -1502,10 +1501,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create a new mapping
           const [newMapping] = await db.insert(productQuestionMappings)
             .values({
-              productId: targetProductId,
-              groupId: mapping.groupId,
+              product_id: targetProductId,
+              group_id: mapping.groupId,
+              action_type: actionType,
               required: true, // Default to required
-              overrides: mappingOverrides,
+              impact_multiplier: 1.0, // Default value
               createdAt: new Date(),
               updatedAt: new Date()
             })
@@ -1544,8 +1544,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if mapping already exists
       const existingMapping = await db.select().from(productQuestionMappings)
         .where(and(
-          eq(productQuestionMappings.productId, parseInt(mappingData.productId)),
-          eq(productQuestionMappings.groupId, parseInt(mappingData.groupId))
+          eq(productQuestionMappings.product_id, parseInt(mappingData.productId)),
+          eq(productQuestionMappings.group_id, parseInt(mappingData.groupId))
         ));
       
       if (existingMapping.length > 0) {
@@ -1553,6 +1553,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Insert new mapping with columns that match the actual database table
+      // Get action type from request if available
+      const actionType = mappingData.actionType || null;
+      
+      // Insert only fields that actually exist in the database
       const [newMapping] = await db.insert(productQuestionMappings)
         .values({
           productId: parseInt(mappingData.productId),
