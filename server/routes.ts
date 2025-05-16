@@ -1470,12 +1470,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process each mapping
       for (const mapping of mappings) {
-        // Check if a mapping with the same question and action type already exists for the target
+        // Check if a mapping with the same question group already exists for the target
         const existingMappings = await db.select().from(productQuestionMappings)
           .where(and(
             eq(productQuestionMappings.productId, targetProductId),
-            eq(productQuestionMappings.actionType, mapping.actionType),
-            eq(productQuestionMappings.questionId, mapping.questionId)
+            eq(productQuestionMappings.groupId, mapping.groupId)
           ));
         
         // Apply any overrides specified for this mapping
@@ -1487,7 +1486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Update the existing mapping
           const [updatedMapping] = await db.update(productQuestionMappings)
             .set({
-              active: true, // Default to active
+              required: true, // Default to required
               overrides: mappingOverrides,
               updatedAt: new Date()
             })
@@ -1497,16 +1496,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ 
             id: updatedMapping.id, 
             action: 'updated', 
-            questionId: mapping.questionId 
+            groupId: mapping.groupId 
           });
         } else {
           // Create a new mapping
           const [newMapping] = await db.insert(productQuestionMappings)
             .values({
               productId: targetProductId,
-              actionType: mapping.actionType,
-              questionId: mapping.questionId,
-              active: true, // Default to active
+              groupId: mapping.groupId,
+              required: true, // Default to required
               overrides: mappingOverrides,
               createdAt: new Date(),
               updatedAt: new Date()
@@ -1539,30 +1537,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Product ID is required" });
       }
       
-      if (!mappingData.actionType) {
-        return res.status(400).json({ message: "Action type is required" });
-      }
-      
-      if (!mappingData.questionId) {
-        return res.status(400).json({ message: "Question ID is required" });
+      if (!mappingData.groupId) {
+        return res.status(400).json({ message: "Question Group ID is required" });
       }
       
       // Check if mapping already exists
       const existingMapping = await db.select().from(productQuestionMappings)
         .where(and(
           eq(productQuestionMappings.productId, parseInt(mappingData.productId)),
-          eq(productQuestionMappings.questionId, parseInt(mappingData.questionId))
+          eq(productQuestionMappings.groupId, parseInt(mappingData.groupId))
         ));
       
       if (existingMapping.length > 0) {
-        return res.status(400).json({ message: "This product-question mapping already exists" });
+        return res.status(400).json({ message: "This product-question group mapping already exists" });
       }
       
       // Insert new mapping with columns that match the actual database table
       const [newMapping] = await db.insert(productQuestionMappings)
         .values({
           productId: parseInt(mappingData.productId),
-          questionId: parseInt(mappingData.questionId),
+          groupId: parseInt(mappingData.groupId),
           required: true,
           createdAt: new Date(),
           updatedAt: new Date()
