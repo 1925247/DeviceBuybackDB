@@ -1292,18 +1292,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.delete(answerChoices)
           .where(eq(answerChoices.questionId, questionId));
         
-        // Create new choices
+        // Log the incoming choice data to debug
+        console.log("Updating with answer choices:", JSON.stringify(questionData.answerChoices));
+        
+        // Create new choices with enhanced null/undefined handling
         const choiceValues = questionData.answerChoices.map((choice: any, index: number) => {
-          // Ensure we have a value for the required text field
-          const answerTextValue = choice.answerText || `Option ${index + 1}`;
+          // Get text from multiple possible field names with fallbacks
+          const textValue = choice.text || choice.answerText || choice.label || `Option ${index + 1}`;
           
+          // Create a complete object ensuring all required fields have values
           return {
             questionId: questionId,
-            text: answerTextValue, // Required field for DB
-            answerText: answerTextValue,
+            text: textValue, // Primary required field
+            answerText: textValue, // Secondary field that mirrors text
             value: choice.value || String(index),
             icon: choice.icon || null,
-            impact: choice.weightage || 0, // For backward compatibility
+            impact: choice.impact || choice.weightage || 0,
             weightage: choice.weightage || 0,
             repairCost: choice.repairCost || 0,
             isDefault: choice.isDefault || false,
