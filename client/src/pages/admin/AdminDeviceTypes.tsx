@@ -94,6 +94,8 @@ const AdminDeviceTypes: React.FC = () => {
 
   const { data: brandDeviceTypes, isLoading: isLoadingBrandDeviceTypes } = useQuery<BrandDeviceType[]>({
     queryKey: ['/api/brand-device-types'],
+    retry: false,
+    refetchOnWindowFocus: false
   });
 
   // When assigning brands, we want to pre-select the ones that are already assigned
@@ -103,6 +105,9 @@ const AdminDeviceTypes: React.FC = () => {
         .filter(relation => relation.device_type_id === selectedDeviceType.id)
         .map(relation => relation.brand_id);
       setSelectedBrands(assignedBrands);
+    } else if (selectedDeviceType) {
+      // Reset to empty array if no brand-device relationships found
+      setSelectedBrands([]);
     }
   }, [selectedDeviceType, brandDeviceTypes]);
 
@@ -334,10 +339,13 @@ const AdminDeviceTypes: React.FC = () => {
   };
 
   const saveSelectedBrands = () => {
-    if (!selectedDeviceType || !brandDeviceTypes) return;
+    if (!selectedDeviceType) return;
+    
+    // Use safe defaults if brandDeviceTypes is undefined
+    const safeDisplayBrandDeviceTypes = displayBrandDeviceTypes || [];
     
     // Get current relations for this device type
-    const currentRelations = brandDeviceTypes.filter(
+    const currentRelations = safeDisplayBrandDeviceTypes.filter(
       relation => relation.device_type_id === selectedDeviceType.id
     );
     
