@@ -86,15 +86,23 @@ const AdminDeviceTypes: React.FC = () => {
   // Query hooks for fetching data
   const { data: deviceTypes, isLoading: isLoadingDeviceTypes } = useQuery<DeviceType[]>({
     queryKey: ['/api/device-types'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const { data: brands, isLoading: isLoadingBrands } = useQuery<Brand[]>({
     queryKey: ['/api/brands'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const { data: brandDeviceTypes, isLoading: isLoadingBrandDeviceTypes } = useQuery<BrandDeviceType[]>({
     queryKey: ['/api/brand-device-types'],
-    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: 1000,
     refetchOnWindowFocus: false
   });
 
@@ -775,14 +783,14 @@ const AdminDeviceTypes: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {deviceTypes.length === 0 ? (
+                    {displayDeviceTypes.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                           No device types found. Add your first device type using the button above.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      deviceTypes.map((deviceType) => (
+                      displayDeviceTypes.map((deviceType) => (
                         <TableRow key={deviceType.id}>
                           <TableCell className="font-medium">{deviceType.id}</TableCell>
                           <TableCell>
@@ -853,7 +861,7 @@ const AdminDeviceTypes: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {deviceTypes.map(deviceType => (
+                {displayDeviceTypes.map(deviceType => (
                   <div key={deviceType.id} className="border rounded-md p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">

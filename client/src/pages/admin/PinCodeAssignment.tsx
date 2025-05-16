@@ -548,7 +548,7 @@ const PinCodeAssignment: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(page => page + 1)}
-              disabled={filteredPincodes?.length < perPage}
+              disabled={(filteredPincodes || []).length < perPage}
             >
               Next
             </Button>
