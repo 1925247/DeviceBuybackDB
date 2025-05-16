@@ -9,6 +9,9 @@ import {
   routeRules, type RouteRule, type InsertRouteRule,
   postalCodes, 
   regions,
+  deviceTypes,
+  brands,
+  deviceModels,
   // Indian database tables
   indianStates, type IndianState, type InsertIndianState,
   indianCities, type IndianCity, type InsertIndianCity,
