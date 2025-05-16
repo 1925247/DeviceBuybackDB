@@ -1136,8 +1136,8 @@ export class DatabaseStorage implements IStorage {
         question: conditionQuestions.question,
         deviceTypeId: conditionQuestions.device_type_id,
         order: conditionQuestions.order,
-        active: conditionQuestions.active,
-        tooltip: conditionQuestions.tooltip
+        active: conditionQuestions.active
+        // Removed tooltip column which doesn't exist in the database
       })
         .from(conditionQuestions)
         .orderBy(conditionQuestions.order);
@@ -1184,8 +1184,8 @@ export class DatabaseStorage implements IStorage {
         question: conditionQuestions.question,
         deviceTypeId: conditionQuestions.device_type_id,
         order: conditionQuestions.order,
-        active: conditionQuestions.active,
-        tooltip: conditionQuestions.tooltip
+        active: conditionQuestions.active
+        // Removed tooltip column which doesn't exist in the database
       })
       .from(conditionQuestions)
       .where(eq(conditionQuestions.id, id));
