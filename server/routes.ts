@@ -785,8 +785,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = Number(req.params.id);
       const requestData = req.body;
       
+      // Import and use the raw pool connection from db.ts
+      const { pool } = await import('./db');
+      
       // First check if the model exists using raw SQL to avoid ORM issues
-      const pool = (db as any).client;
       const checkModelQuery = `SELECT id FROM device_models WHERE id = $1`;
       const checkResult = await pool.query(checkModelQuery, [id]);
       
@@ -836,6 +838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Update query:", updateQuery);
       console.log("Update values:", updateValues);
       
+      // Use the same pool instance
       const result = await pool.query(updateQuery, updateValues);
       
       if (!result.rows || result.rows.length === 0) {
