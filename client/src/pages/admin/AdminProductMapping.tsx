@@ -80,7 +80,6 @@ export default function AdminProductMapping() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       productId: "",
-      actionType: "",
       questionId: ""
     }
   });
@@ -117,8 +116,7 @@ export default function AdminProductMapping() {
     try {
       const response = await apiRequest("POST", "/api/product-question-mappings", {
         productId: parseInt(values.productId),
-        questionId: parseInt(values.questionId),
-        actionType: values.actionType
+        questionId: parseInt(values.questionId)
       });
 
       if (response.ok) {
