@@ -36,8 +36,9 @@ export default function AdminConditionQuestions() {
   });
 
   // Fetch device types for filtering
-  const { data: deviceTypes } = useQuery({
+  const { data: deviceTypes } = useQuery<any[]>({
     queryKey: ["/api/device-types"],
+    initialData: [],
   });
 
   // Handle navigating to question group details
@@ -69,7 +70,8 @@ export default function AdminConditionQuestions() {
   // Get device type name by ID
   const getDeviceTypeName = (deviceTypeId: number | null) => {
     if (!deviceTypeId) return "General";
-    const deviceType = deviceTypes?.find(dt => dt.id === deviceTypeId);
+    if (!deviceTypes || !Array.isArray(deviceTypes)) return "Unknown";
+    const deviceType = deviceTypes.find(dt => dt.id === deviceTypeId);
     return deviceType?.name || "Unknown";
   };
 
@@ -84,7 +86,11 @@ export default function AdminConditionQuestions() {
       return <Layers className="h-10 w-10 text-gray-500" />;
     }
     
-    const deviceType = deviceTypes?.find(dt => dt.id === group.deviceTypeId);
+    if (!deviceTypes || !Array.isArray(deviceTypes)) {
+      return <MonitorSmartphone className="h-10 w-10 text-indigo-500" />;
+    }
+    
+    const deviceType = deviceTypes.find(dt => dt.id === group.deviceTypeId);
     if (deviceType?.slug?.includes("phone") || deviceType?.slug?.includes("mobile")) {
       return <Smartphone className="h-10 w-10 text-blue-500" />;
     }
