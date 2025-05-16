@@ -90,6 +90,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch condition questions" });
     }
   });
+  
+  // Device Models API endpoint
+  app.get(apiRouter("/device-models"), async (req: Request, res: Response) => {
+    try {
+      const brandId = req.query.brand_id ? parseInt(req.query.brand_id as string) : undefined;
+      const deviceTypeId = req.query.device_type_id ? parseInt(req.query.device_type_id as string) : undefined;
+      
+      const deviceModelsData = await storage.getDeviceModels(brandId, deviceTypeId);
+      res.json(deviceModelsData);
+    } catch (error: any) {
+      console.error("Error fetching device models:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch device models" });
+    }
+  });
+
+  // Brands API endpoint
+  app.get(apiRouter("/brands"), async (req: Request, res: Response) => {
+    try {
+      const deviceTypeId = req.query.device_type_id ? parseInt(req.query.device_type_id as string) : undefined;
+      const brandsData = await storage.getBrands(deviceTypeId);
+      res.json(brandsData);
+    } catch (error: any) {
+      console.error("Error fetching brands:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch brands" });
+    }
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);

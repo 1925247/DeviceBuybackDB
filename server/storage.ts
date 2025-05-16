@@ -277,6 +277,12 @@ export interface IStorage {
   getRegions(): Promise<Region[]>;
   getRegion(id: number): Promise<Region | undefined>;
   
+  // Device model operations
+  getDeviceModels(brandId?: number, deviceTypeId?: number): Promise<any[]>;
+  
+  // Brand operations
+  getBrands(deviceTypeId?: number): Promise<any[]>;
+  
   // Route Rules operations
   getRouteRules(): Promise<RouteRule[]>;
   getRouteRule(id: number): Promise<RouteRule | undefined>;
