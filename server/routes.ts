@@ -1550,12 +1550,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "This product-question mapping already exists" });
       }
       
+      // Insert new mapping with minimal required fields
       const [newMapping] = await db.insert(productQuestionMappings)
         .values({
           productId: parseInt(mappingData.productId),
           actionType: mappingData.actionType,
           questionId: parseInt(mappingData.questionId),
-          active: true,
+          required: true,
           overrides: mappingData.overrides || null,
           createdAt: new Date(),
           updatedAt: new Date()
