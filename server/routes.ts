@@ -778,32 +778,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update device model
+  // Update device model with direct SQL to match the actual database structure
   app.put(apiRouter("/device-models/:id"), async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
       const requestData = req.body;
       
-      // Map field names to match the database schema
-      const modelData = {
-        name: requestData.name,
-        slug: requestData.slug,
-        description: requestData.description,
-        // Use 'image' field name to match schema and database
-        image: requestData.image || requestData.imageUrl,
-        brandId: requestData.brandId || (requestData.brand_id ? Number(requestData.brand_id) : undefined),
-        deviceTypeId: requestData.deviceTypeId || (requestData.device_type_id ? Number(requestData.device_type_id) : undefined),
-        active: requestData.active,
-        specifications: requestData.specifications
-      };
+      // First check if the model exists
+      const existingModel = await db.query.deviceModels.findFirst({
+        where: eq(deviceModels.id, id)
+      });
       
-      const updatedModel = await storage.updateDeviceModel(id, modelData);
-      
-      if (!updatedModel) {
+      if (!existingModel) {
         return res.status(404).json({ message: "Device model not found" });
       }
       
-      res.json(updatedModel);
+      // Prepare fields for the database using the actual column names
+      const updateFields: any = {};
+      if (requestData.name !== undefined) updateFields.name = requestData.name;
+      if (requestData.slug !== undefined) updateFields.slug = requestData.slug;
+      if (requestData.image !== undefined) updateFields.image = requestData.image;
+      if (requestData.brand_id !== undefined) updateFields.brand_id = Number(requestData.brand_id);
+      if (requestData.device_type_id !== undefined) updateFields.device_type_id = Number(requestData.device_type_id);
+      if (requestData.active !== undefined) updateFields.active = requestData.active;
+      if (requestData.featured !== undefined) updateFields.featured = requestData.featured;
+      if (requestData.variants !== undefined) updateFields.variants = requestData.variants;
+      
+      // Always add updated_at timestamp
+      updateFields.updated_at = new Date();
+      
+      // Execute SQL directly to avoid ORM issues
+      const sql = `
+        UPDATE device_models
+        SET ${Object.keys(updateFields).map(key => `${key} = $${key}`).join(', ')}
+        WHERE id = $id
+        RETURNING *
+      `;
+      
+      const params = { ...updateFields, id };
+      const result = await db.execute(sql, params);
+      
+      if (!result.rows || result.rows.length === 0) {
+        return res.status(500).json({ message: "Failed to update device model" });
+      }
+      
+      res.json(result.rows[0]);
     } catch (error: any) {
       console.error("Error updating device model:", error);
       res.status(500).json({ message: error.message || "Failed to update device model" });

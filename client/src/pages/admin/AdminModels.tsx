@@ -157,9 +157,27 @@ const AdminModels: React.FC = () => {
 
   const updateModelMutation = useMutation({
     mutationFn: async (data: typeof formData & { id: number }) => {
-      return await apiRequest('PUT', `/api/device-models/${data.id}`, data);
+      // Log the data we're sending to help with debugging
+      console.log("Sending update data:", data);
+      
+      // Ensure fields match the backend's expected snake_case format
+      // The backend expects specific field names that match database columns
+      const payload = {
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        image: data.image,
+        brand_id: data.brand_id ? parseInt(data.brand_id) : undefined,
+        device_type_id: data.device_type_id ? parseInt(data.device_type_id) : undefined,
+        active: data.active,
+        featured: data.featured,
+        variants: data.variants
+      };
+      
+      return await apiRequest('PUT', `/api/device-models/${data.id}`, payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log("Update successful, response:", response);
       queryClient.invalidateQueries({ queryKey: ['/api/device-models'] });
       setIsEditModalOpen(false);
       resetForm();
@@ -169,9 +187,10 @@ const AdminModels: React.FC = () => {
       });
     },
     onError: (error: Error) => {
+      console.error("Update failed:", error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to update device model',
         variant: 'destructive',
       });
     },
