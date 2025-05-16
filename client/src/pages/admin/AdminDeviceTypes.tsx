@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -857,13 +856,91 @@ const AdminDeviceTypes: React.FC = () => {
           </Card>
         </div>
 
-        {/* Brand Associations Section */}
+        {/* Brand Associations By Device Type */}
         <div className="mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Brand Associations</CardTitle>
+              <CardTitle>Brand Associations By Device Type</CardTitle>
               <CardDescription>
-                Manage which brands are associated with each device type
+                View and manage which brands are associated with each device type
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {displayDeviceTypes.map(deviceType => (
+                  <div key={deviceType.id} className="border rounded-md p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {deviceType.icon && (
+                          <img 
+                            src={deviceType.icon} 
+                            alt={`${deviceType.name} icon`} 
+                            className="h-6 w-6 object-contain"
+                          />
+                        )}
+                        <h3 className="text-lg font-medium">{deviceType.name}</h3>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => openAssignBrandsModal(deviceType)}
+                      >
+                        <Plus size={14} className="mr-1" />
+                        Add Brands
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {!displayBrandDeviceTypes || displayBrandDeviceTypes.filter(relation => relation.device_type_id === deviceType.id).length === 0 ? (
+                        <p className="text-sm text-gray-500">No brands assigned yet</p>
+                      ) : (
+                        displayBrandDeviceTypes
+                          .filter(relation => relation.device_type_id === deviceType.id)
+                          .map(relation => {
+                            const brand = displayBrands.find(b => b.id === relation.brand_id);
+                            if (!brand) return null;
+                            
+                            return (
+                              <Badge 
+                                key={relation.id} 
+                                variant="secondary"
+                                className="flex items-center gap-1 py-1 pl-2"
+                              >
+                                {brand.logo && (
+                                  <img 
+                                    src={brand.logo} 
+                                    alt={`${brand.name} logo`} 
+                                    className="h-4 w-4 object-contain mr-1"
+                                  />
+                                )}
+                                {brand.name}
+                                <button 
+                                  type="button"
+                                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                                  onClick={() => deleteBrandDeviceTypeMutation.mutate(relation.id)}
+                                >
+                                  <X size={12} />
+                                </button>
+                              </Badge>
+                            );
+                          })
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* All Brand Associations Table */}
+        <div className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Brand Associations</CardTitle>
+              <CardDescription>
+                View and manage all brand-device type associations
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -924,6 +1001,8 @@ const AdminDeviceTypes: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Add New Brand Association */}
         <div className="mb-8">
           <Card>
             <CardHeader>
@@ -995,18 +1074,6 @@ const AdminDeviceTypes: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-                        onClick={() => openAssignBrandsModal(deviceType)}
-                      >
-                        <Plus size={14} className="mr-1" />
-                        Add Brands
-                      </Button>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {!displayBrandDeviceTypes || displayBrandDeviceTypes.filter(relation => relation.device_type_id === deviceType.id).length === 0 ? (
-                        <p className="text-sm text-gray-500">No brands assigned yet</p>
-                      ) : (
-                        displayBrandDeviceTypes
                           .filter(relation => relation.device_type_id === deviceType.id)
                           .map(relation => {
                             const brand = displayBrands.find(b => b.id === relation.brand_id);
