@@ -782,11 +782,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(apiRouter("/device-models/:id"), async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const modelData = req.body;
+      const requestData = req.body;
       
-      // Convert string IDs to numbers
-      if (modelData.brand_id) modelData.brand_id = Number(modelData.brand_id);
-      if (modelData.device_type_id) modelData.device_type_id = Number(modelData.device_type_id);
+      // Map field names to match the database schema
+      const modelData = {
+        name: requestData.name,
+        slug: requestData.slug,
+        description: requestData.description,
+        imageUrl: requestData.image || requestData.imageUrl,
+        brandId: requestData.brandId || (requestData.brand_id ? Number(requestData.brand_id) : undefined),
+        deviceTypeId: requestData.deviceTypeId || (requestData.device_type_id ? Number(requestData.device_type_id) : undefined),
+        active: requestData.active,
+        specifications: requestData.specifications
+      };
       
       const updatedModel = await storage.updateDeviceModel(id, modelData);
       
