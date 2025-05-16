@@ -431,6 +431,36 @@ export const insertValuationSchema = createInsertSchema(valuations);
 export type InsertValuation = z.infer<typeof insertValuationSchema>;
 export type Valuation = typeof valuations.$inferSelect;
 
+// Condition Questions and Answers
+export const conditionQuestions = pgTable("condition_questions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  device_type_id: integer("device_type_id").notNull().references(() => deviceTypes.id),
+  order: integer("order").default(0),
+  active: boolean("active").default(true),
+  tooltip: text("tooltip"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const conditionAnswers = pgTable("condition_answers", {
+  id: serial("id").primaryKey(),
+  question_id: integer("question_id").notNull().references(() => conditionQuestions.id),
+  text: text("text").notNull(),
+  value: text("value").notNull(),
+  is_default: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertConditionQuestionSchema = createInsertSchema(conditionQuestions);
+export type InsertConditionQuestion = z.infer<typeof insertConditionQuestionSchema>;
+export type ConditionQuestion = typeof conditionQuestions.$inferSelect;
+
+export const insertConditionAnswerSchema = createInsertSchema(conditionAnswers);
+export type InsertConditionAnswer = z.infer<typeof insertConditionAnswerSchema>;
+export type ConditionAnswer = typeof conditionAnswers.$inferSelect;
+
 // System Feature Toggles - Admin-controlled feature flags
 export const featureToggles = pgTable("feature_toggles", {
   id: serial("id").primaryKey(),

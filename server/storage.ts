@@ -1073,44 +1073,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConditionQuestions(deviceTypeId?: number): Promise<any[]> {
-    const baseQuery = db.select({
-      id: conditionQuestions.id,
-      question: conditionQuestions.question,
-      deviceTypeId: conditionQuestions.device_type_id,
-      order: conditionQuestions.order,
-      active: conditionQuestions.active
-    })
-      .from(conditionQuestions)
-      .orderBy(conditionQuestions.order);
-    
-    const finalQuery = deviceTypeId 
-      ? baseQuery.where(eq(conditionQuestions.device_type_id, deviceTypeId))
-      : baseQuery;
-    
-    const questions = await finalQuery;
-    
-    // For each question, get its answers
-    for (const question of questions) {
-      const answers = await db.select({
-        id: conditionAnswers.id,
-        answer: conditionAnswers.answer,
-        impact: conditionAnswers.impact,
-        order: conditionAnswers.order
+    try {
+      const baseQuery = db.select({
+        id: conditionQuestions.id,
+        question: conditionQuestions.question,
+        deviceTypeId: conditionQuestions.device_type_id,
+        order: conditionQuestions.order,
+        active: conditionQuestions.active,
+        tooltip: conditionQuestions.tooltip
       })
-        .from(conditionAnswers)
-        .where(eq(conditionAnswers.question_id, question.id))
-        .orderBy(conditionAnswers.order);
+        .from(conditionQuestions)
+        .orderBy(conditionQuestions.order);
       
-      // Add options property to the question
-      (question as any).options = answers.map(a => ({
-        id: a.id,
-        text: a.answer,
-        value: Number(a.impact),
-        description: a.answer
-      }));
+      const finalQuery = deviceTypeId 
+        ? baseQuery.where(eq(conditionQuestions.device_type_id, deviceTypeId))
+        : baseQuery;
+      
+      const questions = await finalQuery;
+      
+      // For each question, get its answers
+      for (const question of questions) {
+        const answers = await db.select({
+          id: conditionAnswers.id,
+          text: conditionAnswers.text,
+          value: conditionAnswers.value,
+          is_default: conditionAnswers.is_default
+        })
+        .from(conditionAnswers)
+        .where(eq(conditionAnswers.question_id, question.id));
+      
+        // Add options property to the question
+        (question as any).options = answers.map(a => ({
+          id: a.id,
+          text: a.text,
+          value: a.value,
+          description: a.text
+        }));
+      }
+      
+      return questions;
+    } catch (error) {
+      console.error("Error fetching condition questions:", error);
+      return [];
     }
-    
-    return questions;
   }
   
   // Get a single condition question by ID with its options
@@ -1123,6 +1128,7 @@ export class DatabaseStorage implements IStorage {
         deviceTypeId: conditionQuestions.device_type_id,
         order: conditionQuestions.order,
         active: conditionQuestions.active,
+        tooltip: conditionQuestions.tooltip
       })
       .from(conditionQuestions)
       .where(eq(conditionQuestions.id, id));
@@ -1132,28 +1138,25 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Then, get the options for this question
-      const answers = await db.select({
+      const options = await db.select({
         id: conditionAnswers.id,
-        answer: conditionAnswers.answer,
-        impact: conditionAnswers.impact,
-        order: conditionAnswers.order
+        text: conditionAnswers.text,
+        value: conditionAnswers.value,
+        is_default: conditionAnswers.is_default
       })
       .from(conditionAnswers)
-      .where(eq(conditionAnswers.question_id, id))
-      .orderBy(conditionAnswers.order);
+      .where(eq(conditionAnswers.question_id, id));
       
       // Add options property to the question
-      (question as any).options = answers.map(a => ({
-        id: a.id,
-        text: a.answer,
-        value: Number(a.impact),
-        description: a.answer
+      question.options = options.map(option => ({
+        id: option.id,
+        text: option.text,
+        value: option.value
       }));
       
-      // Combine and return
       return question;
     } catch (error) {
-      console.error(`Error fetching condition question with ID ${id}:`, error);
+      console.error("Error fetching condition question:", error);
       return undefined;
     }
   }
