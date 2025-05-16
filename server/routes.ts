@@ -1023,17 +1023,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mappings = await db.select().from(productQuestionMappings)
         .where(eq(productQuestionMappings.groupId, groupId));
       
-      const [updatedGroup] = await db.update(questionGroups)
-        .set({
-          name: groupData.name,
-          statement: groupData.statement,
-          deviceTypeId: groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
-          icon: groupData.icon,
-          active: groupData.active,
-          updatedAt: new Date()
-        })
-        .where(eq(questionGroups.id, groupId))
-        .returning();
+      // Use direct SQL to update the question group (avoids column mismatch issues)
+      const result = await db.execute(sql`
+        UPDATE question_groups 
+        SET name = ${groupData.name}, 
+            statement = ${groupData.statement}, 
+            device_type_id = ${groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null},
+            icon = ${groupData.icon || null},
+            updated_at = ${new Date()}
+        WHERE id = ${groupId}
+        RETURNING *
+      `);
+      
+      const updatedGroup = result.rows && result.rows.length > 0 ? result.rows[0] : null;
       
       if (!updatedGroup) {
         return res.status(404).json({ message: "Question group not found" });
@@ -1054,25 +1056,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupId = parseInt(req.params.id);
       console.log(`Attempting to delete question group with ID: ${groupId}`);
       
-      // Get questions for this group using the column name in the database
-      const groupQuestions = await db.select().from(questions)
-        .where(eq(questions.group_id, groupId));
-      
-      console.log(`Found ${groupQuestions.length} questions in this group to delete`);
-      
-      // Delete all answer choices for questions in this group
-      for (const question of groupQuestions) {
-        console.log(`Deleting answer choices for question ID: ${question.id}`);
-        await db.execute(sql`DELETE FROM answer_choices WHERE question_id = ${question.id}`);
-      }
-      
-      // Delete all questions in this group
-      console.log(`Deleting all questions for group ID: ${groupId}`);
-      await db.execute(sql`DELETE FROM questions WHERE group_id = ${groupId}`);
-      
-      // Delete the group
-      console.log(`Deleting question group ID: ${groupId}`);
-      await db.execute(sql`DELETE FROM question_groups WHERE id = ${groupId}`);
+      // Transaction to ensure all related records are deleted properly
+      await db.transaction(async (tx) => {
+        // Get questions for this group
+        const result = await tx.execute(sql`
+          SELECT id FROM questions WHERE group_id = ${groupId}
+        `);
+        
+        const questions = result.rows || [];
+        console.log(`Found ${questions.length} questions in this group to delete`);
+        
+        // Delete all answer choices for questions in this group
+        for (const question of questions) {
+          const questionId = question.id;
+          console.log(`Deleting answer choices for question ID: ${questionId}`);
+          await tx.execute(sql`
+            DELETE FROM answer_choices WHERE question_id = ${questionId}
+          `);
+        }
+        
+        // Delete all questions in this group
+        console.log(`Deleting all questions for group ID: ${groupId}`);
+        await tx.execute(sql`
+          DELETE FROM questions WHERE group_id = ${groupId}
+        `);
+        
+        // Delete the group
+        console.log(`Deleting question group ID: ${groupId}`);
+        await tx.execute(sql`
+          DELETE FROM question_groups WHERE id = ${groupId}
+        `);
+      });
       
       res.json({ message: "Question group deleted successfully" });
     } catch (error: any) {
