@@ -8,7 +8,17 @@ import {
   rolePermissions, type RolePermission, type InsertRolePermission,
   routeRules, type RouteRule, type InsertRouteRule,
   postalCodes, 
-  regions
+  regions,
+  // Indian database tables
+  indianStates, type IndianState, type InsertIndianState,
+  indianCities, type IndianCity, type InsertIndianCity,
+  indianPostalCodes, type IndianPostalCode, type InsertIndianPostalCode,
+  gstConfiguration, type GstConfiguration, type InsertGstConfiguration,
+  kycDocumentTypes, type KycDocumentType, type InsertKycDocumentType,
+  kycDocuments, type KycDocument, type InsertKycDocument,
+  partnerServiceAreas, type PartnerServiceArea, type InsertPartnerServiceArea,
+  tenantConfigurations, type TenantConfiguration, type InsertTenantConfiguration,
+  tenantCustomizations, type TenantCustomization, type InsertTenantCustomization
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";
@@ -24,6 +34,59 @@ export interface IStorage {
   getUsersCount(): Promise<number>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Indian States operations
+  getIndianStates(active?: boolean): Promise<IndianState[]>;
+  getIndianStateByCode(code: string): Promise<IndianState | undefined>;
+  createIndianState(state: InsertIndianState): Promise<IndianState>;
+  updateIndianState(id: number, state: Partial<InsertIndianState>): Promise<IndianState | undefined>;
+  
+  // Indian Cities operations
+  getIndianCities(stateId?: number, active?: boolean): Promise<IndianCity[]>;
+  getIndianCity(id: number): Promise<IndianCity | undefined>;
+  createIndianCity(city: InsertIndianCity): Promise<IndianCity>;
+  updateIndianCity(id: number, city: Partial<InsertIndianCity>): Promise<IndianCity | undefined>;
+  
+  // Indian Postal Codes operations
+  getIndianPostalCodes(stateId?: number, cityId?: number, active?: boolean): Promise<IndianPostalCode[]>;
+  getIndianPostalCodeByPincode(pincode: string): Promise<IndianPostalCode | undefined>;
+  createIndianPostalCode(postalCode: InsertIndianPostalCode): Promise<IndianPostalCode>;
+  updateIndianPostalCode(id: number, postalCode: Partial<InsertIndianPostalCode>): Promise<IndianPostalCode | undefined>;
+  
+  // GST Configuration operations
+  getGstConfigurations(active?: boolean): Promise<GstConfiguration[]>;
+  getGstConfigurationByHsnCode(hsnCode: string): Promise<GstConfiguration | undefined>;
+  createGstConfiguration(config: InsertGstConfiguration): Promise<GstConfiguration>;
+  updateGstConfiguration(id: number, config: Partial<InsertGstConfiguration>): Promise<GstConfiguration | undefined>;
+  
+  // KYC Document Type operations
+  getKycDocumentTypes(partnerRequired?: boolean, customerRequired?: boolean, active?: boolean): Promise<KycDocumentType[]>;
+  getKycDocumentTypeByCode(code: string): Promise<KycDocumentType | undefined>;
+  createKycDocumentType(docType: InsertKycDocumentType): Promise<KycDocumentType>;
+  updateKycDocumentType(id: number, docType: Partial<InsertKycDocumentType>): Promise<KycDocumentType | undefined>;
+  
+  // KYC Document operations
+  getKycDocumentsByUser(userId: number): Promise<KycDocument[]>;
+  getKycDocument(id: number): Promise<KycDocument | undefined>;
+  createKycDocument(document: InsertKycDocument): Promise<KycDocument>;
+  updateKycDocument(id: number, document: Partial<InsertKycDocument>): Promise<KycDocument | undefined>;
+  verifyKycDocument(id: number, verifierId: number, status: string, reason?: string): Promise<KycDocument | undefined>;
+  
+  // Partner Service Area operations
+  getPartnerServiceAreas(partnerId: number, active?: boolean): Promise<PartnerServiceArea[]>;
+  createPartnerServiceArea(area: InsertPartnerServiceArea): Promise<PartnerServiceArea>;
+  updatePartnerServiceArea(id: number, area: Partial<InsertPartnerServiceArea>): Promise<PartnerServiceArea | undefined>;
+  deletePartnerServiceArea(id: number): Promise<boolean>;
+  
+  // Tenant Configuration operations
+  getTenantConfiguration(partnerId: number): Promise<TenantConfiguration | undefined>;
+  createTenantConfiguration(config: InsertTenantConfiguration): Promise<TenantConfiguration>;
+  updateTenantConfiguration(partnerId: number, config: Partial<InsertTenantConfiguration>): Promise<TenantConfiguration | undefined>;
+  
+  // Tenant Customization operations
+  getTenantCustomization(partnerId: number): Promise<TenantCustomization | undefined>;
+  createTenantCustomization(customization: InsertTenantCustomization): Promise<TenantCustomization>;
+  updateTenantCustomization(partnerId: number, customization: Partial<InsertTenantCustomization>): Promise<TenantCustomization | undefined>;
   
   // Invoice template operations
   getInvoiceTemplates(partnerId?: number): Promise<InvoiceTemplate[]>;

@@ -14,6 +14,7 @@ import {
   date,
   jsonb,
   index as pgIndex,
+  check,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -316,3 +317,179 @@ export const upsertPartnerSchema = z.object({
   status: z.string().default("pending"),
 });
 export type UpsertPartner = z.infer<typeof upsertPartnerSchema>;
+
+// Indian specific tables
+// Indian States
+export const indianStates = pgTable("indian_states", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  isUnionTerritory: boolean("is_union_territory").default(false),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Indian Cities
+export const indianCities = pgTable("indian_cities", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  stateId: integer("state_id").notNull().references(() => indianStates.id),
+  isMetro: boolean("is_metro").default(false),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueNamePerState: unique().on(table.name, table.stateId),
+}));
+
+// Indian Postal Codes with extended data
+export const indianPostalCodes = pgTable("indian_postal_codes", {
+  id: serial("id").primaryKey(),
+  pincode: text("pincode").notNull().unique(),
+  postOfficeName: text("post_office_name"),
+  district: text("district").notNull(),
+  stateId: integer("state_id").notNull().references(() => indianStates.id),
+  cityId: integer("city_id").references(() => indianCities.id),
+  deliveryStatus: text("delivery_status"),
+  divisionName: text("division_name"),
+  regionName: text("region_name"),
+  circleName: text("circle_name"),
+  taluk: text("taluk"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// GST Configuration
+export const gstConfiguration = pgTable("gst_configuration", {
+  id: serial("id").primaryKey(),
+  taxRate: real("tax_rate").notNull(),
+  hsnCode: text("hsn_code").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  active: boolean("active").default(true),
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// KYC Document Types
+export const kycDocumentTypes = pgTable("kyc_document_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  description: text("description"),
+  requiredForPartners: boolean("required_for_partners").default(false),
+  requiredForCustomers: boolean("required_for_customers").default(false),
+  verificationType: text("verification_type").notNull(),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// KYC Documents
+export const kycDocuments = pgTable("kyc_documents", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  documentTypeId: integer("document_type_id").notNull().references(() => kycDocumentTypes.id),
+  documentNumber: text("document_number").notNull(),
+  documentUrl: text("document_url").notNull(),
+  verificationStatus: text("verification_status").notNull().default("pending"),
+  verifiedBy: integer("verified_by").references(() => users.id),
+  verificationDate: timestamp("verification_date"),
+  rejectionReason: text("rejection_reason"),
+  expiryDate: date("expiry_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueDocumentPerUser: unique().on(table.userId, table.documentTypeId),
+}));
+
+// Partner Service Areas
+export const partnerServiceAreas = pgTable("partner_service_areas", {
+  id: serial("id").primaryKey(),
+  partnerId: integer("partner_id").notNull().references(() => partners.id),
+  stateId: integer("state_id").references(() => indianStates.id),
+  cityId: integer("city_id").references(() => indianCities.id),
+  pincode: text("pincode").references(() => indianPostalCodes.pincode),
+  isPrimary: boolean("is_primary").default(false),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  checkConstraint: check(`(state_id IS NOT NULL) OR (city_id IS NOT NULL) OR (pincode IS NOT NULL)`),
+}));
+
+// Multi-tenant Configuration
+export const tenantConfigurations = pgTable("tenant_configurations", {
+  id: serial("id").primaryKey(),
+  partnerId: integer("partner_id").notNull().references(() => partners.id).unique(),
+  databaseName: text("database_name"),
+  databaseHost: text("database_host"),
+  databasePort: integer("database_port"),
+  databaseUser: text("database_user"),
+  databasePassword: text("database_password"),
+  settings: jsonb("settings").default({}),
+  isMultiTenant: boolean("is_multi_tenant").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tenant Customization
+export const tenantCustomizations = pgTable("tenant_customizations", {
+  id: serial("id").primaryKey(),
+  partnerId: integer("partner_id").notNull().references(() => partners.id).unique(),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color"),
+  secondaryColor: text("secondary_color"),
+  invoiceTemplate: text("invoice_template"),
+  emailTemplate: text("email_template"),
+  smsTemplate: text("sms_template"),
+  domain: text("domain"),
+  companyDetails: jsonb("company_details"),
+  gstin: text("gstin"),
+  paymentGatewayConfig: jsonb("payment_gateway_config"),
+  termsAndConditions: text("terms_and_conditions"),
+  privacyPolicy: text("privacy_policy"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Define schemas for new tables
+export const insertIndianStateSchema = createInsertSchema(indianStates);
+export type InsertIndianState = z.infer<typeof insertIndianStateSchema>;
+export type IndianState = typeof indianStates.$inferSelect;
+
+export const insertIndianCitySchema = createInsertSchema(indianCities);
+export type InsertIndianCity = z.infer<typeof insertIndianCitySchema>;
+export type IndianCity = typeof indianCities.$inferSelect;
+
+export const insertIndianPostalCodeSchema = createInsertSchema(indianPostalCodes);
+export type InsertIndianPostalCode = z.infer<typeof insertIndianPostalCodeSchema>;
+export type IndianPostalCode = typeof indianPostalCodes.$inferSelect;
+
+export const insertGstConfigurationSchema = createInsertSchema(gstConfiguration);
+export type InsertGstConfiguration = z.infer<typeof insertGstConfigurationSchema>;
+export type GstConfiguration = typeof gstConfiguration.$inferSelect;
+
+export const insertKycDocumentTypeSchema = createInsertSchema(kycDocumentTypes);
+export type InsertKycDocumentType = z.infer<typeof insertKycDocumentTypeSchema>;
+export type KycDocumentType = typeof kycDocumentTypes.$inferSelect;
+
+export const insertKycDocumentSchema = createInsertSchema(kycDocuments);
+export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
+export type KycDocument = typeof kycDocuments.$inferSelect;
+
+export const insertPartnerServiceAreaSchema = createInsertSchema(partnerServiceAreas);
+export type InsertPartnerServiceArea = z.infer<typeof insertPartnerServiceAreaSchema>;
+export type PartnerServiceArea = typeof partnerServiceAreas.$inferSelect;
+
+export const insertTenantConfigurationSchema = createInsertSchema(tenantConfigurations);
+export type InsertTenantConfiguration = z.infer<typeof insertTenantConfigurationSchema>;
+export type TenantConfiguration = typeof tenantConfigurations.$inferSelect;
+
+export const insertTenantCustomizationSchema = createInsertSchema(tenantCustomizations);
+export type InsertTenantCustomization = z.infer<typeof insertTenantCustomizationSchema>;
+export type TenantCustomization = typeof tenantCustomizations.$inferSelect;
