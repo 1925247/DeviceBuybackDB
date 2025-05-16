@@ -1030,6 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             statement = ${groupData.statement}, 
             device_type_id = ${groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null},
             icon = ${groupData.icon || null},
+            active = ${!!groupData.active},
             updated_at = ${new Date()}
         WHERE id = ${groupId}
         RETURNING *
@@ -1056,39 +1057,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupId = parseInt(req.params.id);
       console.log(`Attempting to delete question group with ID: ${groupId}`);
       
-      // Transaction to ensure all related records are deleted properly
-      await db.transaction(async (tx) => {
-        // Get questions for this group
-        const result = await tx.execute(sql`
-          SELECT id FROM questions WHERE group_id = ${groupId}
-        `);
-        
-        const questions = result.rows || [];
-        console.log(`Found ${questions.length} questions in this group to delete`);
-        
-        // Delete all answer choices for questions in this group
-        for (const question of questions) {
-          const questionId = question.id;
-          console.log(`Deleting answer choices for question ID: ${questionId}`);
-          await tx.execute(sql`
-            DELETE FROM answer_choices WHERE question_id = ${questionId}
-          `);
-        }
-        
-        // Delete all questions in this group
-        console.log(`Deleting all questions for group ID: ${groupId}`);
-        await tx.execute(sql`
-          DELETE FROM questions WHERE group_id = ${groupId}
-        `);
-        
-        // Delete the group
-        console.log(`Deleting question group ID: ${groupId}`);
-        await tx.execute(sql`
-          DELETE FROM question_groups WHERE id = ${groupId}
-        `);
-      });
+      // Simple direct SQL approach to avoid any potential syntax issues
       
-      res.json({ message: "Question group deleted successfully" });
+      // 1. Get all related questions first
+      const getQuestionsQuery = `SELECT id FROM questions WHERE group_id = $1`;
+      const questionsResult = await pool.query(getQuestionsQuery, [groupId]);
+      const questions = questionsResult.rows || [];
+      console.log(`Found ${questions.length} questions to delete for group ID: ${groupId}`);
+      
+      // 2. Delete answer choices for each question
+      for (const question of questions) {
+        const deleteChoicesQuery = `DELETE FROM answer_choices WHERE question_id = $1`;
+        await pool.query(deleteChoicesQuery, [question.id]);
+        console.log(`Deleted answer choices for question ID: ${question.id}`);
+      }
+      
+      // 3. Delete all questions for this group
+      const deleteQuestionsQuery = `DELETE FROM questions WHERE group_id = $1`;
+      await pool.query(deleteQuestionsQuery, [groupId]);
+      console.log(`Deleted all questions for group ID: ${groupId}`);
+      
+      // 4. Delete the question group itself
+      const deleteGroupQuery = `DELETE FROM question_groups WHERE id = $1`;
+      const result = await pool.query(deleteGroupQuery, [groupId]);
+      
+      if (result.rowCount > 0) {
+        console.log(`Successfully deleted question group with ID: ${groupId}`);
+        res.json({ message: "Question group deleted successfully" });
+      } else {
+        console.log(`Question group with ID: ${groupId} not found`);
+        res.status(404).json({ message: "Question group not found" });
+      }
     } catch (error: any) {
       console.error("Error deleting question group:", error);
       res.status(500).json({ message: error.message || "Failed to delete question group" });
