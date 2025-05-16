@@ -580,26 +580,82 @@ function App() {
                   } />
                   <Route
                     path="shipping"
-                    element={<AdminMarketplaceSettings />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminMarketplaceSettings />
+                      </Suspense>
+                    }
                   />
                   <Route
                     path="payments"
-                    element={<AdminMarketplaceSettings />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminMarketplaceSettings />
+                      </Suspense>
+                    }
                   />
-                  <Route path="revolutionary" element={<AdminDevices />} />
-                  <Route path="analytics" element={<AdminDashboard />} />
-                  <Route path="campaigns" element={<AdminDashboard />} />
-                  <Route path="promotions" element={<AdminDashboard />} />
-                  <Route path="coupons" element={<AdminDashboard />} />
-                  <Route path="media" element={<AdminDashboard />} />
-                  <Route path="blog" element={<AdminDashboard />} />
-                  <Route path="reviews" element={<AdminDashboard />} />
-                  <Route path="security" element={<AdminSettings />} />
+                  <Route path="revolutionary" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDevices />
+                    </Suspense>
+                  } />
+                  <Route path="analytics" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="campaigns" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="promotions" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="coupons" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="media" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="blog" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="reviews" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="security" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminSettings />
+                    </Suspense>
+                  } />
 
                   {/* Region & Partner Management */}
-                  <Route path="regions" element={<RegionsManagement />} />
-                  <Route path="partners" element={<PartnersManagement />} />
-                  <Route path="partner-staff" element={<PartnerStaffManagement />} />
+                  <Route path="regions" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <RegionsManagement />
+                    </Suspense>
+                  } />
+                  <Route path="partners" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <PartnersManagement />
+                    </Suspense>
+                  } />
+                  <Route path="partner-staff" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <PartnerStaffManagement />
+                    </Suspense>
+                  } />
                   <Route path="pin-codes" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <PinCodeAssignment />
@@ -610,37 +666,101 @@ function App() {
                       <PartnerOnboarding />
                     </Suspense>
                   } />
-                  <Route path="partner-wallets" element={<PartnerWallets />} />
+                  <Route path="partner-wallets" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <PartnerWallets />
+                    </Suspense>
+                  } />
 
                   {/* Questionnaires */}
-                  <Route path="brand-questionnaires" element={<AdminCQS />} />
+                  <Route path="brand-questionnaires" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminCQS />
+                    </Suspense>
+                  } />
 
                   {/* Routes & Templates */}
-                  <Route path="routes" element={<RouteManagement />} />
-                  <Route path="route-rules" element={<ManageRouteRules />} />
-                  <Route path="store-templates" element={<AdminDashboard />} />
-                  <Route path="store-themes" element={<AdminDashboard />} />
+                  <Route path="routes" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <RouteManagement />
+                    </Suspense>
+                  } />
+                  <Route path="route-rules" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <ManageRouteRules />
+                    </Suspense>
+                  } />
+                  <Route path="store-templates" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="store-themes" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
                   <Route
                     path="invoice-templates"
-                    element={<AdminInvoiceTemplates />}
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminInvoiceTemplates />
+                      </Suspense>
+                    }
                   />
 
                   {/* User Management */}
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="user-roles" element={<UserRoleManagement />} />
-                  <Route path="permissions" element={<UserRoleManagement />} />
+                  <Route path="users" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminUsers />
+                    </Suspense>
+                  } />
+                  <Route path="user-roles" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <UserRoleManagement />
+                    </Suspense>
+                  } />
+                  <Route path="permissions" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <UserRoleManagement />
+                    </Suspense>
+                  } />
 
                   {/* Other Settings */}
-                  <Route path="faq" element={<AdminDashboard />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                  <Route path="config" element={<AdminConfig />} />
-                  <Route path="diagnostic" element={<AdminDiagnostic />} />
-                  <Route path="*" element={<NotFound />} />
+                  <Route path="faq" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="settings" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminSettings />
+                    </Suspense>
+                  } />
+                  <Route path="config" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminConfig />
+                    </Suspense>
+                  } />
+                  <Route path="diagnostic" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDiagnostic />
+                    </Suspense>
+                  } />
+                  <Route path="*" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <NotFound />
+                    </Suspense>
+                  } />
                 </Route>
               </Route>
 
               {/* Catch-all Not Found */}
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={
+                <Suspense fallback={<LoadingSpinner />}>
+                  <NotFound />
+                </Suspense>
+              } />
             </Routes>
           </div>
         </Router>
