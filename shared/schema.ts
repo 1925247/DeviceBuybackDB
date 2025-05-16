@@ -478,9 +478,37 @@ export const featureToggles = pgTable("feature_toggles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Buyback Requests - For device buyback system
+export const buybackRequests = pgTable("buyback_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  deviceType: text("device_type").notNull(),
+  manufacturer: text("manufacturer").notNull(),
+  model: text("model").notNull(),
+  condition: text("condition").notNull(),
+  status: text("status").default("pending").notNull(),
+  partnerId: integer("partner_id").references(() => partners.id),
+  questionnaireAnswers: jsonb("questionnaire_answers"),
+  imei: text("imei"),
+  serialNumber: text("serial_number"),
+  estimatedValue: text("estimated_value"),
+  offeredPrice: text("offered_price"),
+  finalPrice: text("final_price"),
+  notes: text("notes"),
+  images: jsonb("images"),
+  processingSteps: jsonb("processing_steps"),
+  processingHistory: jsonb("processing_history"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertFeatureToggleSchema = createInsertSchema(featureToggles);
 export type InsertFeatureToggle = z.infer<typeof insertFeatureToggleSchema>;
 export type FeatureToggle = typeof featureToggles.$inferSelect;
+
+export const insertBuybackRequestSchema = createInsertSchema(buybackRequests);
+export type InsertBuybackRequest = z.infer<typeof insertBuybackRequestSchema>;
+export type BuybackRequest = typeof buybackRequests.$inferSelect;
 
 // Partner Service Areas
 export const partnerServiceAreas = pgTable("partner_service_areas", {
