@@ -13,7 +13,7 @@ import { uploadSingleImage, getFileUrl } from "./middleware/upload";
 // Import API routes
 import partnerStaffRoutes from "./api/partnerStaff";
 import indianDataRoutes from "./api/indianData";
-import featureToggleRoutes from "./api/featureToggleApi";
+import { featureToggleRouter } from "./api/featureToggleApi";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
@@ -22,7 +22,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Use API routes
   app.use('/api/partner-staff', partnerStaffRoutes);
   app.use('/api/indian', indianDataRoutes);
-  app.use('/api/feature-toggles', featureToggleRoutes);
+  
+  // Feature toggles API routes
+  try {
+    app.use('/api/feature-toggles', featureToggleRouter);
+  } catch (error) {
+    console.error("Error registering feature toggles routes:", error);
+  }
 
   // File upload endpoints
   app.post(apiRouter("/upload"), uploadSingleImage, (req: Request, res: Response) => {
@@ -55,6 +61,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw error;
     }
   };
+
+  // Feature Toggles API is imported and registered in line 25
 
   // Database status endpoint
   app.get(apiRouter("/status"), async (_req: Request, res: Response) => {
