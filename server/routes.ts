@@ -1074,12 +1074,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete all answer choices for questions in this group
       for (const question of groupQuestions) {
         await db.delete(answerChoices)
-          .where(eq(answerChoices.questionId, question.id));
+          .where(eq(answerChoices.question_id, question.id));
       }
       
       // Delete all questions in this group
       await db.delete(questions)
-        .where(eq(questions.groupId, groupId));
+        .where(eq(questions.group_id, groupId));
       
       // Delete the group
       const result = await db.delete(questionGroups)
