@@ -793,19 +793,20 @@ export class DatabaseStorage implements IStorage {
   // Brand Device Types operations
   async getAllBrandDeviceTypes(): Promise<any[]> {
     try {
-      const relations = await db
-        .select({
-          id: brandDeviceTypes.id,
-          brand_id: brandDeviceTypes.brand_id,
-          device_type_id: brandDeviceTypes.device_type_id,
-          created_at: brandDeviceTypes.created_at,
-          updated_at: brandDeviceTypes.updated_at,
-          brand_name: brands.name,
-          device_type_name: deviceTypes.name
-        })
-        .from(brandDeviceTypes)
-        .leftJoin(brands, eq(brandDeviceTypes.brand_id, brands.id))
-        .leftJoin(deviceTypes, eq(brandDeviceTypes.device_type_id, deviceTypes.id));
+      // Use raw SQL to avoid schema reference issues
+      const relations = await db.execute(sql`
+        SELECT 
+          bdt.id, 
+          bdt.brand_id, 
+          bdt.device_type_id, 
+          bdt.created_at, 
+          bdt.updated_at,
+          b.name as brand_name, 
+          dt.name as device_type_name
+        FROM brand_device_types bdt
+        LEFT JOIN brands b ON bdt.brand_id = b.id
+        LEFT JOIN device_types dt ON bdt.device_type_id = dt.id
+      `);
       
       return relations;
     } catch (error) {
@@ -816,22 +817,27 @@ export class DatabaseStorage implements IStorage {
 
   async getBrandDeviceType(id: number): Promise<any | undefined> {
     try {
-      const [relation] = await db
-        .select({
-          id: brandDeviceTypes.id,
-          brand_id: brandDeviceTypes.brand_id,
-          device_type_id: brandDeviceTypes.device_type_id,
-          created_at: brandDeviceTypes.created_at,
-          updated_at: brandDeviceTypes.updated_at,
-          brand_name: brands.name,
-          device_type_name: deviceTypes.name
-        })
-        .from(brandDeviceTypes)
-        .leftJoin(brands, eq(brandDeviceTypes.brand_id, brands.id))
-        .leftJoin(deviceTypes, eq(brandDeviceTypes.device_type_id, deviceTypes.id))
-        .where(eq(brandDeviceTypes.id, id));
+      // Use raw SQL to avoid schema reference issues
+      const result = await db.execute(sql`
+        SELECT 
+          bdt.id, 
+          bdt.brand_id, 
+          bdt.device_type_id, 
+          bdt.created_at, 
+          bdt.updated_at,
+          b.name as brand_name, 
+          dt.name as device_type_name
+        FROM brand_device_types bdt
+        LEFT JOIN brands b ON bdt.brand_id = b.id
+        LEFT JOIN device_types dt ON bdt.device_type_id = dt.id
+        WHERE bdt.id = ${id}
+      `);
       
-      return relation;
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      return result[0];
     } catch (error) {
       console.error(`Error getting brand device type with id ${id}:`, error);
       throw error;
@@ -866,9 +872,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBrandDeviceType(id: number): Promise<boolean> {
     try {
-      await db
-        .delete(brandDeviceTypes)
-        .where(eq(brandDeviceTypes.id, id));
+      // Delete using raw SQL to avoid schema reference issues
+      await db.execute(sql`
+        DELETE FROM brand_device_types
+        WHERE id = ${id}
+      `);
       
       return true;
     } catch (error) {
@@ -877,26 +885,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getBrandForDeviceType(deviceTypeId: number): Promise<Brand[]> {
+  async getBrandForDeviceType(deviceTypeId: number): Promise<any[]> {
     try {
-      const query = db
-        .select()
-        .from(brands)
-        .innerJoin(
-          brandDeviceTypes,
-          eq(brands.id, brandDeviceTypes.brand_id)
-        )
-        .where(eq(brandDeviceTypes.device_type_id, deviceTypeId));
-
-      const results = await query;
-      return results.map(result => ({
-        id: result.brands.id,
-        name: result.brands.name,
-        slug: result.brands.slug,
-        logo: result.brands.logo,
-        created_at: result.brands.created_at,
-        updated_at: result.brands.updated_at,
-      }));
+      // Use raw SQL to avoid schema reference issues
+      const results = await db.execute(sql`
+        SELECT 
+          b.id, 
+          b.name, 
+          b.slug, 
+          b.logo, 
+          b.created_at, 
+          b.updated_at
+        FROM brands b
+        INNER JOIN brand_device_types bdt ON b.id = bdt.brand_id
+        WHERE bdt.device_type_id = ${deviceTypeId}
+      `);
+      
+      return results;
     } catch (error) {
       console.error(`Error getting brands for device type with id ${deviceTypeId}:`, error);
       return [];
