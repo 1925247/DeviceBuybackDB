@@ -137,7 +137,7 @@ async function main() {
   `);
 
   // Add tenant customization table 
-  migrationQueries.push(/* sql */`
+  migrationQueries.push(sql`
     CREATE TABLE IF NOT EXISTS tenant_customizations (
       id SERIAL PRIMARY KEY,
       partner_id INTEGER NOT NULL REFERENCES partners(id) UNIQUE,
@@ -164,7 +164,7 @@ async function main() {
   }
 
   // Seed Indian states data
-  await migrate(/* sql */`
+  await migrate(sql`
     INSERT INTO indian_states (name, code, is_union_territory) VALUES
     ('Andhra Pradesh', 'AP', FALSE),
     ('Arunachal Pradesh', 'AR', FALSE),
@@ -206,7 +206,7 @@ async function main() {
   `);
 
   // Seed KYC document types for India
-  await migrate(/* sql */`
+  await migrate(sql`
     INSERT INTO kyc_document_types (name, code, description, required_for_partners, required_for_customers, verification_type) VALUES
     ('PAN Card', 'PAN', 'Permanent Account Number issued by Income Tax Department', TRUE, FALSE, 'manual'),
     ('Aadhaar Card', 'AADHAAR', 'Unique Identification Authority of India', TRUE, TRUE, 'manual'),
@@ -219,7 +219,7 @@ async function main() {
   `);
 
   // Seed GST configurations for electronics
-  await migrate(/* sql */`
+  await migrate(sql`
     INSERT INTO gst_configuration (tax_rate, hsn_code, description, category, active, effective_from) VALUES
     (18.0, '8471', 'Computers and computer peripherals', 'ELECTRONICS', TRUE, '2022-01-01'),
     (18.0, '8517', 'Mobile phones, smartphones and communication devices', 'ELECTRONICS', TRUE, '2022-01-01'),

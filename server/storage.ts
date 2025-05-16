@@ -88,6 +88,49 @@ export interface IStorage {
   createTenantCustomization(customization: InsertTenantCustomization): Promise<TenantCustomization>;
   updateTenantCustomization(partnerId: number, customization: Partial<InsertTenantCustomization>): Promise<TenantCustomization | undefined>;
   
+  // Indian State operations
+  getIndianStates(): Promise<IndianState[]>;
+  getIndianStateByCode(code: string): Promise<IndianState | undefined>;
+  createIndianState(state: InsertIndianState): Promise<IndianState>;
+  updateIndianState(code: string, state: Partial<InsertIndianState>): Promise<IndianState | undefined>;
+  
+  // Indian City operations
+  getIndianCities(stateCode?: string): Promise<IndianCity[]>;
+  getIndianCity(id: number): Promise<IndianCity | undefined>;
+  createIndianCity(city: InsertIndianCity): Promise<IndianCity>;
+  updateIndianCity(id: number, city: Partial<InsertIndianCity>): Promise<IndianCity | undefined>;
+  
+  // Indian Postal Code operations
+  getIndianPostalCodes(stateCode?: string, cityId?: number): Promise<IndianPostalCode[]>;
+  getIndianPostalCodeByCode(code: string): Promise<IndianPostalCode | undefined>;
+  createIndianPostalCode(postalCode: InsertIndianPostalCode): Promise<IndianPostalCode>;
+  updateIndianPostalCode(code: string, postalCode: Partial<InsertIndianPostalCode>): Promise<IndianPostalCode | undefined>;
+  
+  // GST Configuration operations
+  getGstConfigurations(): Promise<GstConfiguration[]>;
+  getGstConfigurationById(id: number): Promise<GstConfiguration | undefined>;
+  getGstConfigurationByHsnCode(hsnCode: string): Promise<GstConfiguration | undefined>;
+  createGstConfiguration(config: InsertGstConfiguration): Promise<GstConfiguration>;
+  updateGstConfiguration(id: number, config: Partial<InsertGstConfiguration>): Promise<GstConfiguration | undefined>;
+  
+  // KYC Document Type operations
+  getKycDocumentTypes(): Promise<KycDocumentType[]>;
+  getKycDocumentTypeByCode(code: string): Promise<KycDocumentType | undefined>;
+  createKycDocumentType(docType: InsertKycDocumentType): Promise<KycDocumentType>;
+  updateKycDocumentType(code: string, docType: Partial<InsertKycDocumentType>): Promise<KycDocumentType | undefined>;
+  
+  // KYC Document operations
+  getKycDocuments(partnerId?: number, userId?: number): Promise<KycDocument[]>;
+  getKycDocument(id: number): Promise<KycDocument | undefined>;
+  createKycDocument(document: InsertKycDocument): Promise<KycDocument>;
+  updateKycDocument(id: number, document: Partial<InsertKycDocument>): Promise<KycDocument | undefined>;
+  
+  // Partner Service Area operations
+  getPartnerServiceAreas(partnerId: number): Promise<PartnerServiceArea[]>;
+  createPartnerServiceArea(serviceArea: InsertPartnerServiceArea): Promise<PartnerServiceArea>;
+  updatePartnerServiceArea(id: number, serviceArea: Partial<InsertPartnerServiceArea>): Promise<PartnerServiceArea | undefined>;
+  deletePartnerServiceArea(id: number): Promise<boolean>;
+  
   // Invoice template operations
   getInvoiceTemplates(partnerId?: number): Promise<InvoiceTemplate[]>;
   getInvoiceTemplate(id: number): Promise<InvoiceTemplate | undefined>;
