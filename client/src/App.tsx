@@ -516,7 +516,7 @@ function App() {
                   {/* Region & Partner Management */}
                   <Route path="regions" element={<RegionsManagement />} />
                   <Route path="partners" element={<PartnersManagement />} />
-                  <Route path="partner-staff" element={<AdminUsers />} />
+                  <Route path="partner-staff" element={<PartnersManagement />} />
                   <Route path="pin-codes" element={<PinCodeAssignment />} />
                   <Route path="partners-onboarding" element={<PartnerOnboarding />} />
                   <Route path="partner-wallets" element={<PartnerWallets />} />
