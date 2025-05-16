@@ -38,6 +38,7 @@ import {
   User,
   Search,
   ChevronDown,
+  Copy,
   ToggleLeft,
 } from "lucide-react";
 
@@ -288,13 +289,25 @@ const AdminLayout: React.FC = () => {
                   <Link
                     to="/admin/condition-questions"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("/admin/condition-questions")
+                      isActive("/admin/condition-questions") && !isActive("/admin/product-mapping")
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <Layers className="w-5 h-5 mr-3" />
                     <span>Q&A Management</span>
+                  </Link>
+                  
+                  <Link
+                    to="/admin/product-mapping"
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ml-5 ${
+                      isActive("/admin/product-mapping")
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Copy className="w-5 h-5 mr-3" />
+                    <span>Product Q&A Mapping</span>
                   </Link>
 
                   <Link
