@@ -786,8 +786,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = req.body;
       
       // First check if the model exists using raw SQL to avoid ORM issues
+      const pool = (db as any).client;
       const checkModelQuery = `SELECT id FROM device_models WHERE id = $1`;
-      const checkResult = await db.execute(checkModelQuery, [id]);
+      const checkResult = await pool.query(checkModelQuery, [id]);
       
       if (!checkResult.rows || checkResult.rows.length === 0) {
         return res.status(404).json({ message: "Device model not found" });
@@ -835,7 +836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Update query:", updateQuery);
       console.log("Update values:", updateValues);
       
-      const result = await db.execute(updateQuery, updateValues);
+      const result = await pool.query(updateQuery, updateValues);
       
       if (!result.rows || result.rows.length === 0) {
         return res.status(500).json({ message: "Failed to update device model" });
