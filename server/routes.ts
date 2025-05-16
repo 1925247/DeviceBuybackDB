@@ -1023,19 +1023,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mappings = await db.select().from(productQuestionMappings)
         .where(eq(productQuestionMappings.groupId, groupId));
       
-      // Use direct SQL to update the question group (avoids column mismatch issues)
-      const result = await db.execute(sql`
+      // Using raw SQL with parameterized queries for better safety
+      const updateQuery = `
         UPDATE question_groups 
-        SET name = ${groupData.name}, 
-            statement = ${groupData.statement}, 
-            device_type_id = ${groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null},
-            icon = ${groupData.icon || null},
-            active = ${!!groupData.active},
-            updated_at = ${new Date()}
-        WHERE id = ${groupId}
+        SET name = $1, 
+            statement = $2, 
+            device_type_id = $3,
+            icon = $4,
+            active = $5,
+            updated_at = $6
+        WHERE id = $7
         RETURNING *
-      `);
+      `;
       
+      const params = [
+        groupData.name, 
+        groupData.statement, 
+        groupData.deviceTypeId ? parseInt(groupData.deviceTypeId) : null,
+        groupData.icon || null,
+        groupData.active === undefined ? true : !!groupData.active,
+        new Date(),
+        groupId
+      ];
+      
+      const result = await pool.query(updateQuery, params);
       const updatedGroup = result.rows && result.rows.length > 0 ? result.rows[0] : null;
       
       if (!updatedGroup) {
