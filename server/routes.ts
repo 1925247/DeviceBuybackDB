@@ -1067,9 +1067,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       */
       
-      // Get questions for this group
+      // Get questions for this group using the column name in the database
       const groupQuestions = await db.select().from(questions)
-        .where(eq(questions.groupId, groupId));
+        .where(eq(questions.group_id, groupId));
       
       // Delete all answer choices for questions in this group
       for (const question of groupQuestions) {
@@ -1103,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupId = req.query.group_id ? parseInt(req.query.group_id as string) : undefined;
       
       const allQuestions = await db.select().from(questions)
-        .where(groupId ? eq(questions.groupId, groupId) : undefined)
+        .where(groupId ? eq(questions.group_id, groupId) : undefined)
         .orderBy(asc(questions.order));
       
       res.json(allQuestions);

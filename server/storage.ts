@@ -1152,7 +1152,7 @@ export class DatabaseStorage implements IStorage {
       for (const question of questions) {
         const answers = await db.select({
           id: conditionAnswers.id,
-          text: conditionAnswers.text,
+          text: conditionAnswers.answer_text, // Use answer_text instead of text column
           value: conditionAnswers.value,
           is_default: conditionAnswers.is_default
         })
