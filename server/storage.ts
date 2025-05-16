@@ -950,20 +950,20 @@ export class DatabaseStorage implements IStorage {
       variants: model.variants || [],
     };
 
-    // Convert modelData to compatible type
+    // Convert modelData to match the device_models table schema
     const compatibleData = {
       name: modelData.name as string,
       slug: modelData.slug as string,
-      image: modelData.image as string,
-      brand_id: modelData.brand_id as number,
-      device_type_id: modelData.device_type_id as number,
+      imageUrl: modelData.image as string, // Map to correct field name
+      description: '', // Add the missing description field
+      brandId: modelData.brand_id as number, // Use camelCase as in schema
+      deviceTypeId: modelData.device_type_id as number, // Use camelCase as in schema
       active: modelData.active as boolean,
-      featured: modelData.featured as boolean,
-      variants: modelData.variants as string[]
+      specifications: {} // Add empty specifications object
     };
     
     const [newModel] = await db.insert(deviceModels)
-      .values([compatibleData])
+      .values(compatibleData)
       .returning();
       
     return newModel;
