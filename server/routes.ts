@@ -1721,16 +1721,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`Fetching questions for device model ID: ${modelId}`);
           
-          // First get the product ID that matches this model ID
+          // Products have a direct device_model_id column we can use
           const productResult = await pool.query(
-            `SELECT id FROM products WHERE model_id = $1`,
+            `SELECT id, title FROM products WHERE device_model_id = $1`,
             [modelId]
           );
           
+          // If no direct match, try to find by name
           if (productResult.rows.length === 0) {
-            console.log(`No product found for model ID: ${modelId}`);
-            res.json([]);
-            return;
+            console.log(`No direct product mapping for model ID: ${modelId}, trying to find by name`);
+            
+            const modelResult = await pool.query(
+              `SELECT name FROM device_models WHERE id = $1`,
+              [modelId]
+            );
+            
+            if (modelResult.rows.length === 0) {
+              console.log(`No device model found with ID: ${modelId}`);
+              res.json([]);
+              return;
+            }
+            
+            const modelName = modelResult.rows[0].name;
+            console.log(`Found device model name: ${modelName}`);
+            
+            // Find product by matching the title (which usually contains model name)
+            const titleProductResult = await pool.query(
+              `SELECT id, title FROM products WHERE title LIKE $1`,
+              [`%${modelName}%`]
+            );
+            
+            if (titleProductResult.rows.length > 0) {
+              console.log(`Found products by title match: ${titleProductResult.rows.map(r => r.title).join(', ')}`);
+              // Override original empty result with these matches
+              productResult.rows = titleProductResult.rows;
+            }
+          }
+          
+          if (productResult.rows.length === 0) {
+            console.log(`No product found for model ID: ${modelId}, creating one automatically`);
+            
+            // Get the device model details to create a matching product
+            const modelDetailsResult = await pool.query(
+              `SELECT m.id, m.name, m.slug, m.brand_id, m.device_type_id, b.name as brand_name
+               FROM device_models m
+               JOIN brands b ON m.brand_id = b.id
+               WHERE m.id = $1`,
+              [modelId]
+            );
+            
+            if (modelDetailsResult.rows.length === 0) {
+              console.log(`Cannot find device model details for ID: ${modelId}`);
+              res.json([]);
+              return;
+            }
+            
+            const modelDetails = modelDetailsResult.rows[0];
+            
+            // Create a product for this device model
+            const newProductResult = await pool.query(
+              `INSERT INTO products (
+                title, 
+                slug, 
+                description, 
+                price, 
+                status, 
+                is_physical, 
+                requires_shipping,
+                device_model_id,
+                created_at, 
+                updated_at
+              ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+              ) RETURNING id, title`,
+              [
+                modelDetails.name, 
+                modelDetails.slug, 
+                `${modelDetails.brand_name} ${modelDetails.name}`, 
+                0, 
+                'active', 
+                true, 
+                true,
+                modelId,
+                new Date(), 
+                new Date()
+              ]
+            );
+            
+            if (newProductResult.rows.length > 0) {
+              console.log(`Created new product: ${newProductResult.rows[0].title} with ID: ${newProductResult.rows[0].id}`);
+              productResult.rows = newProductResult.rows;
+            } else {
+              console.log(`Failed to create product for model ID: ${modelId}`);
+              res.json([]);
+              return;
+            }
           }
           
           const productId = productResult.rows[0].id;
