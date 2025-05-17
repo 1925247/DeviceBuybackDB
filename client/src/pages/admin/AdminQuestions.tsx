@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import AnswerChoicesPreview from "@/components/AnswerChoicesPreview";
 
 // Type for the question form data
 interface QuestionFormData {
@@ -601,7 +602,8 @@ export default function AdminQuestions() {
                     {(question.questionType === "single_choice" ||
                       question.questionType === "multiple_choice") && (
                       <div className="grid gap-2 mt-3">
-                        <AnswerChoicesList questionId={question.id} questionType={question.questionType} />
+                        {/* Import this component elsewhere */}
+                        <AnswerChoicesPreview questionId={question.id} questionType={question.questionType} />
                       </div>
                     )}
 

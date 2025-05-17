@@ -46,6 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/question-groups', fixedQuestionGroupsRoutes);
   app.use('/api/questions', simpleQARoutes);
   app.use('/api/product-question-mappings', simpleProductQuestionMappingsRoutes);
+  app.use('/api/answer-choices', answerChoicesRoutes);
   
   // Feature toggles API routes
   try {
