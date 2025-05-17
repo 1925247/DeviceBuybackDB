@@ -18,8 +18,8 @@ router.get('/', async (req: Request, res: Response) => {
                   'questionId', ac.question_id,
                   'text', ac.text,
                   'value', ac.value,
-                  'order', ac.order,
-                  'impactMultiplier', ac.impact_multiplier,
+                  'order', ac."order",
+                  'impact', ac.impact,
                   'createdAt', ac.created_at,
                   'updatedAt', ac.updated_at
               )

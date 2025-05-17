@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const query = `
-      SELECT g.*,
+      SELECT g.id, g.name, g.active, g.device_type_id, g.statement, g.icon, g.created_at, g.updated_at,
       (
         SELECT json_agg(
           json_build_object(
@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
             'groupId', q.group_id,
             'active', q.active,
             'questionType', q.question_type,
-            'order', q.order,
+            'order', q."order",
             'tooltip', q.tooltip,
             'required', q.required,
             'createdAt', q.created_at,
@@ -29,8 +29,8 @@ router.get('/', async (req: Request, res: Response) => {
                   'questionId', ac.question_id,
                   'text', ac.text,
                   'value', ac.value,
-                  'order', ac.order,
-                  'impactMultiplier', ac.impact_multiplier,
+                  'order', ac."order",
+                  'impact', ac.impact,
                   'createdAt', ac.created_at,
                   'updatedAt', ac.updated_at
                 )
