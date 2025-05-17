@@ -12,11 +12,20 @@ router.get('/', async (req: Request, res: Response) => {
     
     // First, we'll build a base query with proper joins
     let query = `
-      SELECT pqm.*, 
-        q.question_text, q.question_type, 
-        g.name as group_name, 
-        dm.name as product_name, 
-        b.name as brand_name
+      SELECT 
+        pqm.id, 
+        pqm.product_id as "productId", 
+        pqm.question_id as "questionId", 
+        pqm.group_id as "groupId",
+        pqm.required,
+        pqm.impact_multiplier as "impactMultiplier",
+        pqm.active,
+        pqm.order,
+        q.question_text as "questionText", 
+        q.question_type as "questionType", 
+        g.name as "groupName", 
+        dm.name as "productName", 
+        b.name as "brandName"
       FROM product_question_mappings pqm
       INNER JOIN questions q ON pqm.question_id = q.id
       INNER JOIN question_groups g ON pqm.group_id = g.id
@@ -43,7 +52,26 @@ router.get('/', async (req: Request, res: Response) => {
     query += ' ORDER BY pqm.id';
     
     const result = await pool.query(query, queryParams);
-    res.json(result.rows);
+    console.log(`Found ${result.rows.length} product-question mappings`);
+    
+    // Format the response to match what the frontend expects
+    const formattedResults = result.rows.map(row => ({
+      id: row.id,
+      productId: row.productId,
+      questionId: row.questionId,
+      groupId: row.groupId,
+      required: row.required,
+      impactMultiplier: row.impactMultiplier,
+      active: row.active,
+      order: row.order,
+      questionText: row.questionText,
+      questionType: row.questionType,
+      groupName: row.groupName,
+      productName: row.productName,
+      brandName: row.brandName
+    }));
+    
+    res.json(formattedResults);
   } catch (error: any) {
     console.error('Error fetching product-question mappings:', error);
     res.status(500).json({ message: error.message || 'Failed to fetch product-question mappings' });

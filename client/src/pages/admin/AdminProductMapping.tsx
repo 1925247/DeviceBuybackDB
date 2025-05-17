@@ -295,20 +295,19 @@ export default function AdminProductMapping() {
   const getMappingsByProduct = () => {
     if (!allProductMappings || !products) return [];
     
+    console.log("Processing mappings:", allProductMappings);
+    
     // Create a map of products with their associated group mappings
     const productMap = new Map();
     
     // Group mappings by product
-    allProductMappings.forEach((mapping: ProductQuestionMapping) => {
+    allProductMappings.forEach((mapping: any) => {
       if (!productMap.has(mapping.productId)) {
-        const product = products.find((p: any) => p.id === mapping.productId);
-        if (product) {
-          productMap.set(mapping.productId, {
-            id: mapping.productId,
-            title: product.title,
-            mappings: []
-          });
-        }
+        productMap.set(mapping.productId, {
+          id: mapping.productId,
+          title: mapping.productName || "Unknown Product",
+          mappings: []
+        });
       }
       
       if (productMap.has(mapping.productId)) {
@@ -323,7 +322,7 @@ export default function AdminProductMapping() {
           productData.mappings.push({
             id: mapping.id,
             groupId: mapping.groupId,
-            groupName: mapping.groupName,
+            groupName: mapping.groupName || "Unknown Group",
             count: 1
           });
         } else {
