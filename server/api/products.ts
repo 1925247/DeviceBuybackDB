@@ -3,16 +3,24 @@ import { pool } from '../db';
 
 const router = express.Router();
 
-// GET all products
+// GET all products (using device_models for product mapping)
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Use device_models instead of products table
     const query = `
-      SELECT p.id, p.title as name, p.slug, p.description, p.price, p.device_model_id,
-             dm.name AS model_name, b.name AS brand_name
-      FROM products p
-      LEFT JOIN device_models dm ON p.device_model_id = dm.id
+      SELECT 
+        dm.id, 
+        dm.name, 
+        dm.slug, 
+        '' as description,
+        0 as price,
+        dm.id as device_model_id,
+        dm.name AS model_name, 
+        b.name AS brand_name
+      FROM device_models dm
       LEFT JOIN brands b ON dm.brand_id = b.id
-      ORDER BY p.id
+      WHERE dm.active = true
+      ORDER BY dm.id
     `;
     
     const result = await pool.query(query);
@@ -30,12 +38,18 @@ router.get('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     
     const query = `
-      SELECT p.id, p.title as name, p.slug, p.description, p.price, p.device_model_id,
-             dm.name AS model_name, b.name AS brand_name
-      FROM products p
-      LEFT JOIN device_models dm ON p.device_model_id = dm.id
+      SELECT 
+        dm.id, 
+        dm.name, 
+        dm.slug, 
+        '' as description,
+        0 as price,
+        dm.id as device_model_id,
+        dm.name AS model_name, 
+        b.name AS brand_name
+      FROM device_models dm
       LEFT JOIN brands b ON dm.brand_id = b.id
-      WHERE p.id = $1
+      WHERE dm.id = $1
     `;
     
     const result = await pool.query(query, [id]);
