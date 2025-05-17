@@ -56,7 +56,7 @@ import { Badge } from "@/components/ui/badge";
 // Type for the question form data
 interface QuestionFormData {
   questionText: string;
-  questionType: "single_choice" | "multiple_choice" | "text" | "number";
+  questionType: "single_choice" | "multiple_choice" | "text_input";
   groupId: number;
   order: number;
   active: boolean;
@@ -598,9 +598,7 @@ export default function AdminQuestions() {
                           ? "Single Choice"
                           : question.questionType === "multiple_choice"
                             ? "Multiple Choice"
-                            : (question.questionType === "text" || question.questionType === "text_input")
-                              ? "Text Input"
-                              : "Number Input"}
+                            : "Text Input"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
@@ -726,7 +724,7 @@ export default function AdminQuestions() {
                       </div>
                     )}
 
-                    {question.questionType === "text" && (
+                    {question.questionType === "text_input" && (
                       <div className="mt-3">
                         <Input
                           disabled
@@ -736,16 +734,7 @@ export default function AdminQuestions() {
                       </div>
                     )}
 
-                    {question.questionType === "number" && (
-                      <div className="mt-3">
-                        <Input
-                          disabled
-                          type="number"
-                          placeholder="0"
-                          className="bg-gray-50"
-                        />
-                      </div>
-                    )}
+
                   </AccordionContent>
                 </AccordionItem>
               ))}
