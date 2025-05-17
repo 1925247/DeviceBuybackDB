@@ -28,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
         SELECT json_build_object(
           'id', g.id,
           'name', g.name,
-          'description', g.description
+          'statement', g.statement
         )
         FROM question_groups g
         WHERE g.id = pqm.group_id
@@ -45,24 +45,7 @@ router.get('/', async (req: Request, res: Response) => {
         )
         FROM device_models dm
         WHERE dm.id = pqm.product_id
-      ) as product,
-      (
-        SELECT json_agg(
-          json_build_object(
-            'id', pdr.id,
-            'mappingId', pdr.mapping_id,
-            'answerChoiceId', pdr.answer_choice_id,
-            'deductionRate', pdr.deduction_rate,
-            'answerChoiceText', (
-              SELECT ac.text
-              FROM answer_choices ac
-              WHERE ac.id = pdr.answer_choice_id
-            )
-          )
-        )
-        FROM product_deduction_rates pdr
-        WHERE pdr.mapping_id = pqm.id
-      ) as deduction_rates
+      ) as product
       FROM product_question_mappings pqm
     `;
     
