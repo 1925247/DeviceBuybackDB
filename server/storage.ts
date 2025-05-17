@@ -474,23 +474,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateBuybackRequest(id: number, requestData: Partial<InsertBuybackRequest>): Promise<BuybackRequest | undefined> {
-    // Handle potential JSON fields that need conversion
-    const normalizedData = {
-      ...requestData
-    };
-    
-    // Remove updated_at if it's being sent from the client
-    // as we'll set it correctly below
-    if ('updated_at' in normalizedData) {
-      delete normalizedData.updated_at;
-    }
-    
     try {
+      // Handle potential JSON fields that need conversion
+      const normalizedData = {
+        ...requestData
+      };
+      
+      // Remove updatedAt if it's being sent from the client
+      // as we'll set it correctly below
+      if ('updatedAt' in normalizedData) {
+        delete normalizedData.updatedAt;
+      }
+      
       const [updatedRequest] = await db
         .update(buybackRequests)
         .set({ 
           ...normalizedData,
-          updated_at: new Date() 
+          updatedAt: new Date() 
         })
         .where(eq(buybackRequests.id, id))
         .returning();

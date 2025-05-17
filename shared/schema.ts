@@ -568,16 +568,43 @@ export interface InsertDeviceImage {
   [key: string]: any;
 }
 
-export interface BuybackRequest {
-  id: number;
-  userId: number;
-  [key: string]: any;
-}
+// Define the actual buyback_requests table for the database
+export const buybackRequests = pgTable("buyback_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  offeredPrice: numeric("offered_price"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deviceModelId: integer("device_model_id"),
+  partnerId: integer("partner_id"),
+  regionId: integer("region_id"),
+  staffId: integer("staff_id"),
+  questionnaireAnswers: jsonb("questionnaire_answers").default({}),
+  imageUrls: jsonb("image_urls").default([]),
+  deductions: jsonb("deductions").default({}),
+  finalPrice: numeric("final_price"),
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
+  pickupAddress: text("pickup_address"),
+  pickupDate: text("pickup_date"),
+  deviceType: text("device_type"),
+  manufacturer: text("manufacturer"),
+  model: text("model"),
+  condition: text("condition"),
+  pickupTime: text("pickup_time"),
+  status: text("status").default("pending"),
+  notes: text("notes"),
+  assignedTo: text("assigned_to"),
+  pickupNotes: text("pickup_notes"),
+  pinCode: text("pin_code"),
+  variant: text("variant")
+});
 
-export interface InsertBuybackRequest {
-  userId: number;
-  [key: string]: any;
-}
+// Generate the schema and types for buyback requests
+export const insertBuybackRequestSchema = createInsertSchema(buybackRequests);
+export type InsertBuybackRequest = z.infer<typeof insertBuybackRequestSchema>;
+export type BuybackRequest = typeof buybackRequests.$inferSelect;
 
 // Invoice related stub types
 export interface InvoiceTemplate {
