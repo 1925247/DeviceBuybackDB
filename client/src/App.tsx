@@ -53,7 +53,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 // Lazy loaded admin components
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminDevices = lazy(() => import("./pages/admin/AdminDevices"));
-const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypes"));
+const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypesFixed"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
