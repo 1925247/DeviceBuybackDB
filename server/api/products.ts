@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const query = `
-      SELECT p.id, p.product_name as name, p.slug, p.description, p.price, p.device_model_id,
+      SELECT p.id, p.title as name, p.slug, p.description, p.price, p.device_model_id,
              dm.name AS model_name, b.name AS brand_name
       FROM products p
       LEFT JOIN device_models dm ON p.device_model_id = dm.id
@@ -30,7 +30,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     
     const query = `
-      SELECT p.id, p.product_name as name, p.slug, p.description, p.price, p.device_model_id,
+      SELECT p.id, p.title as name, p.slug, p.description, p.price, p.device_model_id,
              dm.name AS model_name, b.name AS brand_name
       FROM products p
       LEFT JOIN device_models dm ON p.device_model_id = dm.id
