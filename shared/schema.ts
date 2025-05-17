@@ -573,7 +573,7 @@ export interface InsertDeviceImage {
 export const buybackRequests = pgTable("buyback_requests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  offeredPrice: doublePrecision("offered_price"),
+  offeredPrice: real("offered_price"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   deviceModelId: integer("device_model_id"),
@@ -583,7 +583,7 @@ export const buybackRequests = pgTable("buyback_requests", {
   questionnaireAnswers: jsonb("questionnaire_answers").default({}),
   imageUrls: jsonb("image_urls").default([]),
   deductions: jsonb("deductions").default({}),
-  finalPrice: doublePrecision("final_price"),
+  finalPrice: real("final_price"),
   customerName: text("customer_name"),
   customerEmail: text("customer_email"),
   customerPhone: text("customer_phone"),
@@ -692,9 +692,7 @@ export const partnerServiceAreas = pgTable("partner_service_areas", {
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => ({
-  checkConstraint: check(`(state_id IS NOT NULL) OR (city_id IS NOT NULL) OR (pincode IS NOT NULL)`),
-}));
+});
 
 // Multi-tenant Configuration
 export const tenantConfigurations = pgTable("tenant_configurations", {
