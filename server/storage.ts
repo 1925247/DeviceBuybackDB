@@ -508,77 +508,61 @@ export class DatabaseStorage implements IStorage {
     return !!result;
   }
 
-  // Marketplace operations
-  async getMarketplaceListing(id: number): Promise<MarketplaceListing | undefined> {
-    const [listing] = await db.select().from(marketplaceListings).where(eq(marketplaceListings.id, id));
-    return listing;
+  // Marketplace operations - removed
+  async getMarketplaceListing(id: number): Promise<any> {
+    console.warn("getMarketplaceListing called but marketplace functionality has been removed");
+    return undefined;
   }
 
-  async getMarketplaceListings(page: number = 1, limit: number = 10, status?: string): Promise<MarketplaceListing[]> {
-    const offset = (page - 1) * limit;
-    const baseQuery = db.select().from(marketplaceListings).limit(limit).offset(offset).orderBy(desc(marketplaceListings.created_at));
-    
-    if (status) {
-      return baseQuery.where(eq(marketplaceListings.status, status));
-    }
-    
-    return baseQuery;
+  async getMarketplaceListings(page: number = 1, limit: number = 10, status?: string): Promise<any[]> {
+    console.warn("getMarketplaceListings called but marketplace functionality has been removed");
+    return [];
   }
 
-  async createMarketplaceListing(listing: InsertMarketplaceListing): Promise<MarketplaceListing> {
-    const [newListing] = await db.insert(marketplaceListings).values(listing).returning();
-    return newListing;
+  async createMarketplaceListing(listing: any): Promise<any> {
+    console.warn("createMarketplaceListing called but marketplace functionality has been removed");
+    throw new Error("Marketplace functionality has been removed");
   }
 
-  async updateMarketplaceListing(id: number, listingData: Partial<InsertMarketplaceListing>): Promise<MarketplaceListing | undefined> {
-    const [updatedListing] = await db
-      .update(marketplaceListings)
-      .set({ ...listingData, updated_at: new Date() })
-      .where(eq(marketplaceListings.id, id))
-      .returning();
-    return updatedListing;
+  async updateMarketplaceListing(id: number, listingData: any): Promise<any> {
+    console.warn("updateMarketplaceListing called but marketplace functionality has been removed");
+    throw new Error("Marketplace functionality has been removed");
   }
 
   async deleteMarketplaceListing(id: number): Promise<boolean> {
-    const result = await db.delete(marketplaceListings).where(eq(marketplaceListings.id, id));
-    return !!result;
+    console.warn("deleteMarketplaceListing called but marketplace functionality has been removed");
+    return false;
   }
 
-  // Order operations
-  async getOrder(id: number): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
-    return order;
+  // Order operations - removed
+  async getOrder(id: number): Promise<any> {
+    console.warn("getOrder called but marketplace functionality has been removed");
+    return undefined;
   }
 
-  async getOrders(page: number = 1, limit: number = 10, status?: string): Promise<Order[]> {
-    const offset = (page - 1) * limit;
-    const baseQuery = db.select().from(orders).limit(limit).offset(offset).orderBy(desc(orders.created_at));
-    
-    if (status) {
-      return baseQuery.where(eq(orders.status, status));
-    }
-    
-    return baseQuery;
+  async getOrders(page: number = 1, limit: number = 10, status?: string): Promise<any[]> {
+    console.warn("getOrders called but marketplace functionality has been removed");
+    return [];
   }
 
-  async getOrdersByBuyer(buyerId: number): Promise<Order[]> {
-    return db.select().from(orders).where(eq(orders.buyer_id, buyerId));
+  async getOrdersByBuyer(buyerId: number): Promise<any[]> {
+    console.warn("getOrdersByBuyer called but marketplace functionality has been removed");
+    return [];
   }
 
-  async getOrdersBySeller(sellerId: number): Promise<Order[]> {
-    return db.select().from(orders).where(eq(orders.seller_id, sellerId));
+  async getOrdersBySeller(sellerId: number): Promise<any[]> {
+    console.warn("getOrdersBySeller called but marketplace functionality has been removed");
+    return [];
   }
   
   async getOrdersCount(): Promise<number> {
-    const result = await db.select({ count: count() }).from(orders);
-    return Number(result[0].count);
+    console.warn("getOrdersCount called but marketplace functionality has been removed");
+    return 0;
   }
   
-  async getRecentOrders(limit: number = 5): Promise<Order[]> {
-    return db.select()
-      .from(orders)
-      .orderBy(desc(orders.created_at))
-      .limit(limit);
+  async getRecentOrders(limit: number = 5): Promise<any[]> {
+    console.warn("getRecentOrders called but marketplace functionality has been removed");
+    return [];
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
