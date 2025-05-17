@@ -601,37 +601,7 @@ export default function AdminQuestions() {
                     {(question.questionType === "single_choice" ||
                       question.questionType === "multiple_choice") && (
                       <div className="grid gap-2 mt-3">
-                        {((question.answerChoices || question.answer_choices || []) as any[])
-                          .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
-                          .map((choice: any, idx: number) => (
-                            <Card
-                              key={idx}
-                              className={`${(choice.isDefault || choice.is_default) ? "border-blue-300 bg-blue-50" : ""}`}
-                            >
-                              <CardContent className="p-3">
-                                <div className="flex items-center">
-                                  {question.questionType === "single_choice" ? (
-                                    <div
-                                      className={`w-4 h-4 rounded-full border mr-3 flex-shrink-0 ${(choice.isDefault || choice.is_default) ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
-                                    />
-                                  ) : (
-                                    <div
-                                      className={`w-4 h-4 rounded border mr-3 flex-shrink-0 ${(choice.isDefault || choice.is_default) ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
-                                    />
-                                  )}
-                                  <div className="flex-1">
-                                    {renderChoicePreview(choice)}
-                                  </div>
-                                  <div className="ml-3 text-sm text-gray-500">
-                                    <span className="mr-2">
-                                      W: {choice.weightage ?? choice.impact ?? 0}
-                                    </span>
-                                    <span>R: ${choice.repairCost ?? choice.repair_cost ?? 0}</span>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                        <AnswerChoicesList questionId={question.id} questionType={question.questionType} />
                       </div>
                     )}
 
