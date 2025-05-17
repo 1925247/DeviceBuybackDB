@@ -77,9 +77,7 @@ import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import StaffManagement from "./pages/partner/StaffManagement";
 import StaffManagementDemo from "./pages/partner/StaffManagementDemo";
 
-// E-commerce Admin Pages - Lazy loaded
-const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+// E-commerce Admin Pages removed
 
 
 // LoadingSpinner already imported above
@@ -429,25 +427,7 @@ function App() {
                     </Suspense>
                   } />
 
-                  {/* E-commerce */}
-                  <Route path="products" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminProducts />
-                    </Suspense>
-                  } />
-                  <Route
-                    path="product-categories"
-                    element={
-                      <Suspense fallback={<LoadingSpinner />}>
-                        <AdminCategories />
-                      </Suspense>
-                    }
-                  />
-                  <Route path="categories" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminCategories />
-                    </Suspense>
-                  } />
+                  {/* E-commerce section removed */}
 
                   <Route path="orders" element={
                     <Suspense fallback={<LoadingSpinner />}>
@@ -459,11 +439,7 @@ function App() {
                       <AdminDashboard />
                     </Suspense>
                   } />
-                  <Route path="inventory" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminProducts />
-                    </Suspense>
-                  } />
+                  {/* Inventory route removed */}
                   <Route
                     path="shipping"
                     element={
