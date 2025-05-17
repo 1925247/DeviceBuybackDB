@@ -223,7 +223,7 @@ export default function AdminQuestions() {
         weightage: choice.weightage ?? 0,
         repairCost: choice.repairCost ?? 0,
         isDefault: choice.isDefault ?? false,
-        followUpAction: choice.followUpAction || null
+        followUpAction: typeof choice.followUpAction === 'string' ? choice.followUpAction : null
       }))
     });
     setIsEditDialogOpen(true);
