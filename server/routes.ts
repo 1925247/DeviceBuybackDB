@@ -28,6 +28,8 @@ import simpleQuestionGroupsRoutes from "./api/simpleQuestionGroups";
 import fixedQuestionGroupsRoutes from "./api/fixedQuestionGroups";
 import questionsRoutes from "./api/questions";
 import simpleQuestionsRoutes from "./api/simpleQuestions";
+import fixedQuestionsRoutes from "./api/fixedQuestions";
+import basicQuestionsRoutes from "./api/basicQuestions";
 import productQuestionMappingsRoutes from "./api/productQuestionMappings";
 import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMappings";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes";
@@ -44,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/brands', brandsRoutes);
   app.use('/api/device-types', deviceTypesRoutes);
   app.use('/api/question-groups', fixedQuestionGroupsRoutes);
-  app.use('/api/questions', simpleQuestionsRoutes);
+  app.use('/api/questions', basicQuestionsRoutes);
   app.use('/api/product-question-mappings', simpleProductQuestionMappingsRoutes);
   app.use('/api/brand-device-types', brandDeviceTypesRoutes);
   app.use('/api/products', productsRoutes);
