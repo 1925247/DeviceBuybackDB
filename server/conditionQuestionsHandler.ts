@@ -116,18 +116,10 @@ export async function getConditionQuestions(req: Request, res: Response) {
     // Standard handling for other device models
     console.log(`Fetching questions for standard device model ID: ${modelId}`);
     
-    // Find the product associated with this model
-    const productResult = await pool.query(
-      `SELECT id, title FROM products WHERE device_model_id = $1`,
-      [modelId]
-    );
-    
+    // Product functionality has been removed
     let productId = null;
-    if (productResult.rows.length > 0) {
-      productId = productResult.rows[0].id;
-      console.log(`Found product: ${productResult.rows[0].title} with ID: ${productId}`);
-    } else {
-      // Try to find by model name
+    
+    // Skip product lookup and proceed with model ID directly
       const modelResult = await pool.query(
         `SELECT name FROM device_models WHERE id = $1`,
         [modelId]

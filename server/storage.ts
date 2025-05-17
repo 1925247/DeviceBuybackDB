@@ -1515,41 +1515,11 @@ export class DatabaseStorage implements IStorage {
   // E-COMMERCE OPERATIONS
 
   // Product operations
-  async getProducts(options: { page?: number; limit?: number; status?: string; featured?: boolean; categoryId?: number } = {}): Promise<Product[]> {
-    try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        status, 
-        featured, 
-        categoryId 
-      } = options;
-      
-      const offset = (page - 1) * limit;
-      
-      // Return sample data for development
-      return [
-        {
-          id: 1,
-          title: "iPhone 12 Pro",
-          description: "Refurbished iPhone 12 Pro in excellent condition",
-          slug: "iphone-12-pro",
-          sku: "IP12P-001",
-          price: 699.99,
-          compareAtPrice: 899.99,
-          cost: 500,
-          device_model_id: 1,
-          condition: "Excellent",
-          status: "active",
-          featured: true,
-          inventoryCount: 10,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: 2,
-          title: "Samsung Galaxy S21",
-          description: "Refurbished Samsung Galaxy S21 in good condition",
+  // Product-related methods have been removed
+  
+  // Placeholder for compatibility - returns empty array
+  async getProducts(): Promise<Product[]> {
+    return [];
           slug: "samsung-galaxy-s21",
           sku: "SG21-001",
           price: 599.99,

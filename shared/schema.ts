@@ -486,10 +486,10 @@ export const answerChoices = pgTable("answer_choices", {
 // Products table
 // Product table has been removed
 
-// Product Question Mappings
+// Product Question Mappings - Modified to remove products dependency
 export const productQuestionMappings = pgTable("product_question_mappings", {
   id: serial("id").primaryKey(),
-  productId: integer("product_id").notNull().references(() => products.id),
+  productId: integer("product_id").notNull(), // Removed reference to products table
   questionId: integer("question_id").references(() => questions.id),
   groupId: integer("group_id").references(() => questionGroups.id),
   required: boolean("required").default(true),
@@ -500,11 +500,24 @@ export const productQuestionMappings = pgTable("product_question_mappings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export type Product = typeof products.$inferSelect;
-export type InsertProduct = typeof products.$inferInsert;
-export const insertProductSchema = createInsertSchema(products, {
-  title: (schema) => schema.title.min(1),
-  slug: (schema) => schema.slug.min(1),
+// Product types have been removed - create placeholder interfaces to prevent errors
+export interface Product {
+  id: number;
+  title: string;
+  description?: string;
+  slug: string;
+  [key: string]: any;
+}
+
+export interface InsertProduct {
+  title: string;
+  slug: string;
+  [key: string]: any;
+}
+
+export const insertProductSchema = z.object({
+  title: z.string().min(1),
+  slug: z.string().min(1),
 });
 
 // Types are defined further below with the rest of the schema types
