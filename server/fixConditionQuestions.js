@@ -2,7 +2,8 @@
  * This script ensures that all device models have proper condition question mappings
  * to ensure they appear correctly in the condition assessment page.
  */
-const { Pool } = require('pg');
+import pg from 'pg';
+const { Pool } = pg;
 
 // Connect to the database
 const pool = new Pool({
@@ -21,8 +22,8 @@ const deviceModels = [
     sku_prefix: 'SGS21'
   },
   {
-    name: 'Samsung Galaxy S23 Ultra',
-    slug: 'samsung-galaxy-s23-ultra',
+    name: 'Galaxy S23 Ultra', // Match the existing name in the database
+    slug: 'galaxy-s23-ultra', // Match the existing slug in the database
     image: '/assets/models/galaxy-s23-ultra.png',
     brand_id: 2,  // Samsung
     device_type_id: 1, // Smartphone
