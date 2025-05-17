@@ -2,9 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -31,11 +44,11 @@ import {
 } from "lucide-react";
 import { QuestionGroup, Question, AnswerChoice } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -65,13 +78,13 @@ export default function AdminQuestions() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // States for the component
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  
+
   // Initialize form data
   const [formData, setFormData] = useState<QuestionFormData>({
     questionText: "",
@@ -83,9 +96,9 @@ export default function AdminQuestions() {
     required: true,
     answerChoices: [],
   });
-  
+
   // Fetch the question group details
-  const { data: groupData, isLoading: isGroupLoading } = useQuery<{ 
+  const { data: groupData, isLoading: isGroupLoading } = useQuery<{
     id: number;
     name: string;
     statement: string;
@@ -104,7 +117,9 @@ export default function AdminQuestions() {
       return await apiRequest("POST", "/api/questions", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/question-groups/${groupId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/question-groups/${groupId}`],
+      });
       setIsAddDialogOpen(false);
       resetForm();
       toast({
@@ -123,11 +138,19 @@ export default function AdminQuestions() {
 
   // Update question
   const updateQuestionMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: QuestionFormData }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: QuestionFormData;
+    }) => {
       return await apiRequest("PUT", `/api/questions/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/question-groups/${groupId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/question-groups/${groupId}`],
+      });
       setIsEditDialogOpen(false);
       resetForm();
       toast({
@@ -150,7 +173,9 @@ export default function AdminQuestions() {
       return await apiRequest("DELETE", `/api/questions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/question-groups/${groupId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/question-groups/${groupId}`],
+      });
       setIsDeleteDialogOpen(false);
       setCurrentQuestion(null);
       toast({
@@ -186,36 +211,53 @@ export default function AdminQuestions() {
     resetForm();
     // If there are existing questions, set the order to be the next in sequence
     if (groupData?.questions && groupData.questions.length > 0) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        order: Math.max(...groupData.questions.map(q => q.order ?? 0)) + 1
+        order: Math.max(...groupData.questions.map((q) => q.order ?? 0)) + 1,
       }));
     }
-    
+
     // Add two empty answer choices by default for convenience
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       answerChoices: [
-        { answerText: "", icon: "", weightage: 0, repairCost: 0, isDefault: false, followUpAction: null },
-        { answerText: "", icon: "", weightage: 0, repairCost: 0, isDefault: false, followUpAction: null }
-      ]
+        {
+          answerText: "",
+          icon: "",
+          weightage: 0,
+          repairCost: 0,
+          isDefault: false,
+          followUpAction: null,
+        },
+        {
+          answerText: "",
+          icon: "",
+          weightage: 0,
+          repairCost: 0,
+          isDefault: false,
+          followUpAction: null,
+        },
+      ],
     }));
-    
+
     setIsAddDialogOpen(true);
   };
 
   // Handle edit button click
   const handleEditClick = (question: Question) => {
     setCurrentQuestion(question);
-    
+
     // First fetch the complete question data with answer choices
     apiRequest("GET", `/api/questions/${question.id}`)
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         // Now set the form data with the complete question data
         setFormData({
           questionText: data.questionText,
-          questionType: data.questionType as "single_choice" | "multiple_choice" | "text_input",
+          questionType: data.questionType as
+            | "single_choice"
+            | "multiple_choice"
+            | "text_input",
           groupId: Number(groupId),
           order: data.order ?? 0,
           active: data.active ?? true,
@@ -228,12 +270,15 @@ export default function AdminQuestions() {
             weightage: choice.weightage ?? 0,
             repairCost: choice.repairCost ?? 0,
             isDefault: choice.isDefault ?? false,
-            followUpAction: typeof choice.followUpAction === 'string' ? choice.followUpAction : null
-          }))
+            followUpAction:
+              typeof choice.followUpAction === "string"
+                ? choice.followUpAction
+                : null,
+          })),
         });
         setIsEditDialogOpen(true);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching question details:", error);
         toast({
           title: "Error",
@@ -250,58 +295,74 @@ export default function AdminQuestions() {
   };
 
   // Handle form input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Handle switch change
   const handleSwitchChange = (name: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [name]: checked }));
+    setFormData((prev) => ({ ...prev, [name]: checked }));
   };
 
   // Handle question type change
   const handleQuestionTypeChange = (value: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      questionType: value as "single_choice" | "multiple_choice" | "text_input"
+    setFormData((prev) => ({
+      ...prev,
+      questionType: value as "single_choice" | "multiple_choice" | "text_input",
     }));
   };
 
   // Handle answer choice input change
-  const handleAnswerChoiceChange = (index: number, field: string, value: any) => {
-    setFormData(prev => {
+  const handleAnswerChoiceChange = (
+    index: number,
+    field: string,
+    value: any,
+  ) => {
+    setFormData((prev) => {
       const updatedChoices = [...prev.answerChoices];
-      updatedChoices[index] = { 
-        ...updatedChoices[index], 
-        [field]: field === 'weightage' || field === 'repairCost' ? Number(value) : value 
+      updatedChoices[index] = {
+        ...updatedChoices[index],
+        [field]:
+          field === "weightage" || field === "repairCost"
+            ? Number(value)
+            : value,
       };
       return {
         ...prev,
-        answerChoices: updatedChoices
+        answerChoices: updatedChoices,
       };
     });
   };
 
   // Handle adding a new answer choice
   const handleAddAnswerChoice = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       answerChoices: [
         ...prev.answerChoices,
-        { answerText: "", icon: "", weightage: 0, repairCost: 0, isDefault: false, followUpAction: null }
-      ]
+        {
+          answerText: "",
+          icon: "",
+          weightage: 0,
+          repairCost: 0,
+          isDefault: false,
+          followUpAction: null,
+        },
+      ],
     }));
   };
 
   // Handle removing an answer choice
   const handleRemoveAnswerChoice = (index: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updatedChoices = [...prev.answerChoices];
       updatedChoices.splice(index, 1);
       return {
         ...prev,
-        answerChoices: updatedChoices
+        answerChoices: updatedChoices,
       };
     });
   };
@@ -309,25 +370,32 @@ export default function AdminQuestions() {
   // Handle form submission for add
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form data
-    if ((formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && 
-        (!formData.answerChoices || formData.answerChoices.length < 2)) {
+    if (
+      (formData.questionType === "single_choice" ||
+        formData.questionType === "multiple_choice") &&
+      (!formData.answerChoices || formData.answerChoices.length < 2)
+    ) {
       toast({
         title: "Validation Error",
-        description: "Please add at least two answer choices for choice-based questions",
+        description:
+          "Please add at least two answer choices for choice-based questions",
         variant: "destructive",
       });
       return;
     }
-    
+
     // Filter out empty answer choices
     const validAnswerChoices = formData.answerChoices.filter(
-      choice => choice.answerText.trim() !== ""
+      (choice) => choice.answerText.trim() !== "",
     );
-    
-    if ((formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && 
-        validAnswerChoices.length < 2) {
+
+    if (
+      (formData.questionType === "single_choice" ||
+        formData.questionType === "multiple_choice") &&
+      validAnswerChoices.length < 2
+    ) {
       toast({
         title: "Validation Error",
         description: "Please add at least two valid answer choices with text",
@@ -335,51 +403,59 @@ export default function AdminQuestions() {
       });
       return;
     }
-    
+
     // Ensure only one default answer for single_choice
-    if (formData.questionType === 'single_choice') {
-      const defaultCount = validAnswerChoices.filter(c => c.isDefault).length;
+    if (formData.questionType === "single_choice") {
+      const defaultCount = validAnswerChoices.filter((c) => c.isDefault).length;
       if (defaultCount > 1) {
         toast({
           title: "Validation Error",
-          description: "Single choice questions can only have one default answer",
+          description:
+            "Single choice questions can only have one default answer",
           variant: "destructive",
         });
         return;
       }
     }
-    
+
     // Submit the question with valid answer choices
     const submissionData = {
       ...formData,
-      answerChoices: validAnswerChoices
+      answerChoices: validAnswerChoices,
     };
-    
+
     addQuestionMutation.mutate(submissionData);
   };
 
   // Handle form submission for edit
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Same validation as add
-    if ((formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && 
-        (!formData.answerChoices || formData.answerChoices.length < 2)) {
+    if (
+      (formData.questionType === "single_choice" ||
+        formData.questionType === "multiple_choice") &&
+      (!formData.answerChoices || formData.answerChoices.length < 2)
+    ) {
       toast({
         title: "Validation Error",
-        description: "Please add at least two answer choices for choice-based questions",
+        description:
+          "Please add at least two answer choices for choice-based questions",
         variant: "destructive",
       });
       return;
     }
-    
+
     // Filter out empty answer choices
     const validAnswerChoices = formData.answerChoices.filter(
-      choice => choice.answerText.trim() !== ""
+      (choice) => choice.answerText.trim() !== "",
     );
-    
-    if ((formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && 
-        validAnswerChoices.length < 2) {
+
+    if (
+      (formData.questionType === "single_choice" ||
+        formData.questionType === "multiple_choice") &&
+      validAnswerChoices.length < 2
+    ) {
       toast({
         title: "Validation Error",
         description: "Please add at least two valid answer choices with text",
@@ -387,27 +463,31 @@ export default function AdminQuestions() {
       });
       return;
     }
-    
+
     // Ensure only one default answer for single_choice
-    if (formData.questionType === 'single_choice') {
-      const defaultCount = validAnswerChoices.filter(c => c.isDefault).length;
+    if (formData.questionType === "single_choice") {
+      const defaultCount = validAnswerChoices.filter((c) => c.isDefault).length;
       if (defaultCount > 1) {
         toast({
           title: "Validation Error",
-          description: "Single choice questions can only have one default answer",
+          description:
+            "Single choice questions can only have one default answer",
           variant: "destructive",
         });
         return;
       }
     }
-    
+
     if (currentQuestion) {
       const submissionData = {
         ...formData,
-        answerChoices: validAnswerChoices
+        answerChoices: validAnswerChoices,
       };
-      
-      updateQuestionMutation.mutate({ id: currentQuestion.id, data: submissionData });
+
+      updateQuestionMutation.mutate({
+        id: currentQuestion.id,
+        data: submissionData,
+      });
     }
   };
 
@@ -448,10 +528,13 @@ export default function AdminQuestions() {
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
-            <h1 className="text-2xl font-bold tracking-tight">{groupData?.name || "Loading..."}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {groupData?.name || "Loading..."}
+            </h1>
           </div>
           <p className="text-gray-500 mt-1">
-            {groupData?.statement || "Manage questions and answers for this group"}
+            {groupData?.statement ||
+              "Manage questions and answers for this group"}
           </p>
         </div>
         <div className="mt-4 md:mt-0">
@@ -487,7 +570,9 @@ export default function AdminQuestions() {
                       {question.order}
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{question.questionText}</div>
+                      <div className="font-medium">
+                        {question.question_text}
+                      </div>
                       {question.tooltip && (
                         <div className="text-sm text-gray-500 mt-1">
                           <span className="italic">
@@ -584,7 +669,9 @@ export default function AdminQuestions() {
                       <span className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full mr-3 text-sm font-medium">
                         {question.order}
                       </span>
-                      <span className="text-left">{question.questionText}</span>
+                      <span className="text-left">
+                        {question.question_text}
+                      </span>
                       {question.required && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
@@ -601,7 +688,7 @@ export default function AdminQuestions() {
                     {(question.questionType === "single_choice" ||
                       question.questionType === "multiple_choice") && (
                       <div className="grid gap-2 mt-3">
-                        {(question.answerChoices || [])
+                        {(question.answer_choices || [])
                           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                           .map((choice, idx) => (
                             <Card
@@ -656,7 +743,9 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Question</DialogTitle>
-            <DialogDescription>Create a new question for this group</DialogDescription>
+            <DialogDescription>
+              Create a new question for this group
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubmit}>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -757,8 +846,11 @@ export default function AdminQuestions() {
                   </div>
 
                   <div className="grid gap-6">
-                    {formData.answerChoices.map((choice, index) => (
-                      <div key={index} className="rounded-md border p-4 relative">
+                    {formData.answer_choices.map((choice, index) => (
+                      <div
+                        key={index}
+                        className="rounded-md border p-4 relative"
+                      >
                         <Button
                           type="button"
                           variant="ghost"
@@ -782,7 +874,7 @@ export default function AdminQuestions() {
                                 handleAnswerChoiceChange(
                                   index,
                                   "answerText",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               placeholder="Enter answer text"
@@ -801,7 +893,7 @@ export default function AdminQuestions() {
                                 handleAnswerChoiceChange(
                                   index,
                                   "icon",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               placeholder="Enter icon code or name"
@@ -821,7 +913,7 @@ export default function AdminQuestions() {
                                   handleAnswerChoiceChange(
                                     index,
                                     "weightage",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 placeholder="0"
@@ -841,7 +933,7 @@ export default function AdminQuestions() {
                                   handleAnswerChoiceChange(
                                     index,
                                     "repairCost",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 placeholder="0"
@@ -864,16 +956,20 @@ export default function AdminQuestions() {
                                     const newChoices = prev.answerChoices.map(
                                       (c, i) => ({
                                         ...c,
-                                        isDefault: i === index ? checked : false,
-                                      })
+                                        isDefault:
+                                          i === index ? checked : false,
+                                      }),
                                     );
-                                    return { ...prev, answerChoices: newChoices };
+                                    return {
+                                      ...prev,
+                                      answerChoices: newChoices,
+                                    };
                                   });
                                 } else {
                                   handleAnswerChoiceChange(
                                     index,
                                     "isDefault",
-                                    checked
+                                    checked,
                                   );
                                 }
                               }}
@@ -894,7 +990,7 @@ export default function AdminQuestions() {
                                 handleAnswerChoiceChange(
                                   index,
                                   "followUpAction",
-                                  e.target.value || null
+                                  e.target.value || null,
                                 )
                               }
                               placeholder="Enter follow-up action"
@@ -935,10 +1031,12 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
-            <DialogDescription>Update this question's properties</DialogDescription>
+            <DialogDescription>
+              Update this question's properties
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit}>
-          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
               <div className="grid gap-2">
                 <Label htmlFor="questionText">Question Text *</Label>
                 <Textarea
@@ -963,7 +1061,9 @@ export default function AdminQuestions() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="single_choice">Single Choice</SelectItem>
-                    <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                    <SelectItem value="multiple_choice">
+                      Multiple Choice
+                    </SelectItem>
                     <SelectItem value="text_input">Text Input</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1035,7 +1135,10 @@ export default function AdminQuestions() {
 
                   <div className="grid gap-6">
                     {formData.answerChoices.map((choice, index) => (
-                      <div key={index} className="rounded-md border p-4 relative">
+                      <div
+                        key={index}
+                        className="rounded-md border p-4 relative"
+                      >
                         <Button
                           type="button"
                           variant="ghost"
@@ -1059,7 +1162,7 @@ export default function AdminQuestions() {
                                 handleAnswerChoiceChange(
                                   index,
                                   "answerText",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               placeholder="Enter answer text"
@@ -1078,7 +1181,7 @@ export default function AdminQuestions() {
                                 handleAnswerChoiceChange(
                                   index,
                                   "icon",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               placeholder="Enter icon code or name"
@@ -1098,7 +1201,7 @@ export default function AdminQuestions() {
                                   handleAnswerChoiceChange(
                                     index,
                                     "weightage",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 placeholder="0"
@@ -1118,7 +1221,7 @@ export default function AdminQuestions() {
                                   handleAnswerChoiceChange(
                                     index,
                                     "repairCost",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 placeholder="0"
@@ -1141,16 +1244,20 @@ export default function AdminQuestions() {
                                     const newChoices = prev.answerChoices.map(
                                       (c, i) => ({
                                         ...c,
-                                        isDefault: i === index ? checked : false,
-                                      })
+                                        isDefault:
+                                          i === index ? checked : false,
+                                      }),
                                     );
-                                    return { ...prev, answerChoices: newChoices };
+                                    return {
+                                      ...prev,
+                                      answerChoices: newChoices,
+                                    };
                                   });
                                 } else {
                                   handleAnswerChoiceChange(
                                     index,
                                     "isDefault",
-                                    checked
+                                    checked,
                                   );
                                 }
                               }}
@@ -1171,7 +1278,7 @@ export default function AdminQuestions() {
                                 handleAnswerChoiceChange(
                                   index,
                                   "followUpAction",
-                                  e.target.value || null
+                                  e.target.value || null,
                                 )
                               }
                               placeholder="Enter follow-up action"
@@ -1212,7 +1319,9 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Question</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this question?</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to delete this question?
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-500">
