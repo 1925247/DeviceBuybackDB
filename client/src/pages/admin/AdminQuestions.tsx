@@ -602,8 +602,32 @@ export default function AdminQuestions() {
                     {(question.questionType === "single_choice" ||
                       question.questionType === "multiple_choice") && (
                       <div className="grid gap-2 mt-3">
-                        {/* Import this component elsewhere */}
-                        <AnswerChoicesPreview questionId={question.id} questionType={question.questionType} />
+                        {question.answer_choices && question.answer_choices.length > 0 ? (
+                          question.answer_choices.map((choice: any, idx: number) => (
+                            <div 
+                              key={choice.id || idx} 
+                              className={`flex items-center p-2 border rounded ${choice.is_default ? "border-blue-300 bg-blue-50" : ""}`}
+                            >
+                              {question.questionType === "single_choice" ? (
+                                <div
+                                  className={`w-4 h-4 rounded-full border mr-3 flex-shrink-0 ${choice.is_default ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
+                                />
+                              ) : (
+                                <div
+                                  className={`w-4 h-4 rounded border mr-3 flex-shrink-0 ${choice.is_default ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <p className="font-medium">{choice.text || choice.answerText || choice.answer_text}</p>
+                              </div>
+                              {choice.is_default && (
+                                <Badge variant="outline" className="ml-3 bg-blue-50">Default</Badge>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 italic">No answer choices available</p>
+                        )}
                       </div>
                     )}
 
