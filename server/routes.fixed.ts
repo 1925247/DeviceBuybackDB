@@ -6,8 +6,8 @@ import pg from "pg";
 import { sql, eq, and, asc, desc } from "drizzle-orm";
 import { questionGroups, questions, answerChoices } from "../shared/schema";
 import { 
-  insertUserSchema, insertRouteRuleSchema, insertBuybackRequestSchema,
-  type InsertUser, type InsertRouteRule, type InsertBuybackRequest,
+  insertUserSchema, insertRouteRuleSchema,
+  type InsertUser, type InsertRouteRule,
   deviceModels
 } from "@shared/schema";
 import { ZodError, z } from "zod";

@@ -13,7 +13,6 @@ import {
   brands,
   deviceModels,
   brandDeviceTypes, type BrandDeviceType, type InsertBrandDeviceType,
-  valuations, type Valuation, type InsertValuation,
   featureToggles, type FeatureToggle, type InsertFeatureToggle,
   // Question Management
   questionGroups, type QuestionGroup, type InsertQuestionGroup,
@@ -48,13 +47,7 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
-  // Valuation operations for buyback system
-  getValuations(modelId?: number, brandId?: number, regionId?: number): Promise<Valuation[]>;
-  getValuation(id: number): Promise<Valuation | undefined>;
-  getValuationByModelBrandRegion(modelId: number, brandId: number, regionId?: number): Promise<Valuation | undefined>;
-  createValuation(valuation: InsertValuation): Promise<Valuation>;
-  updateValuation(id: number, valuation: Partial<InsertValuation>): Promise<Valuation | undefined>;
-  deleteValuation(id: number): Promise<boolean>;
+
   
   // Indian States operations
   getIndianStates(active?: boolean): Promise<IndianState[]>;
@@ -161,48 +154,7 @@ export interface IStorage {
   deleteInvoiceTemplate(id: number): Promise<boolean>;
   unsetDefaultInvoiceTemplates(partnerId?: number): Promise<void>;
   
-  // Device operations
-  getDevice(id: number): Promise<Device | undefined>;
-  getDevices(page?: number, limit?: number, status?: string): Promise<Device[]>;
-  getDevicesBySeller(sellerId: number): Promise<Device[]>;
-  getDevicesCount(): Promise<number>;
-  createDevice(device: InsertDevice): Promise<Device>;
-  updateDevice(id: number, device: Partial<InsertDevice>): Promise<Device | undefined>;
-  deleteDevice(id: number): Promise<boolean>;
-  
-  // Device image operations
-  getDeviceImages(deviceId: number): Promise<DeviceImage[]>;
-  createDeviceImage(image: InsertDeviceImage): Promise<DeviceImage>;
-  setDevicePrimaryImage(deviceId: number, imageId: number): Promise<boolean>;
-  deleteDeviceImage(id: number): Promise<boolean>;
-  
-  // Buyback operations
-  getBuybackRequest(id: number): Promise<BuybackRequest | undefined>;
-  getBuybackRequests(page?: number, limit?: number, status?: string): Promise<BuybackRequest[]>;
-  getBuybackRequestsCount(status?: string): Promise<number>;
-  getBuybackRequestsByUser(userId: number): Promise<BuybackRequest[]>;
-  getRecentBuybackRequests(limit?: number): Promise<BuybackRequest[]>;
-  createBuybackRequest(request: InsertBuybackRequest): Promise<BuybackRequest>;
-  updateBuybackRequest(id: number, request: Partial<InsertBuybackRequest>): Promise<BuybackRequest | undefined>;
-  deleteBuybackRequest(id: number): Promise<boolean>;
-  
-  // Marketplace operations
-  getMarketplaceListing(id: number): Promise<MarketplaceListing | undefined>;
-  getMarketplaceListings(page?: number, limit?: number, status?: string): Promise<MarketplaceListing[]>;
-  createMarketplaceListing(listing: InsertMarketplaceListing): Promise<MarketplaceListing>;
-  updateMarketplaceListing(id: number, listing: Partial<InsertMarketplaceListing>): Promise<MarketplaceListing | undefined>;
-  deleteMarketplaceListing(id: number): Promise<boolean>;
-  
-  // Order operations
-  getOrder(id: number): Promise<Order | undefined>;
-  getOrders(page?: number, limit?: number, status?: string): Promise<Order[]>;
-  getOrdersByBuyer(buyerId: number): Promise<Order[]>;
-  getOrdersBySeller(sellerId: number): Promise<Order[]>;
-  getOrdersCount(): Promise<number>;
-  getRecentOrders(limit?: number): Promise<Order[]>;
-  createOrder(order: InsertOrder): Promise<Order>;
-  updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
-  deleteOrder(id: number): Promise<boolean>;
+
   
   // Reference data operations
   // Device Type operations
