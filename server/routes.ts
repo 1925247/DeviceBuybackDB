@@ -49,18 +49,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/device-types', deviceTypesRoutes);
   app.use('/api/brand-device-types', brandDeviceTypesRoutes);
   app.use('/api/products', productsRoutes);
-  
-  // Q&A Management API - Import fixed implementation
-  const questionManagement = require('./api/questionManagement');
-  
-  // Q&A Management Endpoints 
-  app.get('/api/question-groups', questionManagement.getQuestionGroups);
-  app.get('/api/question-groups/:id', questionManagement.getQuestionGroup);
-  app.get('/api/questions', questionManagement.getQuestions || ((_req, res) => res.json([])));
-  app.get('/api/questions/:id', questionManagement.getQuestion);
-  app.post('/api/questions', questionManagement.createQuestion);
-  app.put('/api/questions/:id', questionManagement.updateQuestion);
-  app.delete('/api/questions/:id', questionManagement.deleteQuestion);
+  app.use('/api/question-groups', fixedQuestionGroupsRoutes);
+  app.use('/api/questions', simpleQARoutes);
   
   // Feature toggles API routes
   try {
