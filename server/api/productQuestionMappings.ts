@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { db } from '../db';
 import { productQuestionMappings, products, questions, questionGroups } from '@shared/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -11,23 +11,15 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const productId = req.query.productId ? parseInt(req.query.productId as string) : undefined;
     
-    let query = db.select({
-      id: productQuestionMappings.id,
-      productId: productQuestionMappings.productId,
-      questionId: productQuestionMappings.questionId,
-      groupId: productQuestionMappings.groupId,
-      required: productQuestionMappings.required,
-      impactMultiplier: productQuestionMappings.impactMultiplier,
-      createdAt: productQuestionMappings.createdAt,
-      updatedAt: productQuestionMappings.updatedAt
-    })
-    .from(productQuestionMappings);
+    // Simplified query to avoid schema issues
+    let query = db.select()
+        .from(productQuestionMappings);
     
     if (productId) {
       query = query.where(eq(productQuestionMappings.productId, productId));
     }
     
-    const mappings = await query.orderBy(productQuestionMappings.id);
+    const mappings = await query;
     
     res.json(mappings);
   } catch (error: any) {
