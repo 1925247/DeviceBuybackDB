@@ -31,6 +31,7 @@ import simpleQuestionsRoutes from "./api/simpleQuestions";
 import fixedQuestionsRoutes from "./api/fixedQuestions";
 import basicQuestionsRoutes from "./api/basicQuestions";
 import questionsAdapterRoutes from "./api/questionsAdapterAPI";
+import simpleQARoutes from "./api/simpleQA";
 import productQuestionMappingsRoutes from "./api/productQuestionMappings";
 import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMappings";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes";
