@@ -2,10 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { DialogDescription } from "@/components/ui/DialogDescription";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -32,11 +44,11 @@ import {
 } from "lucide-react";
 import { QuestionGroup, Question, AnswerChoice } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,13 +78,13 @@ export default function AdminQuestions() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // States for the component
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  
+
   // Initialize form data
   const [formData, setFormData] = useState<QuestionFormData>({
     questionText: "",
@@ -84,9 +96,9 @@ export default function AdminQuestions() {
     required: true,
     answerChoices: [],
   });
-  
+
   // Fetch the question group details
-  const { data: groupData, isLoading: isGroupLoading } = useQuery<{ 
+  const { data: groupData, isLoading: isGroupLoading } = useQuery<{
     id: number;
     name: string;
     statement: string;
@@ -105,7 +117,9 @@ export default function AdminQuestions() {
       return await apiRequest("POST", "/api/questions", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/question-groups/${groupId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/question-groups/${groupId}`],
+      });
       setIsAddDialogOpen(false);
       resetForm();
       toast({
@@ -124,11 +138,19 @@ export default function AdminQuestions() {
 
   // Update question
   const updateQuestionMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: QuestionFormData }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: QuestionFormData;
+    }) => {
       return await apiRequest("PUT", `/api/questions/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/question-groups/${groupId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/question-groups/${groupId}`],
+      });
       setIsEditDialogOpen(false);
       resetForm();
       toast({
@@ -151,7 +173,9 @@ export default function AdminQuestions() {
       return await apiRequest("DELETE", `/api/questions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/question-groups/${groupId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/question-groups/${groupId}`],
+      });
       setIsDeleteDialogOpen(false);
       setCurrentQuestion(null);
       toast({
@@ -187,36 +211,54 @@ export default function AdminQuestions() {
     resetForm();
     // If there are existing questions, set the order to be the next in sequence
     if (groupData?.questions && groupData.questions.length > 0) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        order: Math.max(...groupData.questions.map(q => q.order ?? 0)) + 1
+        order: Math.max(...groupData.questions.map((q) => q.order ?? 0)) + 1,
       }));
     }
-    
+
     // Add two empty answer choices by default for convenience
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       answerChoices: [
-        { answerText: "", icon: "", weightage: 0, repairCost: 0, isDefault: false, followUpAction: null },
-        { answerText: "", icon: "", weightage: 0, repairCost: 0, isDefault: false, followUpAction: null }
-      ]
+        {
+          answerText: "",
+          icon: "",
+          weightage: 0,
+          repairCost: 0,
+          isDefault: false,
+          followUpAction: null,
+        },
+        {
+          answerText: "",
+          icon: "",
+          weightage: 0,
+          repairCost: 0,
+          isDefault: false,
+          followUpAction: null,
+        },
+      ],
     }));
-    
+
     setIsAddDialogOpen(true);
   };
 
   // Handle edit button click
   const handleEditClick = (question: Question) => {
     setCurrentQuestion(question);
-    
+
     // First fetch the complete question data with answer choices
     apiRequest("GET", `/api/questions/${question.id}`)
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         // Now set the form data with the complete question data
         setFormData({
           questionText: data.questionText,
-          questionType: data.questionType as "single_choice" | "multiple_choice" | "text" | "number",
+          questionType: data.questionType as
+            | "single_choice"
+            | "multiple_choice"
+            | "text"
+            | "number",
           groupId: Number(groupId),
           order: data.order ?? 0,
           active: data.active ?? true,
@@ -229,12 +271,15 @@ export default function AdminQuestions() {
             weightage: choice.weightage ?? 0,
             repairCost: choice.repairCost ?? 0,
             isDefault: choice.isDefault ?? false,
-            followUpAction: typeof choice.followUpAction === 'string' ? choice.followUpAction : null
-          }))
+            followUpAction:
+              typeof choice.followUpAction === "string"
+                ? choice.followUpAction
+                : null,
+          })),
         });
         setIsEditDialogOpen(true);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching question details:", error);
         toast({
           title: "Error",
@@ -251,58 +296,78 @@ export default function AdminQuestions() {
   };
 
   // Handle form input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Handle switch change
   const handleSwitchChange = (name: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [name]: checked }));
+    setFormData((prev) => ({ ...prev, [name]: checked }));
   };
 
   // Handle question type change
   const handleQuestionTypeChange = (value: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      questionType: value as "single_choice" | "multiple_choice" | "text" | "number"
+    setFormData((prev) => ({
+      ...prev,
+      questionType: value as
+        | "single_choice"
+        | "multiple_choice"
+        | "text"
+        | "number",
     }));
   };
 
   // Handle answer choice input change
-  const handleAnswerChoiceChange = (index: number, field: string, value: any) => {
-    setFormData(prev => {
+  const handleAnswerChoiceChange = (
+    index: number,
+    field: string,
+    value: any,
+  ) => {
+    setFormData((prev) => {
       const updatedChoices = [...prev.answerChoices];
-      updatedChoices[index] = { 
-        ...updatedChoices[index], 
-        [field]: field === 'weightage' || field === 'repairCost' ? Number(value) : value 
+      updatedChoices[index] = {
+        ...updatedChoices[index],
+        [field]:
+          field === "weightage" || field === "repairCost"
+            ? Number(value)
+            : value,
       };
       return {
         ...prev,
-        answerChoices: updatedChoices
+        answerChoices: updatedChoices,
       };
     });
   };
 
   // Handle adding a new answer choice
   const handleAddAnswerChoice = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       answerChoices: [
         ...prev.answerChoices,
-        { answerText: "", icon: "", weightage: 0, repairCost: 0, isDefault: false, followUpAction: null }
-      ]
+        {
+          answerText: "",
+          icon: "",
+          weightage: 0,
+          repairCost: 0,
+          isDefault: false,
+          followUpAction: null,
+        },
+      ],
     }));
   };
 
   // Handle removing an answer choice
   const handleRemoveAnswerChoice = (index: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updatedChoices = [...prev.answerChoices];
       updatedChoices.splice(index, 1);
       return {
         ...prev,
-        answerChoices: updatedChoices
+        answerChoices: updatedChoices,
       };
     });
   };
@@ -310,24 +375,32 @@ export default function AdminQuestions() {
   // Handle form submission for add
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form data
-    if ((formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && 
-        (!formData.answerChoices || formData.answerChoices.length < 2)) {
+    if (
+      (formData.questionType === "single_choice" ||
+        formData.questionType === "multiple_choice") &&
+      (!formData.answerChoices || formData.answerChoices.length < 2)
+    ) {
       toast({
         title: "Validation Error",
-        description: "Please add at least two answer choices for choice-based questions",
+        description:
+          "Please add at least two answer choices for choice-based questions",
         variant: "destructive",
       });
       return;
     }
-    
+
     // Filter out empty answer choices
     const validAnswerChoices = formData.answerChoices.filter(
-      choice => choice.answerText.trim() !== ""
+      (choice) => choice.answerText.trim() !== "",
     );
-    
-    if (formData.questionType !== 'text' && formData.questionType !== 'number' && validAnswerChoices.length < 2) {
+
+    if (
+      formData.questionType !== "text" &&
+      formData.questionType !== "number" &&
+      validAnswerChoices.length < 2
+    ) {
       toast({
         title: "Validation Error",
         description: "Please add at least two valid answer choices with text",
@@ -335,50 +408,59 @@ export default function AdminQuestions() {
       });
       return;
     }
-    
+
     // Ensure only one default answer for single_choice
-    if (formData.questionType === 'single_choice') {
-      const defaultCount = validAnswerChoices.filter(c => c.isDefault).length;
+    if (formData.questionType === "single_choice") {
+      const defaultCount = validAnswerChoices.filter((c) => c.isDefault).length;
       if (defaultCount > 1) {
         toast({
           title: "Validation Error",
-          description: "Single choice questions can only have one default answer",
+          description:
+            "Single choice questions can only have one default answer",
           variant: "destructive",
         });
         return;
       }
     }
-    
+
     // Submit the question with valid answer choices
     const submissionData = {
       ...formData,
-      answerChoices: validAnswerChoices
+      answerChoices: validAnswerChoices,
     };
-    
+
     addQuestionMutation.mutate(submissionData);
   };
 
   // Handle form submission for edit
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Same validation as add
-    if (formData.questionType !== 'text' && formData.questionType !== 'number' && 
-        (!formData.answerChoices || formData.answerChoices.length < 2)) {
+    if (
+      formData.questionType !== "text" &&
+      formData.questionType !== "number" &&
+      (!formData.answerChoices || formData.answerChoices.length < 2)
+    ) {
       toast({
         title: "Validation Error",
-        description: "Please add at least two answer choices for choice-based questions",
+        description:
+          "Please add at least two answer choices for choice-based questions",
         variant: "destructive",
       });
       return;
     }
-    
+
     // Filter out empty answer choices
     const validAnswerChoices = formData.answerChoices.filter(
-      choice => choice.answerText.trim() !== ""
+      (choice) => choice.answerText.trim() !== "",
     );
-    
-    if (formData.questionType !== 'text' && formData.questionType !== 'number' && validAnswerChoices.length < 2) {
+
+    if (
+      formData.questionType !== "text" &&
+      formData.questionType !== "number" &&
+      validAnswerChoices.length < 2
+    ) {
       toast({
         title: "Validation Error",
         description: "Please add at least two valid answer choices with text",
@@ -386,27 +468,31 @@ export default function AdminQuestions() {
       });
       return;
     }
-    
+
     // Ensure only one default answer for single_choice
-    if (formData.questionType === 'single_choice') {
-      const defaultCount = validAnswerChoices.filter(c => c.isDefault).length;
+    if (formData.questionType === "single_choice") {
+      const defaultCount = validAnswerChoices.filter((c) => c.isDefault).length;
       if (defaultCount > 1) {
         toast({
           title: "Validation Error",
-          description: "Single choice questions can only have one default answer",
+          description:
+            "Single choice questions can only have one default answer",
           variant: "destructive",
         });
         return;
       }
     }
-    
+
     if (currentQuestion) {
       const submissionData = {
         ...formData,
-        answerChoices: validAnswerChoices
+        answerChoices: validAnswerChoices,
       };
-      
-      updateQuestionMutation.mutate({ id: currentQuestion.id, data: submissionData });
+
+      updateQuestionMutation.mutate({
+        id: currentQuestion.id,
+        data: submissionData,
+      });
     }
   };
 
@@ -426,7 +512,9 @@ export default function AdminQuestions() {
         )}
         <span>{choice.answerText}</span>
         {choice.isDefault && (
-          <Badge variant="outline" className="ml-2 bg-blue-50">Default</Badge>
+          <Badge variant="outline" className="ml-2 bg-blue-50">
+            Default
+          </Badge>
         )}
       </div>
     );
@@ -445,10 +533,13 @@ export default function AdminQuestions() {
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
-            <h1 className="text-2xl font-bold tracking-tight">{groupData?.name || "Loading..."}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {groupData?.name || "Loading..."}
+            </h1>
           </div>
           <p className="text-gray-500 mt-1">
-            {groupData?.statement || "Manage questions and answers for this group"}
+            {groupData?.statement ||
+              "Manage questions and answers for this group"}
           </p>
         </div>
         <div className="mt-4 md:mt-0">
@@ -476,63 +567,78 @@ export default function AdminQuestions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {groupData.questions.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((question) => (
-                <TableRow key={question.id}>
-                  <TableCell className="text-center font-medium">
-                    {question.order}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{question.questionText}</div>
-                    {question.tooltip && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        <span className="italic">Help text: {question.tooltip}</span>
+              {groupData.questions
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((question) => (
+                  <TableRow key={question.id}>
+                    <TableCell className="text-center font-medium">
+                      {question.order}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{question.questionText}</div>
+                      {question.tooltip && (
+                        <div className="text-sm text-gray-500 mt-1">
+                          <span className="italic">
+                            Help text: {question.tooltip}
+                          </span>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          question.questionType === "single_choice"
+                            ? "default"
+                            : question.questionType === "multiple_choice"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
+                        {question.questionType === "single_choice"
+                          ? "Single Choice"
+                          : question.questionType === "multiple_choice"
+                            ? "Multiple Choice"
+                            : question.questionType === "text" ||
+                                question.questionType === "text_input"
+                              ? "Text Input"
+                              : "Number Input"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {question.required ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-gray-300 mx-auto" />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {question.active ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-gray-300 mx-auto" />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditClick(question)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600"
+                          onClick={() => handleDeleteClick(question)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={question.questionType === 'single_choice' ? "default" : 
-                            question.questionType === 'multiple_choice' ? "secondary" : 
-                            "outline"}>
-                      {question.questionType === 'single_choice' ? 'Single Choice' : 
-                       question.questionType === 'multiple_choice' ? 'Multiple Choice' : 
-                       question.questionType === 'text' || question.questionType === 'text_input' ? 'Text Input' : 'Number Input'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {question.required ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-gray-300 mx-auto" />
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {question.active ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-gray-300 mx-auto" />
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(question)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600"
-                        onClick={() => handleDeleteClick(question)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </div>
@@ -556,74 +662,101 @@ export default function AdminQuestions() {
       {groupData?.questions && groupData.questions.length > 0 && (
         <div className="mt-8 border rounded-md p-4">
           <h3 className="text-lg font-medium mb-4">Question Preview</h3>
-          
+
           <Accordion type="single" collapsible className="w-full">
-            {groupData.questions.sort((a, b) => a.order - b.order).map((question) => (
-              <AccordionItem key={question.id} value={`question-${question.id}`}>
-                <AccordionTrigger className="hover:bg-gray-50 px-4 py-2 rounded-md">
-                  <div className="flex items-center">
-                    <span className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full mr-3 text-sm font-medium">
-                      {question.order}
-                    </span>
-                    <span className="text-left">{question.questionText}</span>
-                    {question.required && (
-                      <span className="text-red-500 ml-1">*</span>
-                    )}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 py-2">
-                  {question.tooltip && (
-                    <div className="mb-4 bg-blue-50 text-blue-700 p-3 rounded-md flex items-start">
-                      <HelpCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">{question.tooltip}</p>
+            {groupData.questions
+              .sort((a, b) => a.order - b.order)
+              .map((question) => (
+                <AccordionItem
+                  key={question.id}
+                  value={`question-${question.id}`}
+                >
+                  <AccordionTrigger className="hover:bg-gray-50 px-4 py-2 rounded-md">
+                    <div className="flex items-center">
+                      <span className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full mr-3 text-sm font-medium">
+                        {question.order}
+                      </span>
+                      <span className="text-left">{question.questionText}</span>
+                      {question.required && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
                     </div>
-                  )}
-                  
-                  {(question.questionType === 'single_choice' || question.questionType === 'multiple_choice') && (
-                    <div className="grid gap-2 mt-3">
-                      {question.answerChoices.sort((a, b) => a.order - b.order).map((choice, idx) => (
-                        <Card key={idx} className={`${choice.isDefault ? 'border-blue-300 bg-blue-50' : ''}`}>
-                          <CardContent className="p-3">
-                            <div className="flex items-center">
-                              {question.questionType === 'single_choice' ? (
-                                <div className={`w-4 h-4 rounded-full border mr-3 flex-shrink-0 ${choice.isDefault ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`} />
-                              ) : (
-                                <div className={`w-4 h-4 rounded border mr-3 flex-shrink-0 ${choice.isDefault ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`} />
-                              )}
-                              <div className="flex-1">
-                                {renderChoicePreview(choice)}
-                              </div>
-                              {(choice.weightage > 0 || choice.repairCost > 0) && (
-                                <div className="ml-3 text-sm text-gray-500">
-                                  {choice.weightage > 0 && (
-                                    <span className="mr-2">W: {choice.weightage}</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 py-2">
+                    {question.tooltip && (
+                      <div className="mb-4 bg-blue-50 text-blue-700 p-3 rounded-md flex items-start">
+                        <HelpCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm">{question.tooltip}</p>
+                      </div>
+                    )}
+
+                    {(question.questionType === "single_choice" ||
+                      question.questionType === "multiple_choice") && (
+                      <div className="grid gap-2 mt-3">
+                        {(question.answerChoices || [])
+                          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                          .map((choice, idx) => (
+                            <Card
+                              key={idx}
+                              className={`${choice.isDefault ? "border-blue-300 bg-blue-50" : ""}`}
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex items-center">
+                                  {question.questionType === "single_choice" ? (
+                                    <div
+                                      className={`w-4 h-4 rounded-full border mr-3 flex-shrink-0 ${choice.isDefault ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
+                                    />
+                                  ) : (
+                                    <div
+                                      className={`w-4 h-4 rounded border mr-3 flex-shrink-0 ${choice.isDefault ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
+                                    />
                                   )}
-                                  {choice.repairCost > 0 && (
-                                    <span>R: ${choice.repairCost}</span>
+                                  <div className="flex-1">
+                                    {renderChoicePreview(choice)}
+                                  </div>
+                                  {(choice.weightage > 0 ||
+                                    choice.repairCost > 0) && (
+                                    <div className="ml-3 text-sm text-gray-500">
+                                      {choice.weightage > 0 && (
+                                        <span className="mr-2">
+                                          W: {choice.weightage}
+                                        </span>
+                                      )}
+                                      {choice.repairCost > 0 && (
+                                        <span>R: ${choice.repairCost}</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {question.questionType === 'text' && (
-                    <div className="mt-3">
-                      <Input disabled placeholder="Text input field" className="bg-gray-50" />
-                    </div>
-                  )}
-                  
-                  {question.questionType === 'number' && (
-                    <div className="mt-3">
-                      <Input disabled type="number" placeholder="0" className="bg-gray-50" />
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    )}
+
+                    {question.questionType === "text" && (
+                      <div className="mt-3">
+                        <Input
+                          disabled
+                          placeholder="Text input field"
+                          className="bg-gray-50"
+                        />
+                      </div>
+                    )}
+
+                    {question.questionType === "number" && (
+                      <div className="mt-3">
+                        <Input
+                          disabled
+                          type="number"
+                          placeholder="0"
+                          className="bg-gray-50"
+                        />
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
           </Accordion>
         </div>
       )}
@@ -633,7 +766,9 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Question</DialogTitle>
-            <DialogDescription>Create a new question for this group</DialogDescription>
+            <DialogDescription>
+              Create a new question for this group
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubmit}>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -648,10 +783,10 @@ export default function AdminQuestions() {
                   required
                 />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="questionType">Question Type *</Label>
-                <Select 
+                <Select
                   onValueChange={handleQuestionTypeChange}
                   defaultValue={formData.questionType}
                 >
@@ -660,13 +795,15 @@ export default function AdminQuestions() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="single_choice">Single Choice</SelectItem>
-                    <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                    <SelectItem value="multiple_choice">
+                      Multiple Choice
+                    </SelectItem>
                     <SelectItem value="text">Text Input</SelectItem>
                     <SelectItem value="number">Number Input</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="tooltip">Help Text (Optional)</Label>
                 <Textarea
@@ -678,7 +815,7 @@ export default function AdminQuestions() {
                   rows={2}
                 />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="order">Display Order</Label>
                 <Input
@@ -694,43 +831,51 @@ export default function AdminQuestions() {
                   Questions are displayed in ascending order
                 </p>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="required"
                     checked={formData.required}
-                    onCheckedChange={(checked) => handleSwitchChange("required", checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("required", checked)
+                    }
                   />
                   <Label htmlFor="required">Required</Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="active"
                     checked={formData.active}
-                    onCheckedChange={(checked) => handleSwitchChange("active", checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("active", checked)
+                    }
                   />
                   <Label htmlFor="active">Active</Label>
                 </div>
               </div>
-              
-              {(formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && (
+
+              {(formData.questionType === "single_choice" ||
+                formData.questionType === "multiple_choice") && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <Label className="text-base">Answer Choices</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       onClick={handleAddAnswerChoice}
                     >
                       <Plus className="h-4 w-4 mr-1" /> Add Choice
                     </Button>
                   </div>
-                  
+
                   {formData.answerChoices.map((choice, index) => (
-                    <div key={index} className="p-4 border rounded-md mb-3 bg-gray-50">
+                    <div
+                      key={index}
+                      className="p-4 border rounded-md mb-3 bg-gray-50"
+                    >
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-medium">Choice {index + 1}</h4>
                         <Button
@@ -744,87 +889,138 @@ export default function AdminQuestions() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       <div className="grid gap-3">
                         <div className="grid gap-1">
-                          <Label htmlFor={`choice-${index}-text`}>Answer Text *</Label>
+                          <Label htmlFor={`choice-${index}-text`}>
+                            Answer Text *
+                          </Label>
                           <Input
                             id={`choice-${index}-text`}
                             value={choice.answerText}
-                            onChange={(e) => handleAnswerChoiceChange(index, "answerText", e.target.value)}
+                            onChange={(e) =>
+                              handleAnswerChoiceChange(
+                                index,
+                                "answerText",
+                                e.target.value,
+                              )
+                            }
                             placeholder="e.g., Excellent condition"
                             required
                           />
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                           <div className="grid gap-1">
-                            <Label htmlFor={`choice-${index}-icon`}>Icon (Optional)</Label>
+                            <Label htmlFor={`choice-${index}-icon`}>
+                              Icon (Optional)
+                            </Label>
                             <Input
                               id={`choice-${index}-icon`}
                               value={choice.icon}
-                              onChange={(e) => handleAnswerChoiceChange(index, "icon", e.target.value)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "icon",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="Icon name"
                             />
                           </div>
-                          
+
                           <div className="grid gap-1">
-                            <Label htmlFor={`choice-${index}-followup`}>Follow-up Action</Label>
+                            <Label htmlFor={`choice-${index}-followup`}>
+                              Follow-up Action
+                            </Label>
                             <Input
                               id={`choice-${index}-followup`}
                               value={choice.followUpAction || ""}
-                              onChange={(e) => handleAnswerChoiceChange(index, "followUpAction", e.target.value || null)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "followUpAction",
+                                  e.target.value || null,
+                                )
+                              }
                               placeholder="e.g., show_next_group"
                             />
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                           <div className="grid gap-1">
-                            <Label htmlFor={`choice-${index}-weightage`}>Weightage</Label>
+                            <Label htmlFor={`choice-${index}-weightage`}>
+                              Weightage
+                            </Label>
                             <Input
                               id={`choice-${index}-weightage`}
                               type="number"
                               value={choice.weightage}
-                              onChange={(e) => handleAnswerChoiceChange(index, "weightage", e.target.value)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "weightage",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="0"
                               min="0"
                             />
                           </div>
-                          
+
                           <div className="grid gap-1">
-                            <Label htmlFor={`choice-${index}-cost`}>Repair Cost ($)</Label>
+                            <Label htmlFor={`choice-${index}-cost`}>
+                              Repair Cost ($)
+                            </Label>
                             <Input
                               id={`choice-${index}-cost`}
                               type="number"
                               value={choice.repairCost}
-                              onChange={(e) => handleAnswerChoiceChange(index, "repairCost", e.target.value)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "repairCost",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="0"
                               min="0"
                             />
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2 mt-1">
                           <Switch
                             id={`choice-${index}-default`}
                             checked={choice.isDefault}
                             onCheckedChange={(checked) => {
-                              if (formData.questionType === 'single_choice' && checked) {
+                              if (
+                                formData.questionType === "single_choice" &&
+                                checked
+                              ) {
                                 // For single choice, uncheck all others
-                                setFormData(prev => {
-                                  const newChoices = prev.answerChoices.map((c, i) => ({
-                                    ...c,
-                                    isDefault: i === index ? checked : false
-                                  }));
+                                setFormData((prev) => {
+                                  const newChoices = prev.answerChoices.map(
+                                    (c, i) => ({
+                                      ...c,
+                                      isDefault: i === index ? checked : false,
+                                    }),
+                                  );
                                   return { ...prev, answerChoices: newChoices };
                                 });
                               } else {
-                                handleAnswerChoiceChange(index, "isDefault", checked);
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "isDefault",
+                                  checked,
+                                );
                               }
                             }}
                           />
-                          <Label htmlFor={`choice-${index}-default`}>Default Answer</Label>
+                          <Label htmlFor={`choice-${index}-default`}>
+                            Default Answer
+                          </Label>
                         </div>
                       </div>
                     </div>
@@ -860,10 +1056,12 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
-            <DialogDescription>Update this question's properties</DialogDescription>
+            <DialogDescription>
+              Update this question's properties
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit}>
-          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
               <div className="grid gap-2">
                 <Label htmlFor="questionText">Question Text *</Label>
                 <Input
@@ -875,10 +1073,10 @@ export default function AdminQuestions() {
                   required
                 />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="questionType">Question Type *</Label>
-                <Select 
+                <Select
                   onValueChange={handleQuestionTypeChange}
                   defaultValue={formData.questionType}
                 >
@@ -887,13 +1085,15 @@ export default function AdminQuestions() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="single_choice">Single Choice</SelectItem>
-                    <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                    <SelectItem value="multiple_choice">
+                      Multiple Choice
+                    </SelectItem>
                     <SelectItem value="text">Text Input</SelectItem>
                     <SelectItem value="number">Number Input</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="tooltip">Help Text (Optional)</Label>
                 <Textarea
@@ -905,7 +1105,7 @@ export default function AdminQuestions() {
                   rows={2}
                 />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="order">Display Order</Label>
                 <Input
@@ -921,43 +1121,51 @@ export default function AdminQuestions() {
                   Questions are displayed in ascending order
                 </p>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="required"
                     checked={formData.required}
-                    onCheckedChange={(checked) => handleSwitchChange("required", checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("required", checked)
+                    }
                   />
                   <Label htmlFor="required">Required</Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="active"
                     checked={formData.active}
-                    onCheckedChange={(checked) => handleSwitchChange("active", checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("active", checked)
+                    }
                   />
                   <Label htmlFor="active">Active</Label>
                 </div>
               </div>
-              
-              {(formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && (
+
+              {(formData.questionType === "single_choice" ||
+                formData.questionType === "multiple_choice") && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <Label className="text-base">Answer Choices</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       onClick={handleAddAnswerChoice}
                     >
                       <Plus className="h-4 w-4 mr-1" /> Add Choice
                     </Button>
                   </div>
-                  
+
                   {formData.answerChoices.map((choice, index) => (
-                    <div key={index} className="p-4 border rounded-md mb-3 bg-gray-50">
+                    <div
+                      key={index}
+                      className="p-4 border rounded-md mb-3 bg-gray-50"
+                    >
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-medium">Choice {index + 1}</h4>
                         <Button
@@ -971,87 +1179,138 @@ export default function AdminQuestions() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       <div className="grid gap-3">
                         <div className="grid gap-1">
-                          <Label htmlFor={`edit-choice-${index}-text`}>Answer Text *</Label>
+                          <Label htmlFor={`edit-choice-${index}-text`}>
+                            Answer Text *
+                          </Label>
                           <Input
                             id={`edit-choice-${index}-text`}
                             value={choice.answerText}
-                            onChange={(e) => handleAnswerChoiceChange(index, "answerText", e.target.value)}
+                            onChange={(e) =>
+                              handleAnswerChoiceChange(
+                                index,
+                                "answerText",
+                                e.target.value,
+                              )
+                            }
                             placeholder="e.g., Excellent condition"
                             required
                           />
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                           <div className="grid gap-1">
-                            <Label htmlFor={`edit-choice-${index}-icon`}>Icon (Optional)</Label>
+                            <Label htmlFor={`edit-choice-${index}-icon`}>
+                              Icon (Optional)
+                            </Label>
                             <Input
                               id={`edit-choice-${index}-icon`}
                               value={choice.icon}
-                              onChange={(e) => handleAnswerChoiceChange(index, "icon", e.target.value)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "icon",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="Icon name"
                             />
                           </div>
-                          
+
                           <div className="grid gap-1">
-                            <Label htmlFor={`edit-choice-${index}-followup`}>Follow-up Action</Label>
+                            <Label htmlFor={`edit-choice-${index}-followup`}>
+                              Follow-up Action
+                            </Label>
                             <Input
                               id={`edit-choice-${index}-followup`}
                               value={choice.followUpAction || ""}
-                              onChange={(e) => handleAnswerChoiceChange(index, "followUpAction", e.target.value || null)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "followUpAction",
+                                  e.target.value || null,
+                                )
+                              }
                               placeholder="e.g., show_next_group"
                             />
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                           <div className="grid gap-1">
-                            <Label htmlFor={`edit-choice-${index}-weightage`}>Weightage</Label>
+                            <Label htmlFor={`edit-choice-${index}-weightage`}>
+                              Weightage
+                            </Label>
                             <Input
                               id={`edit-choice-${index}-weightage`}
                               type="number"
                               value={choice.weightage}
-                              onChange={(e) => handleAnswerChoiceChange(index, "weightage", e.target.value)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "weightage",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="0"
                               min="0"
                             />
                           </div>
-                          
+
                           <div className="grid gap-1">
-                            <Label htmlFor={`edit-choice-${index}-cost`}>Repair Cost ($)</Label>
+                            <Label htmlFor={`edit-choice-${index}-cost`}>
+                              Repair Cost ($)
+                            </Label>
                             <Input
                               id={`edit-choice-${index}-cost`}
                               type="number"
                               value={choice.repairCost}
-                              onChange={(e) => handleAnswerChoiceChange(index, "repairCost", e.target.value)}
+                              onChange={(e) =>
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "repairCost",
+                                  e.target.value,
+                                )
+                              }
                               placeholder="0"
                               min="0"
                             />
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2 mt-1">
                           <Switch
                             id={`edit-choice-${index}-default`}
                             checked={choice.isDefault}
                             onCheckedChange={(checked) => {
-                              if (formData.questionType === 'single_choice' && checked) {
+                              if (
+                                formData.questionType === "single_choice" &&
+                                checked
+                              ) {
                                 // For single choice, uncheck all others
-                                setFormData(prev => {
-                                  const newChoices = prev.answerChoices.map((c, i) => ({
-                                    ...c,
-                                    isDefault: i === index ? checked : false
-                                  }));
+                                setFormData((prev) => {
+                                  const newChoices = prev.answerChoices.map(
+                                    (c, i) => ({
+                                      ...c,
+                                      isDefault: i === index ? checked : false,
+                                    }),
+                                  );
                                   return { ...prev, answerChoices: newChoices };
                                 });
                               } else {
-                                handleAnswerChoiceChange(index, "isDefault", checked);
+                                handleAnswerChoiceChange(
+                                  index,
+                                  "isDefault",
+                                  checked,
+                                );
                               }
                             }}
                           />
-                          <Label htmlFor={`edit-choice-${index}-default`}>Default Answer</Label>
+                          <Label htmlFor={`edit-choice-${index}-default`}>
+                            Default Answer
+                          </Label>
                         </div>
                       </div>
                     </div>
@@ -1087,7 +1346,9 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Question</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this question?</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to delete this question?
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-500">
@@ -1101,7 +1362,8 @@ export default function AdminQuestions() {
               <div className="flex">
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 mr-2" />
                 <p className="text-sm text-amber-700">
-                  Deleting this question will also remove all associated answer choices.
+                  Deleting this question will also remove all associated answer
+                  choices.
                 </p>
               </div>
             </div>
