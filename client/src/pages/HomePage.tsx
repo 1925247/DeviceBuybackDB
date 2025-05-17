@@ -89,12 +89,6 @@ const HomePage = () => {
                 >
                   Sell Now
                 </Link>
-                <Link
-                  to="/shop"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-400 transition-colors border border-blue-400"
-                >
-                  Shop Now
-                </Link>
               </div>
             </div>
             <div className="hidden md:block">

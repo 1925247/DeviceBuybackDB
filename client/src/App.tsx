@@ -34,17 +34,7 @@ import UserLogin from "./pages/UserLogin";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 
-// Shop Flow Pages
-import BuyHome from "./pages/Shop/BuyHome";
-import BuyProduct from "./pages/Shop/BuyProduct";
 
-import BuyCheckout from "./pages/Shop/BuyCheckout";
-import BuyPayment from "./pages/Shop/BuyPayment";
-import BuyInvoice from "./pages/Shop/BuyInvoice";
-import ProductDetails from "./pages/Shop/ProductDetails";
-
-// Alias BuyHome as ShopPage
-const ShopPage = BuyHome;
 
 // Admin Panel Pages - Lazy loaded to improve performance
 import AdminLayout from "./components/admin/AdminLayout";
@@ -353,101 +343,7 @@ function App() {
                 }
               />
 
-              {/* Shop Route - Database connected marketplace */}
-              <Route
-                path="/shop"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ShopPage />
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/shop/buyhome"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ShopPage />
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/shop/products"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ModelsProvider>
-                        <BuyProduct />
-                      </ModelsProvider>
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/shop/details/:slug"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ModelsProvider>
-                        <ProductDetails />
-                      </ModelsProvider>
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/shop/checkout"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ModelsProvider>
-                        <BuyCheckout />
-                      </ModelsProvider>
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/shop/payment"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ModelsProvider>
-                        <BuyPayment />
-                      </ModelsProvider>
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
-              <Route
-                path="/shop/invoice"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <ModelsProvider>
-                        <BuyInvoice />
-                      </ModelsProvider>
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
+
 
               {/* Partner Portal Routes */}
               <Route
