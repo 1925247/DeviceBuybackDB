@@ -28,6 +28,7 @@ import fixedQuestionGroupsRoutes from "./api/fixedQuestionGroups";
 import simpleQARoutes from "./api/simpleQA";
 import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMappings";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes";
+import answerChoicesRoutes from "./api/answerChoicesApi";
 import productsRoutes from "./api/products";
 
 export async function registerRoutes(app: Express): Promise<Server> {
