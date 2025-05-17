@@ -24,14 +24,7 @@ import { featureToggleRouter } from "./api/featureToggleApi";
 import deviceModelsRoutes from "./api/deviceModels";
 import brandsRoutes from "./api/brands";
 import deviceTypesRoutes from "./api/deviceTypes";
-import questionGroupsRoutes from "./api/questionGroups";
-import simpleQuestionGroupsRoutes from "./api/simpleQuestionGroups";
 import fixedQuestionGroupsRoutes from "./api/fixedQuestionGroups";
-import questionsRoutes from "./api/questions";
-import simpleQuestionsRoutes from "./api/simpleQuestions";
-import fixedQuestionsRoutes from "./api/fixedQuestions";
-import basicQuestionsRoutes from "./api/basicQuestions";
-import questionsAdapterRoutes from "./api/questionsAdapterAPI";
 import simpleQARoutes from "./api/simpleQA";
 import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMappings";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes";
@@ -51,6 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/products', productsRoutes);
   app.use('/api/question-groups', fixedQuestionGroupsRoutes);
   app.use('/api/questions', simpleQARoutes);
+  app.use('/api/product-question-mappings', simpleProductQuestionMappingsRoutes);
   
   // Feature toggles API routes
   try {
