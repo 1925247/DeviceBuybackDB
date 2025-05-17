@@ -8,8 +8,21 @@ const router = express.Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const query = `
-      SELECT * FROM question_groups
-      ORDER BY id ASC
+      SELECT 
+        qg.id, 
+        qg.name, 
+        qg.statement, 
+        qg.device_type_id as "deviceTypeId", 
+        qg.icon,
+        qg.active,
+        qg.created_at as "createdAt",
+        qg.updated_at as "updatedAt",
+        dt.name as "deviceTypeName",
+        dt.slug as "deviceTypeSlug",
+        (SELECT COUNT(*) FROM questions q WHERE q.group_id = qg.id) as "questionCount"
+      FROM question_groups qg
+      LEFT JOIN device_types dt ON qg.device_type_id = dt.id
+      ORDER BY qg.id ASC
     `;
     
     const result = await pool.query(query);

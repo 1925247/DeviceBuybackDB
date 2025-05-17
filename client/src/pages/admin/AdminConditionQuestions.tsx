@@ -35,7 +35,9 @@ interface QuestionGroup {
   deviceTypeId?: number | null;
   icon?: string | null;
   active: boolean;
-  questionsCount?: number;
+  questionCount?: number;
+  deviceTypeName?: string;
+  deviceTypeSlug?: string;
 }
 
 interface DeviceType {
@@ -205,12 +207,11 @@ export default function AdminConditionQuestions() {
                 </p>
                 <div className="flex items-center mt-3 text-sm text-gray-500">
                   <span className="font-medium">
-                    {group.questionsCount || 0} Questions
+                    {group.questionCount || 0} Questions
                   </span>
                   <span className="mx-2">•</span>
                   <span>
-                    {deviceTypes?.find((dt) => dt.id === group.deviceTypeId)
-                      ?.name || "No device type"}
+                    {group.deviceTypeName || "No device type"}
                   </span>
                 </div>
               </CardContent>
