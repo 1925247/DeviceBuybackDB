@@ -1550,62 +1550,26 @@ export class DatabaseStorage implements IStorage {
   async getProductVariants(productId: number): Promise<any[]> {
     return [];
   }
-  }
 
-  async getProduct(id: number): Promise<Product | undefined> {
-    try {
-      // Return sample product for development
-      const mockProducts = await this.getProducts();
-      return mockProducts.find(product => product.id === id);
-    } catch (error) {
-      console.error("Error in getProduct:", error);
-      return undefined;
-    }
+  // Product-related methods removed and replaced with compatibility stubs
+  async getProduct(id: number): Promise<any> {
+    console.log("getProduct called, but marketplace functionality has been removed");
+    return undefined;
   }
   
-  async createProduct(product: InsertProduct): Promise<Product> {
-    try {
-      const newProduct: Product = {
-        ...product,
-        id: Date.now(), // Mock ID generation
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      return newProduct;
-    } catch (error) {
-      console.error("Error in createProduct:", error);
-      throw error;
-    }
+  async createProduct(product: any): Promise<any> {
+    console.log("createProduct called, but marketplace functionality has been removed");
+    throw new Error("Marketplace functionality has been removed");
   }
   
-  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
-    try {
-      const existingProduct = await this.getProduct(id);
-      if (!existingProduct) {
-        return undefined;
-      }
-      
-      const updatedProduct: Product = {
-        ...existingProduct,
-        ...product,
-        updatedAt: new Date()
-      };
-      
-      return updatedProduct;
-    } catch (error) {
-      console.error("Error in updateProduct:", error);
-      throw error;
-    }
+  async updateProduct(id: number, product: any): Promise<any> {
+    console.log("updateProduct called, but marketplace functionality has been removed");
+    return undefined;
   }
   
   async deleteProduct(id: number): Promise<boolean> {
-    try {
-      const product = await this.getProduct(id);
-      return !!product;
-    } catch (error) {
-      console.error("Error in deleteProduct:", error);
-      return false;
-    }
+    console.log("deleteProduct called, but marketplace functionality has been removed");
+    return false;
   }
   
   // Product Question Mapping methods
