@@ -329,4 +329,148 @@ router.delete('/by-product/:productId', async (req: Request, res: Response) => {
   }
 });
 
+// Delete a specific mapping by ID (for more granular control)
+router.delete('/:mappingId', async (req: Request, res: Response) => {
+  try {
+    const mappingId = parseInt(req.params.mappingId);
+    
+    // Get mapping details before deletion for the response
+    const getMappingQuery = `
+      SELECT 
+        pqm.id, pqm.product_id, pqm.question_id, pqm.group_id,
+        dm.name as product_name,
+        q.question_text,
+        g.name as group_name
+      FROM product_question_mappings pqm
+      JOIN device_models dm ON pqm.product_id = dm.id
+      JOIN questions q ON pqm.question_id = q.id
+      JOIN question_groups g ON pqm.group_id = g.id
+      WHERE pqm.id = $1
+    `;
+    
+    const mappingResult = await pool.query(getMappingQuery, [mappingId]);
+    
+    if (mappingResult.rows.length === 0) {
+      return res.status(404).json({ 
+        message: 'Mapping not found' 
+      });
+    }
+    
+    const mappingDetails = mappingResult.rows[0];
+    
+    // Delete the mapping
+    const deleteQuery = `
+      DELETE FROM product_question_mappings
+      WHERE id = $1
+    `;
+    
+    await pool.query(deleteQuery, [mappingId]);
+    
+    res.json({
+      message: `Successfully deleted mapping between ${mappingDetails.product_name} and "${mappingDetails.question_text}"`,
+      mappingId,
+      productId: mappingDetails.product_id,
+      productName: mappingDetails.product_name,
+      questionId: mappingDetails.question_id,
+      questionText: mappingDetails.question_text,
+      groupId: mappingDetails.group_id,
+      groupName: mappingDetails.group_name
+    });
+  } catch (error: any) {
+    console.error(`Error deleting product-question mapping ID ${req.params.mappingId}:`, error);
+    res.status(500).json({ message: error.message || 'Failed to delete product-question mapping' });
+  }
+});
+
+// Update a specific mapping (for editing impact multipliers, required status, etc.)
+router.patch('/:mappingId', async (req: Request, res: Response) => {
+  try {
+    const mappingId = parseInt(req.params.mappingId);
+    
+    const schema = z.object({
+      required: z.boolean().optional(),
+      impact_multiplier: z.number().min(0).max(10).optional(),
+      order: z.number().min(0).optional(),
+      active: z.boolean().optional()
+    });
+    
+    const validatedData = schema.parse(req.body);
+    
+    // Build update query based on provided fields
+    const updateFields = [];
+    const queryParams = [mappingId];
+    let paramIndex = 2;
+    
+    if (validatedData.required !== undefined) {
+      updateFields.push(`required = $${paramIndex++}`);
+      queryParams.push(validatedData.required);
+    }
+    
+    if (validatedData.impact_multiplier !== undefined) {
+      updateFields.push(`impact_multiplier = $${paramIndex++}`);
+      queryParams.push(validatedData.impact_multiplier);
+    }
+    
+    if (validatedData.order !== undefined) {
+      updateFields.push(`"order" = $${paramIndex++}`);
+      queryParams.push(validatedData.order);
+    }
+    
+    if (validatedData.active !== undefined) {
+      updateFields.push(`active = $${paramIndex++}`);
+      queryParams.push(validatedData.active);
+    }
+    
+    // Add updated_at timestamp
+    updateFields.push(`updated_at = NOW()`);
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: 'No fields to update provided' });
+    }
+    
+    const updateQuery = `
+      UPDATE product_question_mappings
+      SET ${updateFields.join(', ')}
+      WHERE id = $1
+      RETURNING *
+    `;
+    
+    const result = await pool.query(updateQuery, queryParams);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Mapping not found' });
+    }
+    
+    // Get mapping details with related information
+    const getMappingQuery = `
+      SELECT 
+        pqm.*, 
+        dm.name as product_name,
+        q.question_text,
+        g.name as group_name
+      FROM product_question_mappings pqm
+      JOIN device_models dm ON pqm.product_id = dm.id
+      JOIN questions q ON pqm.question_id = q.id
+      JOIN question_groups g ON pqm.group_id = g.id
+      WHERE pqm.id = $1
+    `;
+    
+    const mappingResult = await pool.query(getMappingQuery, [mappingId]);
+    const mappingDetails = mappingResult.rows[0];
+    
+    res.json({
+      message: 'Mapping updated successfully',
+      mapping: mappingDetails
+    });
+  } catch (error: any) {
+    console.error(`Error updating product-question mapping ID ${req.params.mappingId}:`, error);
+    
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ message: 'Invalid data provided', details: error.errors });
+    }
+    
+    res.status(500).json({ message: error.message || 'Failed to update product-question mapping' });
+  }
+});
+
 export default router;
