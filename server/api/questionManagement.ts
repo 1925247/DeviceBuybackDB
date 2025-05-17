@@ -75,10 +75,39 @@ export async function getQuestionGroup(req: Request, res: Response) {
     
     const questionsResult = await pool.query(questionsQuery, [id]);
     
+    // Get all answer choices for each question
+    const questions = questionsResult.rows;
+    const questionsWithChoices = [];
+    
+    for (const question of questions) {
+      const choicesQuery = `
+        SELECT 
+          id,
+          answer_text as "answerText",
+          text,
+          icon,
+          weightage,
+          impact,
+          repair_cost as "repairCost",
+          is_default as "isDefault",
+          follow_up_action as "followUpAction",
+          "order"
+        FROM answer_choices
+        WHERE question_id = $1
+        ORDER BY "order", id
+      `;
+      
+      const choicesResult = await pool.query(choicesQuery, [question.id]);
+      questionsWithChoices.push({
+        ...question,
+        answerChoices: choicesResult.rows
+      });
+    }
+    
     // Combine the results
     const group = {
       ...groupResult.rows[0],
-      questions: questionsResult.rows
+      questions: questionsWithChoices
     };
     
     res.json(group);
