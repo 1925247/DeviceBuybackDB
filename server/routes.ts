@@ -27,6 +27,7 @@ import questionGroupsRoutes from "./api/questionGroups";
 import questionsRoutes from "./api/questions";
 import productQuestionMappingsRoutes from "./api/productQuestionMappings";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes";
+import productsRoutes from "./api/products";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
@@ -42,6 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/questions', questionsRoutes);
   app.use('/api/product-question-mappings', productQuestionMappingsRoutes);
   app.use('/api/brand-device-types', brandDeviceTypesRoutes);
+  app.use('/api/products', productsRoutes);
   
   // Feature toggles API routes
   try {
