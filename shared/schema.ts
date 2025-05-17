@@ -484,23 +484,7 @@ export const answerChoices = pgTable("answer_choices", {
 });
 
 // Products table
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  slug: text("slug").unique().notNull(),
-  sku: text("sku").unique(),
-  price: real("price"),
-  compareAtPrice: real("compare_at_price"),
-  cost: real("cost"),
-  device_model_id: integer("device_model_id").references(() => deviceModels.id),
-  condition: text("condition"),
-  status: productStatusEnum("status").default("active"),
-  featured: boolean("featured").default(false),
-  inventoryCount: integer("inventory_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Product table has been removed
 
 // Product Question Mappings
 export const productQuestionMappings = pgTable("product_question_mappings", {
