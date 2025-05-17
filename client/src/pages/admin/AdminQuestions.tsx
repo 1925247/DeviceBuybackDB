@@ -297,7 +297,7 @@ export default function AdminQuestions() {
     e.preventDefault();
     
     // Validate form data
-    if (formData.questionType !== 'text' && formData.questionType !== 'number' && 
+    if ((formData.questionType === 'single_choice' || formData.questionType === 'multiple_choice') && 
         (!formData.answerChoices || formData.answerChoices.length < 2)) {
       toast({
         title: "Validation Error",
