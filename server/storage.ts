@@ -565,23 +565,19 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
 
-  async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db.insert(orders).values(order).returning();
-    return newOrder;
+  async createOrder(order: any): Promise<any> {
+    console.warn("createOrder called but marketplace functionality has been removed");
+    throw new Error("Marketplace functionality has been removed");
   }
 
-  async updateOrder(id: number, orderData: Partial<InsertOrder>): Promise<Order | undefined> {
-    const [updatedOrder] = await db
-      .update(orders)
-      .set({ ...orderData, updated_at: new Date() })
-      .where(eq(orders.id, id))
-      .returning();
-    return updatedOrder;
+  async updateOrder(id: number, orderData: any): Promise<any> {
+    console.warn("updateOrder called but marketplace functionality has been removed");
+    throw new Error("Marketplace functionality has been removed");
   }
 
   async deleteOrder(id: number): Promise<boolean> {
-    const result = await db.delete(orders).where(eq(orders.id, id));
-    return !!result;
+    console.warn("deleteOrder called but marketplace functionality has been removed");
+    return false;
   }
 
   // Reference data operations
