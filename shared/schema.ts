@@ -481,39 +481,7 @@ export const answerChoices = pgTable("answer_choices", {
 // Products table
 // Product table has been removed
 
-// Product Question Mappings - Modified to remove products dependency
-export const productQuestionMappings = pgTable("product_question_mappings", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id").notNull(), // Removed reference to products table
-  questionId: integer("question_id").references(() => questions.id),
-  groupId: integer("group_id").references(() => questionGroups.id),
-  required: boolean("required").default(true),
-  active: boolean("active").default(true),
-  order: integer("order").default(0),
-  overrides: jsonb("overrides"), // Override default weightages or repair costs
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Product types have been removed - create placeholder interfaces to prevent errors
-export interface Product {
-  id: number;
-  title: string;
-  description?: string;
-  slug: string;
-  [key: string]: any;
-}
-
-export interface InsertProduct {
-  title: string;
-  slug: string;
-  [key: string]: any;
-}
-
-export const insertProductSchema = z.object({
-  title: z.string().min(1),
-  slug: z.string().min(1),
-});
+// Product Question Mappings & Product types have been completely removed
 
 // Types are defined further below with the rest of the schema types
 
@@ -552,9 +520,7 @@ export const insertAnswerChoiceSchema = createInsertSchema(answerChoices);
 export type InsertAnswerChoice = z.infer<typeof insertAnswerChoiceSchema>;
 export type AnswerChoice = typeof answerChoices.$inferSelect;
 
-// Product-Question mapping types
-export type ProductQuestionMapping = typeof productQuestionMappings.$inferSelect;
-export type InsertProductQuestionMapping = typeof productQuestionMappings.$inferInsert;
+// Product-Question mapping types removed
 
 // Legacy schemas
 export const insertConditionQuestionSchema = createInsertSchema(conditionQuestions);

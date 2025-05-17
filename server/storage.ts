@@ -18,7 +18,6 @@ import {
   questionGroups, type QuestionGroup, type InsertQuestionGroup,
   questions, type Question, type InsertQuestion,
   answerChoices, type AnswerChoice, type InsertAnswerChoice,
-  productQuestionMappings, type ProductQuestionMapping, type InsertProductQuestionMapping,
   // Legacy condition questions
   conditionQuestions, conditionAnswers,
   // Indian database tables
@@ -1535,19 +1534,24 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
   
+  // Question mapping methods - replaced with compatibility stubs since marketplace tables were removed
   async getProductQuestionMappings(productId?: number): Promise<any[]> {
+    console.log("getProductQuestionMappings called but product tables have been removed");
     return [];
   }
   
   async createProductQuestionMapping(mapping: any): Promise<any> {
+    console.log("createProductQuestionMapping called but product tables have been removed");
     return { id: 0, ...mapping };
   }
   
   async copyProductQuestionMappings(sourceProductId: number, targetProductId: number): Promise<boolean> {
+    console.log("copyProductQuestionMappings called but product tables have been removed");
     return true;
   }
   
   async getProductVariants(productId: number): Promise<any[]> {
+    console.log("getProductVariants called but product tables have been removed");
     return [];
   }
 
