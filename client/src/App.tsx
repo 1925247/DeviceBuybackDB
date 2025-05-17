@@ -52,7 +52,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 
 // Lazy loaded admin components
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminDevices = lazy(() => import("./pages/admin/AdminDevices"));
+
 const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypesFixed"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
@@ -499,7 +499,7 @@ function App() {
                   } />
                   <Route path="devices" element={
                     <Suspense fallback={<LoadingSpinner />}>
-                      <AdminDevices />
+                      <AdminDashboard />
                     </Suspense>
                   } />
 
@@ -586,7 +586,7 @@ function App() {
                   />
                   <Route path="revolutionary" element={
                     <Suspense fallback={<LoadingSpinner />}>
-                      <AdminDevices />
+                      <AdminDashboard />
                     </Suspense>
                   } />
                   <Route path="analytics" element={
