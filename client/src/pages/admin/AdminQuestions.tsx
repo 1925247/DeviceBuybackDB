@@ -206,27 +206,42 @@ export default function AdminQuestions() {
   };
 
   // Handle edit button click
-  const handleEditClick = (question: Question & { answerChoices: AnswerChoice[] }) => {
+  const handleEditClick = (question: Question) => {
     setCurrentQuestion(question);
-    setFormData({
-      questionText: question.questionText,
-      questionType: question.questionType as "single_choice" | "multiple_choice" | "text" | "number",
-      groupId: Number(groupId),
-      order: question.order ?? 0,
-      active: question.active ?? true,
-      tooltip: question.tooltip || "",
-      required: question.required ?? true,
-      answerChoices: question.answerChoices.map(choice => ({
-        id: choice.id,
-        answerText: choice.answerText,
-        icon: choice.icon || "",
-        weightage: choice.weightage ?? 0,
-        repairCost: choice.repairCost ?? 0,
-        isDefault: choice.isDefault ?? false,
-        followUpAction: typeof choice.followUpAction === 'string' ? choice.followUpAction : null
-      }))
-    });
-    setIsEditDialogOpen(true);
+    
+    // First fetch the complete question data with answer choices
+    apiRequest("GET", `/api/questions/${question.id}`)
+      .then(response => response.json())
+      .then(data => {
+        // Now set the form data with the complete question data
+        setFormData({
+          questionText: data.questionText,
+          questionType: data.questionType as "single_choice" | "multiple_choice" | "text" | "number",
+          groupId: Number(groupId),
+          order: data.order ?? 0,
+          active: data.active ?? true,
+          tooltip: data.tooltip || "",
+          required: data.required ?? true,
+          answerChoices: (data.answerChoices || []).map((choice: any) => ({
+            id: choice.id,
+            answerText: choice.answerText,
+            icon: choice.icon || "",
+            weightage: choice.weightage ?? 0,
+            repairCost: choice.repairCost ?? 0,
+            isDefault: choice.isDefault ?? false,
+            followUpAction: typeof choice.followUpAction === 'string' ? choice.followUpAction : null
+          }))
+        });
+        setIsEditDialogOpen(true);
+      })
+      .catch(error => {
+        console.error("Error fetching question details:", error);
+        toast({
+          title: "Error",
+          description: "Could not load question details",
+          variant: "destructive",
+        });
+      });
   };
 
   // Handle delete button click
