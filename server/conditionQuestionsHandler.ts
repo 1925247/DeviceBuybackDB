@@ -128,7 +128,7 @@ export async function getConditionQuestions(req: Request, res: Response) {
     // Since products have been removed, we'll fetch questions directly based on the device model
     // Using the model ID as our reference point
     
-    // Get the mapped questions for this product
+    // Get default questions for this device model (since products table has been removed)
     try {
       const mappedQuestionsResult = await pool.query(`
         SELECT 
@@ -141,17 +141,14 @@ export async function getConditionQuestions(req: Request, res: Response) {
           a.text as option_text,
           a.answer_text,
           a.value
-        FROM product_question_mappings pqm
-        JOIN questions q ON pqm.question_id = q.id
-        JOIN products p ON pqm.product_id = p.id
-        JOIN device_models dm ON p.device_model_id = dm.id
+        FROM questions q
+        JOIN device_models dm ON dm.id = $1
         LEFT JOIN answer_choices a ON q.id = a.question_id
-        WHERE pqm.product_id = $1
         ORDER BY q.order, a.order
-      `, [productId]);
+      `, [modelId]);
       
       if (mappedQuestionsResult.rows.length > 0) {
-        console.log(`Found ${mappedQuestionsResult.rows.length} question records for product ID: ${productId}`);
+        console.log(`Found ${mappedQuestionsResult.rows.length} question records for device model ID: ${modelId}`);
         
         // Format questions and answer choices
         const questionsMap = new Map();
@@ -182,7 +179,7 @@ export async function getConditionQuestions(req: Request, res: Response) {
         questionsData = Array.from(questionsMap.values());
         console.log(`Returning ${questionsData.length} formatted questions`);
       } else {
-        console.log(`No mapped questions found for product ID: ${productId}`);
+        console.log(`No mapped questions found for device model ID: ${modelId}`);
       }
     } catch (error) {
       console.error("Error fetching mapped questions:", error);
