@@ -30,10 +30,11 @@ import {
   partnerServiceAreas, type PartnerServiceArea, type InsertPartnerServiceArea,
   tenantConfigurations, type TenantConfiguration, type InsertTenantConfiguration,
   tenantCustomizations, type TenantCustomization, type InsertTenantCustomization,
+  // Buyback functionality
+  buybackRequests, type BuybackRequest, type InsertBuybackRequest,
   // Stub types for removed functionality
   type Device, type InsertDevice,
   type DeviceImage, type InsertDeviceImage,
-  type BuybackRequest, type InsertBuybackRequest,
   type InvoiceTemplate, type InsertInvoiceTemplate,
   type DeviceTypeInterface as DeviceType, 
   type Region, type Brand, type DeviceModel,
