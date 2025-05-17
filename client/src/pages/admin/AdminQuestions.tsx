@@ -688,7 +688,7 @@ export default function AdminQuestions() {
                     {(question.questionType === "single_choice" ||
                       question.questionType === "multiple_choice") && (
                       <div className="grid gap-2 mt-3">
-                        {(question.answer_choices || [])
+                        {(question.answerChoices || [])
                           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                           .map((choice, idx) => (
                             <Card
@@ -846,7 +846,7 @@ export default function AdminQuestions() {
                   </div>
 
                   <div className="grid gap-6">
-                    {formData.answer_choices.map((choice, index) => (
+                    {formData.answerChoices.map((choice, index) => (
                       <div
                         key={index}
                         className="rounded-md border p-4 relative"
