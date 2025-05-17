@@ -601,7 +601,7 @@ export default function AdminQuestions() {
                     {(question.questionType === "single_choice" ||
                       question.questionType === "multiple_choice") && (
                       <div className="grid gap-2 mt-3">
-                        {(question.answerChoices || [])
+                        {((question.answerChoices || question.answer_choices || []) as any[])
                           .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
                           .map((choice: any, idx: number) => (
                             <Card
@@ -624,9 +624,9 @@ export default function AdminQuestions() {
                                   </div>
                                   <div className="ml-3 text-sm text-gray-500">
                                     <span className="mr-2">
-                                      W: {choice.weightage ?? 0}
+                                      W: {choice.weightage ?? choice.impact ?? 0}
                                     </span>
-                                    <span>R: ${choice.repairCost ?? 0}</span>
+                                    <span>R: ${choice.repairCost ?? choice.repair_cost ?? 0}</span>
                                   </div>
                                 </div>
                               </CardContent>
