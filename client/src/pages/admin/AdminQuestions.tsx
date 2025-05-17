@@ -510,7 +510,7 @@ export default function AdminQuestions() {
         {choice.icon && (
           <span className="mr-2 text-gray-500">[Icon: {choice.icon}]</span>
         )}
-        <span>{choice.answerText}</span>
+        <span>{choice.answerText || "No answer text"}</span>
         {choice.isDefault && (
           <Badge variant="outline" className="ml-2 bg-blue-50">
             Default
@@ -598,8 +598,7 @@ export default function AdminQuestions() {
                           ? "Single Choice"
                           : question.questionType === "multiple_choice"
                             ? "Multiple Choice"
-                            : question.questionType === "text" ||
-                                question.questionType === "text_input"
+                            : (question.questionType === "text" || question.questionType === "text_input")
                               ? "Text Input"
                               : "Number Input"}
                       </Badge>
@@ -665,7 +664,7 @@ export default function AdminQuestions() {
 
           <Accordion type="single" collapsible className="w-full">
             {groupData.questions
-              .sort((a, b) => a.order - b.order)
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
               .map((question) => (
                 <AccordionItem
                   key={question.id}
@@ -714,19 +713,12 @@ export default function AdminQuestions() {
                                   <div className="flex-1">
                                     {renderChoicePreview(choice)}
                                   </div>
-                                  {(choice.weightage > 0 ||
-                                    choice.repairCost > 0) && (
-                                    <div className="ml-3 text-sm text-gray-500">
-                                      {choice.weightage > 0 && (
-                                        <span className="mr-2">
-                                          W: {choice.weightage}
-                                        </span>
-                                      )}
-                                      {choice.repairCost > 0 && (
-                                        <span>R: ${choice.repairCost}</span>
-                                      )}
-                                    </div>
-                                  )}
+                                  <div className="ml-3 text-sm text-gray-500">
+                                    <span className="mr-2">
+                                      W: {choice.weightage ?? 0}
+                                    </span>
+                                    <span>R: ${choice.repairCost ?? 0}</span>
+                                  </div>
                                 </div>
                               </CardContent>
                             </Card>
