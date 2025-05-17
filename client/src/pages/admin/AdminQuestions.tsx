@@ -425,8 +425,8 @@ export default function AdminQuestions() {
         {choice.icon && (
           <span className="mr-2 text-gray-500">[Icon: {choice.icon}]</span>
         )}
-        <span>{choice.answerText || "No answer text"}</span>
-        {choice.isDefault && (
+        <span>{choice.answerText || choice.text || choice.answer_text || "No answer text"}</span>
+        {(choice.isDefault || choice.is_default) && (
           <Badge variant="outline" className="ml-2 bg-blue-50">
             Default
           </Badge>
@@ -606,17 +606,17 @@ export default function AdminQuestions() {
                           .map((choice: any, idx: number) => (
                             <Card
                               key={idx}
-                              className={`${choice.isDefault ? "border-blue-300 bg-blue-50" : ""}`}
+                              className={`${(choice.isDefault || choice.is_default) ? "border-blue-300 bg-blue-50" : ""}`}
                             >
                               <CardContent className="p-3">
                                 <div className="flex items-center">
                                   {question.questionType === "single_choice" ? (
                                     <div
-                                      className={`w-4 h-4 rounded-full border mr-3 flex-shrink-0 ${choice.isDefault ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
+                                      className={`w-4 h-4 rounded-full border mr-3 flex-shrink-0 ${(choice.isDefault || choice.is_default) ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
                                     />
                                   ) : (
                                     <div
-                                      className={`w-4 h-4 rounded border mr-3 flex-shrink-0 ${choice.isDefault ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
+                                      className={`w-4 h-4 rounded border mr-3 flex-shrink-0 ${(choice.isDefault || choice.is_default) ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}
                                     />
                                   )}
                                   <div className="flex-1">
