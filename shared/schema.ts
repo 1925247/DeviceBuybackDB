@@ -522,6 +522,107 @@ export type AnswerChoice = typeof answerChoices.$inferSelect;
 
 // Product-Question mapping types removed
 
+// Stub interfaces for backward compatibility
+export interface Product {
+  id: number;
+  [key: string]: any;
+}
+
+export interface InsertProduct {
+  [key: string]: any;
+}
+
+export interface ProductQuestionMapping {
+  id: number;
+  productId: number;
+  questionId: number;
+  [key: string]: any;
+}
+
+export interface InsertProductQuestionMapping {
+  productId: number;
+  questionId: number;
+  [key: string]: any;
+}
+
+// Additional stub types for removed tables
+export interface Device {
+  id: number;
+  [key: string]: any;
+}
+
+export interface InsertDevice {
+  [key: string]: any;
+}
+
+export interface DeviceImage {
+  id: number;
+  deviceId: number;
+  url: string;
+  [key: string]: any;
+}
+
+export interface InsertDeviceImage {
+  deviceId: number;
+  url: string;
+  [key: string]: any;
+}
+
+export interface BuybackRequest {
+  id: number;
+  userId: number;
+  [key: string]: any;
+}
+
+export interface InsertBuybackRequest {
+  userId: number;
+  [key: string]: any;
+}
+
+// Invoice related stub types
+export interface InvoiceTemplate {
+  id: number;
+  name: string;
+  [key: string]: any;
+}
+
+export interface InsertInvoiceTemplate {
+  name: string;
+  [key: string]: any;
+}
+
+// More stub interfaces to fix errors
+export interface Region {
+  id: number;
+  name: string;
+  code: string;
+  [key: string]: any;
+}
+
+// Using type alias to avoid duplicate definition
+export type DeviceTypeInterface = {
+  id: number;
+  name: string;
+  slug: string;
+  [key: string]: any;
+};
+
+export interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  [key: string]: any;
+}
+
+export interface DeviceModel {
+  id: number;
+  name: string;
+  slug: string;
+  brand_id: number;
+  device_type_id: number;
+  [key: string]: any;
+}
+
 // Legacy schemas
 export const insertConditionQuestionSchema = createInsertSchema(conditionQuestions);
 export type InsertConditionQuestion = z.infer<typeof insertConditionQuestionSchema>;

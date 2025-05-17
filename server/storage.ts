@@ -295,98 +295,83 @@ export class DatabaseStorage implements IStorage {
     return !!result;
   }
 
-  // Device operations
+  // Device operations - replaced with stubs since marketplace functionality has been removed
   async getDevice(id: number): Promise<Device | undefined> {
-    const [device] = await db.select().from(devices).where(eq(devices.id, id));
-    return device;
+    console.log("getDevice called but device tables have been removed");
+    return { 
+      id: id, 
+      name: "Stub Device", 
+      status: "unavailable",
+      price: "0.00"
+    };
   }
 
   async getDevices(page: number = 1, limit: number = 10, status?: string): Promise<Device[]> {
-    const offset = (page - 1) * limit;
-    const baseQuery = db.select().from(devices).limit(limit).offset(offset).orderBy(desc(devices.listed_date));
-    
-    if (status) {
-      return baseQuery.where(eq(devices.status, status));
-    }
-    
-    return baseQuery;
+    console.log("getDevices called but device tables have been removed");
+    return [];
   }
 
   async getDevicesBySeller(sellerId: number): Promise<Device[]> {
-    return db.select().from(devices).where(eq(devices.seller_id, sellerId));
+    console.log("getDevicesBySeller called but device tables have been removed");
+    return [];
   }
   
   async getDevicesCount(): Promise<number> {
-    const result = await db.select({ count: count() }).from(devices);
-    return Number(result[0].count);
+    console.log("getDevicesCount called but device tables have been removed");
+    return 0;
   }
 
   async createDevice(device: InsertDevice): Promise<Device> {
-    // Convert numeric price to string format as expected by the database
-    const deviceToInsert = {
-      ...device,
-      price: typeof device.price === 'number' ? 
-        device.price.toString() : device.price
+    console.log("createDevice called but device tables have been removed");
+    return {
+      id: 0,
+      name: "Stub Device",
+      status: "unavailable",
+      price: "0.00",
+      ...device
     };
-    
-    const [newDevice] = await db.insert(devices).values([deviceToInsert]).returning();
-    return newDevice;
   }
 
   async updateDevice(id: number, deviceData: Partial<InsertDevice>): Promise<Device | undefined> {
-    // Convert numeric price to string format as expected by the database
-    const dataToUpdate: any = {
-      ...deviceData,
-      updated_at: new Date()
+    console.log("updateDevice called but device tables have been removed");
+    return {
+      id: id,
+      name: "Stub Device",
+      status: "unavailable",
+      price: "0.00",
+      updatedAt: new Date()
     };
-    
-    if (deviceData.price !== undefined && typeof deviceData.price === 'number') {
-      dataToUpdate.price = deviceData.price.toString();
-    }
-    
-    const [updatedDevice] = await db
-      .update(devices)
-      .set(dataToUpdate)
-      .where(eq(devices.id, id))
-      .returning();
-    return updatedDevice;
   }
 
   async deleteDevice(id: number): Promise<boolean> {
-    const result = await db.delete(devices).where(eq(devices.id, id));
-    return !!result;
+    console.log("deleteDevice called but device tables have been removed");
+    return true;
   }
 
-  // Device image operations
+  // Device image operations - replaced with stubs as marketplace functionality has been removed
   async getDeviceImages(deviceId: number): Promise<DeviceImage[]> {
-    return db.select().from(deviceImages).where(eq(deviceImages.device_id, deviceId));
+    console.log("getDeviceImages called but device tables have been removed");
+    return [];
   }
 
   async createDeviceImage(image: InsertDeviceImage): Promise<DeviceImage> {
-    const [newImage] = await db.insert(deviceImages).values(image).returning();
-    return newImage;
+    console.log("createDeviceImage called but device tables have been removed");
+    return {
+      id: 0,
+      deviceId: image.deviceId,
+      url: image.url || "",
+      is_primary: false
+    };
   }
 
   async setDevicePrimaryImage(deviceId: number, imageId: number): Promise<boolean> {
-    // First, set all images for this device to non-primary
-    await db
-      .update(deviceImages)
-      .set({ is_primary: false })
-      .where(eq(deviceImages.device_id, deviceId));
-    
-    // Then set the specified image as primary
-    const [updatedImage] = await db
-      .update(deviceImages)
-      .set({ is_primary: true })
-      .where(and(eq(deviceImages.id, imageId), eq(deviceImages.device_id, deviceId)))
-      .returning();
-    
-    return !!updatedImage;
+    console.log("setDevicePrimaryImage called but device tables have been removed");
+    return true;
   }
 
   async deleteDeviceImage(id: number): Promise<boolean> {
-    const result = await db.delete(deviceImages).where(eq(deviceImages.id, id));
-    return !!result;
+    console.log("deleteDeviceImage called but device tables have been removed");
+    return true;
   }
 
   // Buyback operations
