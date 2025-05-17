@@ -1512,49 +1512,44 @@ export class DatabaseStorage implements IStorage {
     return this.getSettings();
   }
 
-  // E-COMMERCE OPERATIONS
-
-  // Product operations
-  // Product-related methods have been removed
+  // MARKETPLACE FUNCTIONALITY REMOVED
   
-  // Placeholder for compatibility - returns empty array
+  // Placeholders for compatibility - all return empty arrays or null
   async getProducts(): Promise<Product[]> {
     return [];
-          slug: "samsung-galaxy-s21",
-          sku: "SG21-001",
-          price: 599.99,
-          compareAtPrice: 799.99,
-          cost: 400,
-          device_model_id: 2,
-          condition: "Good",
-          status: "active",
-          featured: false,
-          inventoryCount: 5,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: 3,
-          title: "Macbook Pro 13\"",
-          description: "Refurbished Macbook Pro 13\" in excellent condition",
-          slug: "macbook-pro-13",
-          sku: "MP13-001",
-          price: 1299.99,
-          compareAtPrice: 1599.99,
-          cost: 900,
-          device_model_id: 3,
-          condition: "Excellent",
-          status: "active",
-          featured: true,
-          inventoryCount: 3,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-    } catch (error) {
-      console.error("Error in getProducts:", error);
-      return [];
-    }
+  }
+  
+  async getProduct(id: number): Promise<Product | undefined> {
+    return undefined;
+  }
+  
+  async createProduct(product: InsertProduct): Promise<Product> {
+    return { id: 0, title: '', slug: '' } as Product;
+  }
+  
+  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
+    return undefined;
+  }
+  
+  async deleteProduct(id: number): Promise<boolean> {
+    return true;
+  }
+  
+  async getProductQuestionMappings(productId?: number): Promise<any[]> {
+    return [];
+  }
+  
+  async createProductQuestionMapping(mapping: any): Promise<any> {
+    return { id: 0, ...mapping };
+  }
+  
+  async copyProductQuestionMappings(sourceProductId: number, targetProductId: number): Promise<boolean> {
+    return true;
+  }
+  
+  async getProductVariants(productId: number): Promise<any[]> {
+    return [];
+  }
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
