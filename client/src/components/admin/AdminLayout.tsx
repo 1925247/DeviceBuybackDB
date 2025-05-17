@@ -475,17 +475,7 @@ const AdminLayout: React.FC = () => {
                   Settings
                 </h3>
                 <nav className="mt-2 space-y-1">
-                  <Link
-                    to="/admin/marketplace-settings"
-                    className={`flex items-center px-4 py-2 text-sm rounded-lg ${
-                      isActive("/admin/marketplace-settings")
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <ShoppingBag className="w-5 h-5 mr-3" />
-                    <span>Marketplace Settings</span>
-                  </Link>
+
 
                   <Link
                     to="/admin/settings"

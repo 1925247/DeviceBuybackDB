@@ -90,7 +90,7 @@ import StaffManagementDemo from "./pages/partner/StaffManagementDemo";
 // E-commerce Admin Pages - Lazy loaded
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
-const AdminMarketplaceSettings = lazy(() => import("./pages/admin/AdminMarketplaceSettings"));
+
 
 // LoadingSpinner already imported above
 
@@ -552,22 +552,7 @@ function App() {
                       <AdminCategories />
                     </Suspense>
                   } />
-                  <Route
-                    path="marketplace"
-                    element={
-                      <Suspense fallback={<LoadingSpinner />}>
-                        <AdminMarketplaceSettings />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="marketplace-settings"
-                    element={
-                      <Suspense fallback={<LoadingSpinner />}>
-                        <AdminMarketplaceSettings />
-                      </Suspense>
-                    }
-                  />
+
                   <Route path="orders" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminOrders />
@@ -587,7 +572,7 @@ function App() {
                     path="shipping"
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <AdminMarketplaceSettings />
+                        <AdminDashboard />
                       </Suspense>
                     }
                   />
@@ -595,7 +580,7 @@ function App() {
                     path="payments"
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <AdminMarketplaceSettings />
+                        <AdminDashboard />
                       </Suspense>
                     }
                   />

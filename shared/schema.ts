@@ -439,25 +439,7 @@ export const kycDocuments = pgTable("kyc_documents", {
   uniqueDocumentPerUser: unique().on(table.userId, table.documentTypeId),
 }));
 
-// Device Valuations for Buyback System
-export const valuations = pgTable("valuations", {
-  id: serial("id").primaryKey(),
-  deviceModelId: integer("device_model_id").notNull().references(() => deviceModels.id),
-  brandId: integer("brand_id").notNull().references(() => brands.id),
-  basePrice: real("base_price").notNull(),
-  conditionMultipliers: jsonb("condition_multipliers").notNull(), // JSON with condition keys and multiplier values
-  regionId: integer("region_id").references(() => regions.id),
-  lastUpdatedBy: integer("last_updated_by").references(() => users.id),
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => ({
-  uniqueModelBrandRegion: unique().on(table.deviceModelId, table.brandId, table.regionId || "null"),
-}));
 
-export const insertValuationSchema = createInsertSchema(valuations);
-export type InsertValuation = z.infer<typeof insertValuationSchema>;
-export type Valuation = typeof valuations.$inferSelect;
 
 // Condition Questions and Answers
 // Question Groups for organizing related questions
