@@ -189,7 +189,7 @@ export default function AdminQuestions() {
     if (groupData?.questions && groupData.questions.length > 0) {
       setFormData(prev => ({
         ...prev,
-        order: Math.max(...groupData.questions.map(q => q.order)) + 1
+        order: Math.max(...groupData.questions.map(q => q.order ?? 0)) + 1
       }));
     }
     
@@ -210,20 +210,20 @@ export default function AdminQuestions() {
     setCurrentQuestion(question);
     setFormData({
       questionText: question.questionText,
-      questionType: question.questionType as any,
+      questionType: question.questionType as "single_choice" | "multiple_choice" | "text" | "number",
       groupId: Number(groupId),
-      order: question.order,
-      active: question.active,
+      order: question.order ?? 0,
+      active: question.active ?? true,
       tooltip: question.tooltip || "",
-      required: question.required,
+      required: question.required ?? true,
       answerChoices: question.answerChoices.map(choice => ({
         id: choice.id,
         answerText: choice.answerText,
         icon: choice.icon || "",
-        weightage: choice.weightage,
-        repairCost: choice.repairCost || 0,
-        isDefault: choice.isDefault,
-        followUpAction: choice.followUpAction
+        weightage: choice.weightage ?? 0,
+        repairCost: choice.repairCost ?? 0,
+        isDefault: choice.isDefault ?? false,
+        followUpAction: choice.followUpAction || null
       }))
     });
     setIsEditDialogOpen(true);
@@ -461,7 +461,7 @@ export default function AdminQuestions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {groupData.questions.sort((a, b) => a.order - b.order).map((question) => (
+              {groupData.questions.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((question) => (
                 <TableRow key={question.id}>
                   <TableCell className="text-center font-medium">
                     {question.order}
@@ -480,7 +480,7 @@ export default function AdminQuestions() {
                             "outline"}>
                       {question.questionType === 'single_choice' ? 'Single Choice' : 
                        question.questionType === 'multiple_choice' ? 'Multiple Choice' : 
-                       question.questionType === 'text' ? 'Text Input' : 'Number Input'}
+                       question.questionType === 'text' || question.questionType === 'text_input' ? 'Text Input' : 'Number Input'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
@@ -618,6 +618,7 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Question</DialogTitle>
+            <DialogDescription>Create a new question for this group</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubmit}>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -844,6 +845,7 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
+            <DialogDescription>Update this question's properties</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit}>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -1070,6 +1072,7 @@ export default function AdminQuestions() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Question</DialogTitle>
+            <DialogDescription>Are you sure you want to delete this question?</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-500">
