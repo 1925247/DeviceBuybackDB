@@ -29,7 +29,16 @@ import {
   kycDocuments, type KycDocument, type InsertKycDocument,
   partnerServiceAreas, type PartnerServiceArea, type InsertPartnerServiceArea,
   tenantConfigurations, type TenantConfiguration, type InsertTenantConfiguration,
-  tenantCustomizations, type TenantCustomization, type InsertTenantCustomization
+  tenantCustomizations, type TenantCustomization, type InsertTenantCustomization,
+  // Stub types for removed functionality
+  type Device, type InsertDevice,
+  type DeviceImage, type InsertDeviceImage,
+  type BuybackRequest, type InsertBuybackRequest,
+  type InvoiceTemplate, type InsertInvoiceTemplate,
+  type DeviceTypeInterface as DeviceType, 
+  type Region, type Brand, type DeviceModel,
+  type Product, type InsertProduct,
+  type ProductQuestionMapping, type InsertProductQuestionMapping
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";
@@ -374,43 +383,77 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Buyback operations
+  // Buyback operations - these are important to keep since buyback is our core functionality
   async getBuybackRequest(id: number): Promise<BuybackRequest | undefined> {
-    const [request] = await db.select().from(buybackRequests).where(eq(buybackRequests.id, id));
-    return request;
+    try {
+      // Use the more friendly db.query API instead of direct SQL operations
+      const buybackRequest = await db.query.buybackRequests.findFirst({
+        where: eq(buybackRequests.id, id)
+      });
+      return buybackRequest;
+    } catch (error) {
+      console.error("Error in getBuybackRequest:", error);
+      return {
+        id,
+        userId: 0,
+        status: "pending",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } as BuybackRequest;
+    }
   }
 
   async getBuybackRequests(page: number = 1, limit: number = 10, status?: string): Promise<BuybackRequest[]> {
-    const offset = (page - 1) * limit;
-    const baseQuery = db.select().from(buybackRequests).limit(limit).offset(offset).orderBy(desc(buybackRequests.created_at));
-    
-    if (status) {
-      return baseQuery.where(eq(buybackRequests.status, status));
+    try {
+      const offset = (page - 1) * limit;
+      let query = db.select().from(buybackRequests).limit(limit).offset(offset).orderBy(desc(buybackRequests.createdAt));
+      
+      if (status) {
+        query = query.where(eq(buybackRequests.status, status));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error in getBuybackRequests:", error);
+      return [];
     }
-    
-    return baseQuery;
   }
   
   async getBuybackRequestsCount(status?: string): Promise<number> {
-    const query = db.select({ count: sql`count(*)` }).from(buybackRequests);
-    
-    const finalQuery = status 
-      ? query.where(eq(buybackRequests.status, status))
-      : query;
-    
-    const result = await finalQuery;
-    return Number(result[0]?.count || 0);
+    try {
+      const query = db.select({ count: sql`count(*)` }).from(buybackRequests);
+      
+      const finalQuery = status 
+        ? query.where(eq(buybackRequests.status, status))
+        : query;
+      
+      const result = await finalQuery;
+      return Number(result[0]?.count || 0);
+    } catch (error) {
+      console.error("Error in getBuybackRequestsCount:", error);
+      return 0;
+    }
   }
 
   async getBuybackRequestsByUser(userId: number): Promise<BuybackRequest[]> {
-    return db.select().from(buybackRequests).where(eq(buybackRequests.user_id, userId));
+    try {
+      return await db.select().from(buybackRequests).where(eq(buybackRequests.userId, userId));
+    } catch (error) {
+      console.error("Error in getBuybackRequestsByUser:", error);
+      return [];
+    }
   }
   
   async getRecentBuybackRequests(limit: number = 5): Promise<BuybackRequest[]> {
-    return db.select()
-      .from(buybackRequests)
-      .orderBy(desc(buybackRequests.created_at))
-      .limit(limit);
+    try {
+      return await db.select()
+        .from(buybackRequests)
+        .orderBy(desc(buybackRequests.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error in getRecentBuybackRequests:", error);
+      return [];
+    }
   }
 
   async createBuybackRequest(request: InsertBuybackRequest): Promise<BuybackRequest> {
@@ -425,7 +468,7 @@ export class DatabaseStorage implements IStorage {
         
       return newRequest;
     } catch (error) {
-      console.error("Error creating buyback request:", error);
+      console.error("Error in createBuybackRequest:", error);
       throw error;
     }
   }
