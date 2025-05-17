@@ -23,6 +23,9 @@ import { featureToggleRouter } from "./api/featureToggleApi";
 import deviceModelsRoutes from "./api/deviceModels";
 import brandsRoutes from "./api/brands";
 import deviceTypesRoutes from "./api/deviceTypes";
+import questionGroupsRoutes from "./api/questionGroups";
+import questionsRoutes from "./api/questions";
+import productQuestionMappingsRoutes from "./api/productQuestionMappings";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API prefix
@@ -34,6 +37,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/device-models', deviceModelsRoutes);
   app.use('/api/brands', brandsRoutes);
   app.use('/api/device-types', deviceTypesRoutes);
+  app.use('/api/question-groups', questionGroupsRoutes);
+  app.use('/api/questions', questionsRoutes);
+  app.use('/api/product-question-mappings', productQuestionMappingsRoutes);
   
   // Feature toggles API routes
   try {
