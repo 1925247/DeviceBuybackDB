@@ -38,10 +38,16 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     
-    // Get the question group
+    // Get the question group with device type info
     const groupQuery = `
-      SELECT * FROM question_groups 
-      WHERE id = $1
+      SELECT 
+        qg.*,
+        qg.device_type_id as "deviceTypeId",
+        dt.name as "deviceTypeName",
+        dt.slug as "deviceTypeSlug"
+      FROM question_groups qg
+      LEFT JOIN device_types dt ON qg.device_type_id = dt.id
+      WHERE qg.id = $1
     `;
     
     const groupResult = await pool.query(groupQuery, [id]);
@@ -52,7 +58,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     
     const group = groupResult.rows[0];
     
-    // Get all questions in this group
+    // Get all questions in this group with their answer choices
     const questionsQuery = `
       SELECT q.*, 
       (
@@ -60,20 +66,24 @@ router.get('/:id', async (req: Request, res: Response) => {
           json_build_object(
             'id', ac.id,
             'questionId', ac.question_id,
-            'text', ac.text,
-            'value', ac.value,
+            'answerText', ac.answer_text,
+            'icon', ac.icon,
+            'weightage', ac.weightage,
+            'repairCost', ac.repair_cost,
+            'isDefault', ac.is_default,
             'order', ac."order",
-            'impact', ac.impact,
+            'followUpAction', ac.follow_up_action,
             'createdAt', ac.created_at,
             'updatedAt', ac.updated_at
           )
         )
         FROM answer_choices ac
         WHERE ac.question_id = q.id
+        ORDER BY ac."order"
       ) as answer_choices
       FROM questions q
       WHERE q.group_id = $1
-      ORDER BY q."order"
+      ORDER BY q."order" NULLS LAST
     `;
     
     const questionsResult = await pool.query(questionsQuery, [id]);
