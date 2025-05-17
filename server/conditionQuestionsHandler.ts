@@ -116,35 +116,17 @@ export async function getConditionQuestions(req: Request, res: Response) {
     // Standard handling for other device models
     console.log(`Fetching questions for standard device model ID: ${modelId}`);
     
-    // Product functionality has been removed
-    let productId = null;
+    // Get the model name for reference only
+    const modelResult = await pool.query(
+      `SELECT name FROM device_models WHERE id = $1`,
+      [modelId]
+    );
     
-    // Skip product lookup and proceed with model ID directly
-      const modelResult = await pool.query(
-        `SELECT name FROM device_models WHERE id = $1`,
-        [modelId]
-      );
-      
-      if (modelResult.rows.length > 0) {
-        const deviceModelName = modelResult.rows[0].name;
-        console.log(`Found model name: ${deviceModelName}, trying to find matching product`);
-        
-        const productByNameResult = await pool.query(
-          `SELECT id, title FROM products WHERE title LIKE $1`,
-          [`%${deviceModelName}%`]
-        );
-        
-        if (productByNameResult.rows.length > 0) {
-          productId = productByNameResult.rows[0].id;
-          console.log(`Found product by name: ${productByNameResult.rows[0].title} with ID: ${productId}`);
-        }
-      }
-    }
+    const deviceModelName = modelResult.rows.length > 0 ? modelResult.rows[0].name : 'Unknown model';
+    console.log(`Processing questions for model: ${deviceModelName}`);
     
-    if (!productId) {
-      console.log(`No product found for model ID: ${modelId}`);
-      return res.json([]);
-    }
+    // Since products have been removed, we'll fetch questions directly based on the device model
+    // Using the model ID as our reference point
     
     // Get the mapped questions for this product
     try {
