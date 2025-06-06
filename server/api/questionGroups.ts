@@ -4,47 +4,25 @@ import { z } from 'zod';
 
 const router = express.Router();
 
-// GET all question groups
+// GET all question groups with device type info and question counts
 router.get('/', async (req: Request, res: Response) => {
   try {
     const query = `
-      SELECT g.id, g.name, g.active, g.device_type_id, g.statement, g.icon, g.created_at, g.updated_at,
-      (
-        SELECT json_agg(
-          json_build_object(
-            'id', q.id,
-            'questionText', q.question_text,
-            'groupId', q.group_id,
-            'active', q.active,
-            'questionType', q.question_type,
-            'order', q."order",
-            'tooltip', q.tooltip,
-            'required', q.required,
-            'createdAt', q.created_at,
-            'updatedAt', q.updated_at,
-            'answerChoices', (
-              SELECT json_agg(
-                json_build_object(
-                  'id', ac.id,
-                  'questionId', ac.question_id,
-                  'text', ac.text,
-                  'value', ac.value,
-                  'order', ac."order",
-                  'impact', ac.impact,
-                  'createdAt', ac.created_at,
-                  'updatedAt', ac.updated_at
-                )
-              )
-              FROM answer_choices ac
-              WHERE ac.question_id = q.id
-            )
-          )
-        )
-        FROM questions q
-        WHERE q.group_id = g.id
-      ) as questions
-      FROM question_groups g
-      ORDER BY g.id
+      SELECT 
+        qg.id, 
+        qg.name, 
+        qg.statement, 
+        qg.device_type_id as "deviceTypeId", 
+        qg.icon,
+        qg.active,
+        qg.created_at as "createdAt",
+        qg.updated_at as "updatedAt",
+        dt.name as "deviceTypeName",
+        dt.slug as "deviceTypeSlug",
+        (SELECT COUNT(*) FROM questions q WHERE q.group_id = qg.id) as "questionCount"
+      FROM question_groups qg
+      LEFT JOIN device_types dt ON qg.device_type_id = dt.id
+      ORDER BY qg.id ASC
     `;
     
     const result = await pool.query(query);
@@ -60,53 +38,58 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     
-    const query = `
-      SELECT g.*,
-      (
-        SELECT json_agg(
-          json_build_object(
-            'id', q.id,
-            'questionText', q.question_text,
-            'groupId', q.group_id,
-            'active', q.active,
-            'questionType', q.question_type,
-            'order', q.order,
-            'tooltip', q.tooltip,
-            'required', q.required,
-            'createdAt', q.created_at,
-            'updatedAt', q.updated_at,
-            'answerChoices', (
-              SELECT json_agg(
-                json_build_object(
-                  'id', ac.id,
-                  'questionId', ac.question_id,
-                  'text', ac.text,
-                  'value', ac.value,
-                  'order', ac.order,
-                  'impactMultiplier', ac.impact_multiplier,
-                  'createdAt', ac.created_at,
-                  'updatedAt', ac.updated_at
-                )
-              )
-              FROM answer_choices ac
-              WHERE ac.question_id = q.id
-            )
-          )
-        )
-        FROM questions q
-        WHERE q.group_id = g.id
-      ) as questions
-      FROM question_groups g
-      WHERE g.id = $1
+    // Get the question group with device type info
+    const groupQuery = `
+      SELECT 
+        qg.*,
+        qg.device_type_id as "deviceTypeId",
+        dt.name as "deviceTypeName",
+        dt.slug as "deviceTypeSlug"
+      FROM question_groups qg
+      LEFT JOIN device_types dt ON qg.device_type_id = dt.id
+      WHERE qg.id = $1
     `;
     
-    const result = await pool.query(query, [id]);
+    const groupResult = await pool.query(groupQuery, [id]);
     
-    if (result.rows.length === 0) {
+    if (groupResult.rows.length === 0) {
       return res.status(404).json({ message: 'Question group not found' });
     }
     
-    res.json(result.rows[0]);
+    const group = groupResult.rows[0];
+    
+    // Get all questions in this group with their answer choices
+    const questionsQuery = `
+      SELECT q.*, 
+      (
+        SELECT json_agg(
+          json_build_object(
+            'id', ac.id,
+            'questionId', ac.question_id,
+            'answerText', ac.answer_text,
+            'icon', ac.icon,
+            'weightage', ac.weightage,
+            'repairCost', ac.repair_cost,
+            'isDefault', ac.is_default,
+            'order', ac."order",
+            'followUpAction', ac.follow_up_action,
+            'createdAt', ac.created_at,
+            'updatedAt', ac.updated_at
+          )
+        )
+        FROM answer_choices ac
+        WHERE ac.question_id = q.id
+        ORDER BY ac."order"
+      ) as answer_choices
+      FROM questions q
+      WHERE q.group_id = $1
+      ORDER BY q."order" NULLS LAST
+    `;
+    
+    const questionsResult = await pool.query(questionsQuery, [id]);
+    group.questions = questionsResult.rows;
+    
+    res.json(group);
   } catch (error: any) {
     console.error(`Error fetching question group with ID ${req.params.id}:`, error);
     res.status(500).json({ message: error.message || 'Failed to fetch question group' });
@@ -118,26 +101,29 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       name: z.string(),
-      description: z.string().optional().nullable(),
-      active: z.boolean().optional().nullable()
+      statement: z.string().optional().nullable(),
+      device_type_id: z.number().optional().nullable(),
+      active: z.boolean().optional(),
+      icon: z.string().optional().nullable()
     });
     
     const validatedData = schema.parse(req.body);
     
     const query = `
-      INSERT INTO question_groups (name, description, active, created_at, updated_at)
-      VALUES ($1, $2, $3, NOW(), NOW())
-      RETURNING id, name, description, active, created_at as "createdAt", updated_at as "updatedAt"
+      INSERT INTO question_groups (name, statement, device_type_id, active, icon, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      RETURNING *
     `;
     
     const params = [
       validatedData.name,
-      validatedData.description || null,
-      validatedData.active !== null ? validatedData.active : true
+      validatedData.statement || null,
+      validatedData.device_type_id || null,
+      validatedData.active !== undefined ? validatedData.active : true,
+      validatedData.icon || null
     ];
     
     const result = await pool.query(query, params);
-    
     res.status(201).json(result.rows[0]);
   } catch (error: any) {
     console.error('Error creating question group:', error);
@@ -152,8 +138,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     
     const schema = z.object({
       name: z.string().optional(),
-      description: z.string().optional().nullable(),
-      active: z.boolean().optional().nullable()
+      statement: z.string().optional().nullable(),
+      device_type_id: z.number().optional().nullable(),
+      active: z.boolean().optional(),
+      icon: z.string().optional().nullable()
     });
     
     const validatedData = schema.parse(req.body);
@@ -168,14 +156,24 @@ router.put('/:id', async (req: Request, res: Response) => {
       params.push(validatedData.name);
     }
     
-    if ('description' in validatedData) {
-      updates.push(`description = $${paramIndex++}`);
-      params.push(validatedData.description);
+    if ('statement' in validatedData) {
+      updates.push(`statement = $${paramIndex++}`);
+      params.push(validatedData.statement);
+    }
+    
+    if ('device_type_id' in validatedData) {
+      updates.push(`device_type_id = $${paramIndex++}`);
+      params.push(validatedData.device_type_id);
     }
     
     if ('active' in validatedData) {
       updates.push(`active = $${paramIndex++}`);
       params.push(validatedData.active);
+    }
+    
+    if ('icon' in validatedData) {
+      updates.push(`icon = $${paramIndex++}`);
+      params.push(validatedData.icon);
     }
     
     updates.push(`updated_at = NOW()`);
@@ -189,7 +187,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       UPDATE question_groups
       SET ${updates.join(', ')}
       WHERE id = $1
-      RETURNING id, name, description, active, created_at as "createdAt", updated_at as "updatedAt"
+      RETURNING *
     `;
     
     const result = await pool.query(query, params);
@@ -210,21 +208,23 @@ router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     
-    // Check if there are any questions in this group
+    // First check if there are any questions in this group
     const checkQuery = `
-      SELECT COUNT(*) FROM questions WHERE group_id = $1
+      SELECT COUNT(*) as question_count
+      FROM questions
+      WHERE group_id = $1
     `;
     
     const checkResult = await pool.query(checkQuery, [id]);
-    const questionCount = parseInt(checkResult.rows[0].count);
+    const questionCount = parseInt(checkResult.rows[0].question_count);
     
     if (questionCount > 0) {
       return res.status(400).json({ 
-        message: `Cannot delete group with ${questionCount} questions. Delete questions first or reassign them to another group.` 
+        message: `Cannot delete question group with ${questionCount} questions. Please delete or move the questions first.` 
       });
     }
     
-    // Delete the group
+    // Delete the question group
     const deleteQuery = `
       DELETE FROM question_groups
       WHERE id = $1

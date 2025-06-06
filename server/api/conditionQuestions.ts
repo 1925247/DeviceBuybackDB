@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { sql } from "drizzle-orm";
 
 /**
@@ -13,7 +13,7 @@ export async function getConditionQuestionsForModel(req: Request, res: Response)
     const modelQuery = `
       SELECT id, name, brand_id FROM device_models WHERE id = $1
     `;
-    const modelResult = await db.execute(sql.raw(modelQuery), [modelId]);
+    const modelResult = await pool.query(modelQuery, [modelId]);
     
     if (modelResult.rows.length === 0) {
       return res.status(404).json({ message: "Device model not found" });
@@ -66,12 +66,12 @@ export async function getConditionQuestionsForModel(req: Request, res: Response)
       FROM model_questions mq
     `;
     
-    const result = await db.execute(sql.raw(query), [modelId]);
+    const result = await pool.query(query, [modelId]);
     
     // Group questions by group_id for better frontend organization
-    const groupedQuestions = {};
+    const groupedQuestions: Record<string, any> = {};
     
-    result.rows.forEach(question => {
+    result.rows.forEach((question: any) => {
       if (!groupedQuestions[question.group_id]) {
         groupedQuestions[question.group_id] = {
           id: question.group_id,
@@ -203,7 +203,7 @@ export async function fixDeviceQuestionMappings(req: Request, res: Response) {
           WHERE group_id = $1 AND active = true
         `;
         
-        const questionsResult = await db.execute(sql.raw(questionsQuery), [group.id]);
+        const questionsResult = await pool.query(questionsQuery, [group.id]);
         const questions = questionsResult.rows;
         
         if (questions.length === 0) {
@@ -226,7 +226,7 @@ export async function fixDeviceQuestionMappings(req: Request, res: Response) {
             DO NOTHING
           `;
           
-          await db.execute(sql.raw(mappingQuery), [model.id, question.id]);
+          await pool.query(mappingQuery, [model.id, question.id]);
         }
         
         results.push({

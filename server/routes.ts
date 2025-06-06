@@ -24,7 +24,7 @@ import { featureToggleRouter } from "./api/featureToggleApi";
 import deviceModelsRoutes from "./api/deviceModels";
 import brandsRoutes from "./api/brands";
 import deviceTypesRoutes from "./api/deviceTypes";
-import fixedQuestionGroupsRoutes from "./api/fixedQuestionGroups";
+import questionGroupsRoutes from "./api/questionGroups";
 import simpleQARoutes from "./api/simpleQA";
 import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMappings";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes";
@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/device-types', deviceTypesRoutes);
   app.use('/api/brand-device-types', brandDeviceTypesRoutes);
   app.use('/api/products', productsRoutes);
-  app.use('/api/question-groups', fixedQuestionGroupsRoutes);
+  app.use('/api/question-groups', questionGroupsRoutes);
   app.use('/api/questions', simpleQARoutes);
   app.use('/api/product-question-mappings', simpleProductQuestionMappingsRoutes);
   app.use('/api/answer-choices', answerChoicesRoutes);
@@ -157,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${query} AND ${conditions.join(' AND ')}`
         : query;
 
-      const result = await db.execute(sql.raw(finalQuery + ` ORDER BY dm.name`), params);
+      const result = await pool.query(finalQuery + ` ORDER BY dm.name`, params);
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching device models:", error);
@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${query} WHERE ${conditions.join(' AND ')}${groupBy}`
         : `${query}${groupBy}`;
 
-      const result = await db.execute(sql.raw(finalQuery), params);
+      const result = await pool.query(finalQuery, params);
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching brands:", error);

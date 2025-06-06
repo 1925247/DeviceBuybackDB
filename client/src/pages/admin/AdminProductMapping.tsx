@@ -123,42 +123,47 @@ export default function AdminProductMapping() {
   const sourceProductId = copyForm.watch("sourceProductId");
 
   // Fetch product question mappings when source product changes (for copy functionality)
-  const { data: sourceProductMappings, isLoading: isLoadingSourceMappings } = useQuery({
-    queryKey: ["/api/product-question-mappings", sourceProductId],
-    queryFn: async () => {
-      if (!sourceProductId) return [];
-      const response = await fetch(
-        `/api/product-question-mappings?productId=${sourceProductId}`,
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch product question mappings");
-      }
-      return response.json();
-    },
-    enabled: !!sourceProductId,
-    retry: false,
-  });
-  
+  const { data: sourceProductMappings, isLoading: isLoadingSourceMappings } =
+    useQuery({
+      queryKey: ["/api/model-question-mappings", sourceProductId],
+      queryFn: async () => {
+        if (!sourceProductId) return [];
+        const response = await fetch(
+          `/api/model-question-mappings?productId=${sourceProductId}`,
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch product question mappings");
+        }
+        return response.json();
+      },
+      enabled: !!sourceProductId,
+      retry: false,
+    });
+
   // Fetch all product question mappings for the view tab
-  const { data: allProductMappings, isLoading: isLoadingAllMappings } = useQuery({
-    queryKey: ["/api/product-question-mappings", "all"],
-    queryFn: async () => {
-      const response = await fetch('/api/product-question-mappings');
-      if (!response.ok) {
-        throw new Error("Failed to fetch all product question mappings");
-      }
-      return response.json();
-    },
-    retry: false,
-  });
-  
+  const { data: allProductMappings, isLoading: isLoadingAllMappings } =
+    useQuery({
+      queryKey: ["/api/model-question-mappings", "all"],
+      queryFn: async () => {
+        const response = await fetch("/api/model-question-mappings");
+        if (!response.ok) {
+          throw new Error("Failed to fetch all product question mappings");
+        }
+        return response.json();
+      },
+      retry: false,
+    });
+
   // Fetch specific product question mappings for the selected product
-  const { data: selectedProductMappings, isLoading: isLoadingSelectedProductMappings } = useQuery({
-    queryKey: ["/api/product-question-mappings", selectedProduct],
+  const {
+    data: selectedProductMappings,
+    isLoading: isLoadingSelectedProductMappings,
+  } = useQuery({
+    queryKey: ["/api/model-question-mappings", selectedProduct],
     queryFn: async () => {
       if (!selectedProduct) return [];
       const response = await fetch(
-        `/api/product-question-mappings?productId=${selectedProduct}`,
+        `/api/model-question-mappings?productId=${selectedProduct}`,
       );
       if (!response.ok) {
         throw new Error("Failed to fetch selected product question mappings");
@@ -174,7 +179,7 @@ export default function AdminProductMapping() {
     try {
       const response = await apiRequest(
         "POST",
-        "/api/product-question-mappings",
+        "/api/model-question-mappings",
         {
           productId: parseInt(values.productId),
           groupId: parseInt(values.groupId),
@@ -184,11 +189,11 @@ export default function AdminProductMapping() {
       if (response.ok) {
         toast({
           title: "Success",
-          description: "Product-Question mapping created successfully",
+          description: "model-Question mapping created successfully",
         });
         form.reset();
         queryClient.invalidateQueries({
-          queryKey: ["/api/product-question-mappings"],
+          queryKey: ["/api/model-question-mappings"],
         });
       } else {
         const error = await response.json();
@@ -231,7 +236,7 @@ export default function AdminProductMapping() {
 
       const response = await apiRequest(
         "POST",
-        "/api/product-question-mappings/copy",
+        "/api/model-question-mappings/copy",
         {
           sourceProductId: parseInt(formValues.sourceProductId),
           targetProductId: parseInt(formValues.targetProductId),
@@ -247,7 +252,7 @@ export default function AdminProductMapping() {
         });
         setSelectedMappings([]);
         queryClient.invalidateQueries({
-          queryKey: ["/api/product-question-mappings"],
+          queryKey: ["/api/model-question-mappings"],
         });
       } else {
         const error = await response.json();
@@ -290,40 +295,40 @@ export default function AdminProductMapping() {
     const product = products.find((p: Product) => p.id === productId);
     return product ? product.title : "Unknown Product";
   };
-  
+
   // Group mappings by product
   const getMappingsByProduct = () => {
     if (!allProductMappings || !products) return [];
-    
+
     console.log("Processing mappings:", allProductMappings);
-    
+
     // Create a map of products with their associated group mappings
     const productMap = new Map();
-    
+
     // Group mappings by product
     allProductMappings.forEach((mapping: any) => {
       if (!productMap.has(mapping.productId)) {
         productMap.set(mapping.productId, {
           id: mapping.productId,
           title: mapping.productName || "Unknown Product",
-          mappings: []
+          mappings: [],
         });
       }
-      
+
       if (productMap.has(mapping.productId)) {
         const productData = productMap.get(mapping.productId);
-        
+
         // Check if we already have this group added (avoid duplicates)
         const existingGroupIndex = productData.mappings.findIndex(
-          (m: any) => m.groupId === mapping.groupId
+          (m: any) => m.groupId === mapping.groupId,
         );
-        
+
         if (existingGroupIndex === -1) {
           productData.mappings.push({
             id: mapping.id,
             groupId: mapping.groupId,
             groupName: mapping.groupName || "Unknown Group",
-            count: 1
+            count: 1,
           });
         } else {
           // Increment count of questions in this group
@@ -331,25 +336,25 @@ export default function AdminProductMapping() {
         }
       }
     });
-    
+
     return Array.from(productMap.values());
   };
-  
+
   // Delete a product-question mapping
   const deleteMapping = async (mappingId: number) => {
     try {
       const response = await apiRequest(
         "DELETE",
-        `/api/product-question-mappings/${mappingId}`
+        `/api/model-question-mappings/${mappingId}`,
       );
-      
+
       if (response.ok) {
         toast({
           title: "Success",
           description: "Mapping deleted successfully",
         });
         queryClient.invalidateQueries({
-          queryKey: ["/api/product-question-mappings"],
+          queryKey: ["/api/model-question-mappings"],
         });
       } else {
         const error = await response.json();
@@ -371,7 +376,7 @@ export default function AdminProductMapping() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Product-Question Mappings</h1>
+        <h1 className="text-3xl font-bold">Model-Question Mappings</h1>
       </div>
 
       <Tabs value={currentTab} onValueChange={setCurrentTab}>
@@ -384,9 +389,9 @@ export default function AdminProductMapping() {
         <TabsContent value="view" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>View Product-Question Group Mappings</CardTitle>
+              <CardTitle>View Model-Question Group Mappings</CardTitle>
               <CardDescription>
-                See which question groups are assigned to each product
+                See which question groups are assigned to each Model
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -399,17 +404,26 @@ export default function AdminProductMapping() {
                   {getMappingsByProduct().map((product: any) => (
                     <Card key={product.id} className="border-gray-200">
                       <CardHeader className="bg-gray-50">
-                        <CardTitle className="text-xl">{product.title}</CardTitle>
+                        <CardTitle className="text-xl">
+                          {product.title}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="pt-4">
                         <div className="space-y-2">
-                          <h3 className="text-md font-medium mb-2">Associated Question Groups:</h3>
+                          <h3 className="text-md font-medium mb-2">
+                            Associated Question Groups:
+                          </h3>
                           {product.mappings.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {product.mappings.map((mapping: any) => (
-                                <div key={mapping.id} className="flex items-center justify-between bg-white p-3 border rounded-md">
+                                <div
+                                  key={mapping.id}
+                                  className="flex items-center justify-between bg-white p-3 border rounded-md"
+                                >
                                   <div>
-                                    <div className="font-medium">{mapping.groupName}</div>
+                                    <div className="font-medium">
+                                      {mapping.groupName}
+                                    </div>
                                     <div className="text-sm text-gray-500">
                                       Questions: {mapping.count}
                                     </div>
@@ -426,7 +440,9 @@ export default function AdminProductMapping() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-gray-500">No question groups mapped to this product.</p>
+                            <p className="text-gray-500">
+                              No question groups mapped to this product.
+                            </p>
                           )}
                         </div>
                       </CardContent>
@@ -435,9 +451,12 @@ export default function AdminProductMapping() {
                 </div>
               ) : (
                 <div className="text-center py-10">
-                  <h3 className="text-lg font-medium mb-2">No mappings found</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    No mappings found
+                  </h3>
                   <p className="text-gray-500">
-                    Use the "Add New Mapping" tab to create product-question group mappings.
+                    Use the "Add New Mapping" tab to create model-question group
+                    mappings.
                   </p>
                 </div>
               )}
@@ -448,9 +467,9 @@ export default function AdminProductMapping() {
         <TabsContent value="add" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Add New Product-Question Mapping</CardTitle>
+              <CardTitle>Add New Model-Question Mapping</CardTitle>
               <CardDescription>
-                Create a new mapping between a product and question group
+                Create a new mapping between a model and question group
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -465,7 +484,7 @@ export default function AdminProductMapping() {
                       name="productId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Product</FormLabel>
+                          <FormLabel>Model</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
@@ -473,7 +492,7 @@ export default function AdminProductMapping() {
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a product" />
+                                <SelectValue placeholder="Select a model" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -579,9 +598,9 @@ export default function AdminProductMapping() {
         <TabsContent value="copy" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Copy Mappings Between Products</CardTitle>
+              <CardTitle>Copy Mappings Between Model</CardTitle>
               <CardDescription>
-                Copy question mappings from one product to another
+                Copy question mappings from one model to another
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -593,7 +612,7 @@ export default function AdminProductMapping() {
                       name="sourceProductId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Source Product</FormLabel>
+                          <FormLabel>Source Model</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
@@ -601,7 +620,7 @@ export default function AdminProductMapping() {
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select source product" />
+                                <SelectValue placeholder="Select source model" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -629,7 +648,7 @@ export default function AdminProductMapping() {
                       name="targetProductId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Target Product</FormLabel>
+                          <FormLabel>Target Model</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
@@ -637,7 +656,7 @@ export default function AdminProductMapping() {
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select target product" />
+                                <SelectValue placeholder="Select target model" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -666,7 +685,7 @@ export default function AdminProductMapping() {
                       Available Mappings
                     </h3>
                     <p className="text-sm text-gray-500 mb-4">
-                      Select the mappings you want to copy to the target product
+                      Select the mappings you want to copy to the target model
                     </p>
 
                     {isLoadingSourceMappings ? (
@@ -708,7 +727,7 @@ export default function AdminProductMapping() {
                     ) : (
                       <div className="text-center py-8 border rounded-md bg-gray-50">
                         <p className="text-gray-500">
-                          No mappings found for this product
+                          No mappings found for this model
                         </p>
                       </div>
                     )}
