@@ -50,6 +50,7 @@ const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
 const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQuestions"));
 const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
+const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
