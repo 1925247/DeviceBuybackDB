@@ -142,7 +142,7 @@ const AdminBuybacksNew = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Value</p>
               <p className="text-3xl font-bold text-purple-600">
-                ${requests.reduce((sum, r) => sum + (r.offeredPrice || 0), 0).toLocaleString()}
+                ₹{requests.reduce((sum, r) => sum + (parseFloat(r.offered_price) || 0), 0).toLocaleString('en-IN')}
               </p>
             </div>
             <DollarSign className="h-8 w-8 text-purple-600" />
@@ -219,11 +219,16 @@ const AdminBuybacksNew = () => {
                     <User className="h-8 w-8 text-gray-300 mr-3" />
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {request.customerName || 'N/A'}
+                        {request.customer_name || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {request.customerEmail || 'N/A'}
+                        {request.customer_email || 'N/A'}
                       </div>
+                      {request.order_id && (
+                        <div className="text-xs text-blue-600 font-mono">
+                          ID: {request.order_id}
+                        </div>
+                      )}
                       <div className="text-sm text-gray-900 mt-1">
                         {request.manufacturer} {request.model}
                       </div>
@@ -232,11 +237,11 @@ const AdminBuybacksNew = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    ${request.offeredPrice || 0}
+                    ₹{parseFloat(request.offered_price || 0).toLocaleString('en-IN')}
                   </div>
-                  {request.finalPrice && (
+                  {request.final_price && (
                     <div className="text-sm text-green-600">
-                      Final: ${request.finalPrice}
+                      Final: ₹{parseFloat(request.final_price).toLocaleString('en-IN')}
                     </div>
                   )}
                 </td>
@@ -247,7 +252,7 @@ const AdminBuybacksNew = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(request.createdAt).toLocaleDateString()}
+                  {new Date(request.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
