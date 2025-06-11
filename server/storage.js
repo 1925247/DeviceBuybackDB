@@ -256,7 +256,51 @@ export class DatabaseStorage {
 
   // Device Models operations
   async getDeviceModels() {
-    return await db.select().from(deviceModels).where(eq(deviceModels.active, true));
+    return await db.select({
+      id: deviceModels.id,
+      name: deviceModels.name,
+      slug: deviceModels.slug,
+      image: deviceModels.image,
+      brandId: deviceModels.brandId,
+      deviceTypeId: deviceModels.deviceTypeId,
+      active: deviceModels.active,
+      featured: deviceModels.featured,
+      variants: deviceModels.variants,
+      basePrice: deviceModels.basePrice,
+      specifications: deviceModels.specifications,
+      releaseYear: deviceModels.releaseYear,
+      createdAt: deviceModels.createdAt,
+      updatedAt: deviceModels.updatedAt
+    }).from(deviceModels).where(eq(deviceModels.active, true));
+  }
+
+  async getDeviceModelsByBrand(brandId) {
+    return await db.select().from(deviceModels)
+      .where(and(eq(deviceModels.brandId, brandId), eq(deviceModels.active, true)))
+      .orderBy(deviceModels.name);
+  }
+
+  async getDeviceModelVariants(modelId) {
+    return await db.select().from(deviceModelVariants)
+      .where(and(eq(deviceModelVariants.modelId, modelId), eq(deviceModelVariants.active, true)))
+      .orderBy(deviceModelVariants.variantName);
+  }
+
+  async createDeviceModelVariant(insertVariant) {
+    const [variant] = await db
+      .insert(deviceModelVariants)
+      .values(insertVariant)
+      .returning();
+    return variant;
+  }
+
+  async updateDeviceModelVariant(id, updateData) {
+    const [variant] = await db
+      .update(deviceModelVariants)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(deviceModelVariants.id, id))
+      .returning();
+    return variant;
   }
 
   async createDeviceModel(insertDeviceModel) {

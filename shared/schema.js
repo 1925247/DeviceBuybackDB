@@ -252,14 +252,42 @@ export const deviceModels = pgTable("device_models", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   image: text("image").notNull(),
-  brand_id: integer("brand_id").notNull().references(() => brands.id),
-  device_type_id: integer("device_type_id").notNull().references(() => deviceTypes.id),
+  brandId: integer("brand_id").notNull().references(() => brands.id),
+  deviceTypeId: integer("device_type_id").notNull().references(() => deviceTypes.id),
   active: boolean("active").default(true).notNull(),
   featured: boolean("featured").default(false).notNull(),
   variants: json("variants"),
+  basePrice: real("base_price").default(0),
+  specifications: jsonb("specifications"),
+  releaseYear: integer("release_year"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Device Model Variants - separate storage for each variant configuration
+export const deviceModelVariants = pgTable("device_model_variants", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").notNull().references(() => deviceModels.id),
+  variantName: text("variant_name").notNull(), // e.g., "512GB Space Black"
+  storage: text("storage"), // e.g., "512GB"
+  color: text("color"), // e.g., "Space Black"
+  ram: text("ram"), // e.g., "8GB"
+  processor: text("processor"), // e.g., "A17 Pro"
+  displaySize: text("display_size"), // e.g., "6.7 inch"
+  basePrice: real("base_price").notNull(),
+  currentPrice: real("current_price").notNull(),
+  marketValue: real("market_value"),
+  depreciationRate: real("depreciation_rate").default(0),
+  availability: boolean("availability").default(true),
+  sku: text("sku").unique(),
+  specifications: jsonb("specifications"),
+  images: jsonb("images"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueModelVariant: unique().on(table.modelId, table.variantName)
+}));
 
 // Brand Device Types (relation table between brands and device types)
 export const brandDeviceTypes = pgTable("brand_device_types", {
