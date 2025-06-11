@@ -91,7 +91,48 @@ export async function registerRoutes(app) {
   app.get(apiRouter("/ensure-mappings-table"), ensureDeviceQuestionMappingsTable);
   app.get(apiRouter("/fix-question-mappings"), fixDeviceQuestionMappings);
 
-  // Comprehensive Device Model Question Mapping endpoints
+  // Question Groups Management API
+  import { 
+    getQuestionGroups, 
+    getQuestionGroup, 
+    createQuestionGroup, 
+    updateQuestionGroup, 
+    deleteQuestionGroup,
+    getGroupQuestions,
+    reorderQuestionGroup,
+    getQuestionGroupsByDeviceType 
+  } from './api/questionGroupsApi.js';
+  
+  import { 
+    getQuestions, 
+    getQuestion, 
+    createQuestion, 
+    updateQuestion, 
+    deleteQuestion,
+    getQuestionsForDeviceModels,
+    getQuestionsForBrands 
+  } from './api/questionsApi.js';
+
+  // Question Groups endpoints
+  app.get("/api/question-groups", getQuestionGroups);
+  app.get("/api/question-groups/:id", getQuestionGroup);
+  app.post("/api/question-groups", createQuestionGroup);
+  app.put("/api/question-groups/:id", updateQuestionGroup);
+  app.delete("/api/question-groups/:id", deleteQuestionGroup);
+  app.get("/api/question-groups/:id/questions", getGroupQuestions);
+  app.put("/api/question-groups/:id/reorder", reorderQuestionGroup);
+  app.get("/api/question-groups/device/:deviceType", getQuestionGroupsByDeviceType);
+
+  // Questions endpoints
+  app.get("/api/questions", getQuestions);
+  app.get("/api/questions/:id", getQuestion);
+  app.post("/api/questions", createQuestion);
+  app.put("/api/questions/:id", updateQuestion);
+  app.delete("/api/questions/:id", deleteQuestion);
+  app.get("/api/questions/models", getQuestionsForDeviceModels);
+  app.get("/api/questions/brands", getQuestionsForBrands);
+
+  // Comprehensive Device Model Question Mapping endpoints (legacy)
   app.get(apiRouter("/device-models/:modelId/questions"), getDeviceModelQuestions);
   app.post(apiRouter("/device-models/:modelId/questions"), mapQuestionsToDeviceModel);
   app.get(apiRouter("/questions/available"), getAvailableQuestions);
