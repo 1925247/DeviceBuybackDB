@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Edit2, Check, X, Clock, Package, DollarSign } from 'lucide-react';
+import { Search, Eye, CheckCircle, XCircle, Clock, DollarSign, Package, User } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const AdminBuybacksNew = () => {
@@ -27,6 +27,7 @@ const AdminBuybacksNew = () => {
       }
     } catch (error) {
       console.error('Error fetching buyback requests:', error);
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -67,41 +68,23 @@ const AdminBuybacksNew = () => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4" />;
       case 'in_review': return <Eye className="h-4 w-4" />;
-      case 'approved': return <Check className="h-4 w-4" />;
+      case 'approved': return <CheckCircle className="h-4 w-4" />;
       case 'completed': return <Package className="h-4 w-4" />;
-      case 'rejected': return <X className="h-4 w-4" />;
+      case 'rejected': return <XCircle className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const filteredRequests = requests.filter(request => {
     const matchesSearch = 
-      request.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.device.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || request.status === statusFilter;
+      request.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
     
+    const matchesStatus = !statusFilter || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'in_review', label: 'In Review' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'rejected', label: 'Rejected' }
-  ];
 
   if (loading) {
     return (
@@ -113,15 +96,14 @@ const AdminBuybacksNew = () => {
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Buyback Requests</h1>
-        <p className="text-gray-600 mt-2">Manage device buyback requests and approvals</p>
+        <p className="text-gray-600 mt-2">Manage customer device buyback requests</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Requests</p>
@@ -131,11 +113,11 @@ const AdminBuybacksNew = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Pending Review</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-3xl font-bold text-yellow-600">
                 {requests.filter(r => r.status === 'pending').length}
               </p>
             </div>
@@ -143,27 +125,27 @@ const AdminBuybacksNew = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Approved</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-green-600">
                 {requests.filter(r => r.status === 'approved').length}
               </p>
             </div>
-            <Check className="h-8 w-8 text-green-600" />
+            <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-3xl font-bold text-gray-900">
-                ${requests.reduce((sum, r) => sum + (r.finalValue || r.estimatedValue), 0).toLocaleString()}
+              <p className="text-3xl font-bold text-purple-600">
+                ${requests.reduce((sum, r) => sum + (r.offeredPrice || 0), 0).toLocaleString()}
               </p>
             </div>
-            <DollarSign className="h-8 w-8 text-green-600" />
+            <DollarSign className="h-8 w-8 text-purple-600" />
           </div>
         </div>
       </div>
@@ -187,9 +169,12 @@ const AdminBuybacksNew = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="in_review">In Review</option>
+            <option value="approved">Approved</option>
+            <option value="completed">Completed</option>
+            <option value="rejected">Rejected</option>
           </select>
 
           <button
@@ -197,10 +182,9 @@ const AdminBuybacksNew = () => {
               setSearchTerm('');
               setStatusFilter('');
             }}
-            className="flex items-center justify-center px-3 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-3 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Clear
+            Clear Filters
           </button>
         </div>
       </div>
@@ -211,13 +195,7 @@ const AdminBuybacksNew = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Request
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Device
+                Customer & Device
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Value
@@ -226,7 +204,7 @@ const AdminBuybacksNew = () => {
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
+                Submitted
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -237,40 +215,39 @@ const AdminBuybacksNew = () => {
             {filteredRequests.map(request => (
               <tr key={request.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{request.id}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{request.customerName}</div>
-                    <div className="text-sm text-gray-500">{request.customerEmail}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{request.device}</div>
-                    <div className="text-sm text-gray-500">{request.brand}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      ${request.finalValue || request.estimatedValue}
-                    </div>
-                    {request.finalValue && request.finalValue !== request.estimatedValue && (
-                      <div className="text-sm text-gray-500">
-                        Est: ${request.estimatedValue}
+                  <div className="flex items-center">
+                    <User className="h-8 w-8 text-gray-300 mr-3" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {request.customerName || 'N/A'}
                       </div>
-                    )}
+                      <div className="text-sm text-gray-500">
+                        {request.customerEmail || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-900 mt-1">
+                        {request.manufacturer} {request.model}
+                      </div>
+                    </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">
+                    ${request.offeredPrice || 0}
+                  </div>
+                  {request.finalPrice && (
+                    <div className="text-sm text-green-600">
+                      Final: ${request.finalPrice}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                     {getStatusIcon(request.status)}
-                    <span className="ml-1 capitalize">{request.status.replace('_', ' ')}</span>
+                    <span className="ml-1 capitalize">{request.status}</span>
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(request.submittedAt)}
+                  {new Date(request.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
@@ -278,18 +255,10 @@ const AdminBuybacksNew = () => {
                       setSelectedRequest(request);
                       setShowModal(true);
                     }}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
+                    className="text-blue-600 hover:text-blue-900"
                   >
                     <Eye className="h-4 w-4" />
                   </button>
-                  {request.status === 'pending' && (
-                    <button
-                      onClick={() => handleStatusUpdate(request.id, 'in_review')}
-                      className="text-green-600 hover:text-green-900"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}
@@ -304,126 +273,62 @@ const AdminBuybacksNew = () => {
         )}
       </div>
 
-      {/* Request Detail Modal */}
+      {/* Request Details Modal */}
       {showModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Request Details - {selectedRequest.id}
-              </h2>
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Request Details</h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <X className="h-6 w-6" />
+                ×
               </button>
             </div>
-
-            {/* Customer Info */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="font-medium">{selectedRequest.customerName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium">{selectedRequest.customerEmail}</p>
-                </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-gray-900">Customer Information</h3>
+                <p className="text-sm text-gray-600">Name: {selectedRequest.customerName}</p>
+                <p className="text-sm text-gray-600">Email: {selectedRequest.customerEmail}</p>
+                <p className="text-sm text-gray-600">Phone: {selectedRequest.customerPhone}</p>
               </div>
-            </div>
-
-            {/* Device Info */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Device Information</h3>
-              <div className="grid grid-cols-2 gap-4">
+              
+              <div>
+                <h3 className="font-medium text-gray-900">Device Information</h3>
+                <p className="text-sm text-gray-600">Device: {selectedRequest.manufacturer} {selectedRequest.model}</p>
+                <p className="text-sm text-gray-600">Condition: {selectedRequest.condition}</p>
+                <p className="text-sm text-gray-600">Offered Price: ${selectedRequest.offeredPrice}</p>
+              </div>
+              
+              {selectedRequest.notes && (
                 <div>
-                  <p className="text-sm text-gray-600">Device</p>
-                  <p className="font-medium">{selectedRequest.device}</p>
+                  <h3 className="font-medium text-gray-900">Notes</h3>
+                  <p className="text-sm text-gray-600">{selectedRequest.notes}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Brand</p>
-                  <p className="font-medium">{selectedRequest.brand}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Condition Answers */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Condition Assessment</h3>
-              <div className="space-y-2">
-                {Object.entries(selectedRequest.conditionAnswers).map(([key, value]) => (
-                  <div key={key} className="flex justify-between p-2 bg-gray-50 rounded">
-                    <span className="capitalize">{key.replace('_', ' ')}:</span>
-                    <span className="font-medium capitalize">{value.replace('_', ' ')}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Valuation */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Valuation</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Estimated Value</p>
-                  <p className="text-2xl font-bold text-gray-900">${selectedRequest.estimatedValue}</p>
-                </div>
-                {selectedRequest.finalValue && (
-                  <div>
-                    <p className="text-sm text-gray-600">Final Value</p>
-                    <p className="text-2xl font-bold text-green-600">${selectedRequest.finalValue}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Notes */}
-            {selectedRequest.notes && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
-                <p className="text-gray-700 bg-gray-50 p-3 rounded">{selectedRequest.notes}</p>
-              </div>
-            )}
-
-            {/* Status Actions */}
-            <div className="flex justify-end space-x-3">
-              {selectedRequest.status === 'pending' && (
-                <>
-                  <button
-                    onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => handleStatusUpdate(selectedRequest.id, 'in_review')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Start Review
-                  </button>
-                </>
               )}
               
-              {selectedRequest.status === 'in_review' && (
+              <div className="flex gap-2 pt-4">
                 <button
-                  onClick={() => handleStatusUpdate(selectedRequest.id, 'approved', selectedRequest.estimatedValue)}
+                  onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
                   Approve
                 </button>
-              )}
-              
-              {selectedRequest.status === 'approved' && (
+                <button
+                  onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Reject
+                </button>
                 <button
                   onClick={() => handleStatusUpdate(selectedRequest.id, 'completed')}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Mark Complete
                 </button>
-              )}
+              </div>
             </div>
           </div>
         </div>
