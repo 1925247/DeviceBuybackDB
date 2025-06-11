@@ -479,10 +479,29 @@ export const answerChoices = pgTable("answer_choices", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Products table
-// Product table has been removed
+// Device Model Question Mappings - connects device models to assessment questions
+export const deviceQuestionMappings = pgTable("device_question_mappings", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").notNull().references(() => deviceModels.id),
+  questionId: integer("question_id").notNull().references(() => questions.id),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueModelQuestion: unique().on(table.modelId, table.questionId)
+}));
 
-// Product Question Mappings & Product types have been completely removed
+// Product Question Mappings (legacy support)
+export const productQuestionMappings = pgTable("product_question_mappings", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => deviceModels.id),
+  questionId: integer("question_id").notNull().references(() => questions.id),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueProductQuestion: unique().on(table.productId, table.questionId)
+}));
 
 // Types are defined further below with the rest of the schema types
 
@@ -533,18 +552,7 @@ export interface InsertProduct {
   [key: string]: any;
 }
 
-export interface ProductQuestionMapping {
-  id: number;
-  productId: number;
-  questionId: number;
-  [key: string]: any;
-}
-
-export interface InsertProductQuestionMapping {
-  productId: number;
-  questionId: number;
-  [key: string]: any;
-}
+// ProductQuestionMapping types are now defined below with proper Drizzle schemas
 
 // Additional stub types for removed tables
 export interface Device {
@@ -659,6 +667,16 @@ export type ConditionQuestion = typeof conditionQuestions.$inferSelect;
 export const insertConditionAnswerSchema = createInsertSchema(conditionAnswers);
 export type InsertConditionAnswer = z.infer<typeof insertConditionAnswerSchema>;
 export type ConditionAnswer = typeof conditionAnswers.$inferSelect;
+
+// Device Question Mapping schemas
+export const insertDeviceQuestionMappingSchema = createInsertSchema(deviceQuestionMappings);
+export type InsertDeviceQuestionMapping = z.infer<typeof insertDeviceQuestionMappingSchema>;
+export type DeviceQuestionMapping = typeof deviceQuestionMappings.$inferSelect;
+
+// Product Question Mapping schemas (legacy)
+export const insertProductQuestionMappingSchema = createInsertSchema(productQuestionMappings);
+export type InsertProductQuestionMapping = z.infer<typeof insertProductQuestionMappingSchema>;
+export type ProductQuestionMapping = typeof productQuestionMappings.$inferSelect;
 
 // System Feature Toggles - Admin-controlled feature flags
 export const featureToggles = pgTable("feature_toggles", {
