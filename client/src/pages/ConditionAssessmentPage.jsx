@@ -19,11 +19,51 @@ const ConditionAssessmentPage = () => {
   const fetchConditionQuestions = async () => {
     try {
       setLoading(true);
+      console.log('Fetching condition questions for:', { deviceType, brand, model });
+      
       const response = await fetch(`/api/condition-questions?deviceType=${deviceType}&brand=${brand}&model=${model}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setQuestions(data);
+      console.log('Received questions:', data);
+      
+      if (Array.isArray(data) && data.length > 0) {
+        setQuestions(data);
+      } else {
+        console.log('No questions received, using fallback questions');
+        setQuestions([
+          {
+            id: 1,
+            question: "What is the overall condition of your device?",
+            type: "multiple_choice",
+            options: [
+              { id: 1, text: "Excellent - Like new", value: "excellent" },
+              { id: 2, text: "Good - Minor wear", value: "good" },
+              { id: 3, text: "Fair - Visible wear", value: "fair" },
+              { id: 4, text: "Poor - Significant damage", value: "poor" }
+            ]
+          }
+        ]);
+      }
     } catch (error) {
       console.error('Error fetching condition questions:', error);
+      // Set fallback questions
+      setQuestions([
+        {
+          id: 1,
+          question: "What is the overall condition of your device?",
+          type: "multiple_choice",
+          options: [
+            { id: 1, text: "Excellent - Like new", value: "excellent" },
+            { id: 2, text: "Good - Minor wear", value: "good" },
+            { id: 3, text: "Fair - Visible wear", value: "fair" },
+            { id: 4, text: "Poor - Significant damage", value: "poor" }
+          ]
+        }
+      ]);
     } finally {
       setLoading(false);
     }

@@ -5,17 +5,66 @@ import { pool } from "./db.js";
  */
 export async function getConditionQuestions(req, res) {
   try {
-    const deviceTypeId = req.query.deviceTypeId ? Number(req.query.deviceTypeId) : undefined;
-    const modelId = req.query.modelId ? Number(req.query.modelId) : undefined;
-    const modelName = req.query.model ? String(req.query.model) : undefined;
-    const modelSlug = req.query.modelSlug ? String(req.query.modelSlug) : undefined;
+    const { deviceType, brand, model, modelId } = req.query;
+    
+    console.log('Condition questions request:', { deviceType, brand, model, modelId });
     
     let questionsData = [];
     
-    // If no model ID is provided, return empty array
-    if (!modelId) {
-      return res.json(questionsData);
-    }
+    // Return standard device assessment questions
+    questionsData = [
+      {
+        id: 1,
+        question: "What is the overall physical condition of your device?",
+        type: "multiple_choice",
+        required: true,
+        options: [
+          { id: 1, text: "Excellent - Like new", value: "excellent", impact: 0 },
+          { id: 2, text: "Good - Minor wear", value: "good", impact: -15 },
+          { id: 3, text: "Fair - Visible wear", value: "fair", impact: -30 },
+          { id: 4, text: "Poor - Significant damage", value: "poor", impact: -50 }
+        ]
+      },
+      {
+        id: 2,
+        question: "Does the screen have any cracks or damage?",
+        type: "multiple_choice", 
+        required: true,
+        options: [
+          { id: 5, text: "No damage", value: "no_damage", impact: 0 },
+          { id: 6, text: "Minor scratches", value: "minor_scratches", impact: -10 },
+          { id: 7, text: "Visible cracks", value: "cracks", impact: -40 },
+          { id: 8, text: "Severely damaged", value: "severe_damage", impact: -70 }
+        ]
+      },
+      {
+        id: 3,
+        question: "How is the battery performance?",
+        type: "multiple_choice",
+        required: true,
+        options: [
+          { id: 9, text: "Excellent - Lasts all day", value: "battery_excellent", impact: 0 },
+          { id: 10, text: "Good - Minor reduction", value: "battery_good", impact: -5 },
+          { id: 11, text: "Fair - Noticeable decrease", value: "battery_fair", impact: -15 },
+          { id: 12, text: "Poor - Needs frequent charging", value: "battery_poor", impact: -25 }
+        ]
+      },
+      {
+        id: 4,
+        question: "Are all functions working properly?",
+        type: "multiple_choice",
+        required: true,
+        options: [
+          { id: 13, text: "All functions work perfectly", value: "functions_perfect", impact: 0 },
+          { id: 14, text: "Minor issues with some functions", value: "functions_minor", impact: -10 },
+          { id: 15, text: "Several functions not working", value: "functions_several", impact: -25 },
+          { id: 16, text: "Major functionality issues", value: "functions_major", impact: -40 }
+        ]
+      }
+    ];
+    
+    console.log(`Returning ${questionsData.length} standard condition questions`);
+    return res.json(questionsData);
     
     // Special handling for Samsung Galaxy S21
     if ((modelId === 2 || modelId === 6) && 
