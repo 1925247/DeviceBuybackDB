@@ -28,6 +28,7 @@ import ValuationPage from "./pages/ValuationPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import DeviceListing from "./pages/DeviceListing";
 import FAQPage from "./pages/FAQPage";
 import BlogPage from "./pages/BlogPage";
 import UserLogin from "./pages/UserLogin";
@@ -51,6 +52,7 @@ const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQ
 const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
+const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
@@ -308,7 +310,7 @@ const App = () => {
                 >
                   <Route index element={
                     <Suspense fallback={<LoadingSpinner />}>
-                      <AdminDashboard />
+                      <AdminDashboardOverview />
                     </Suspense>
                   } />
 

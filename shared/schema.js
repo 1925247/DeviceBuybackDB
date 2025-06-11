@@ -252,8 +252,8 @@ export const deviceModels = pgTable("device_models", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   image: text("image").notNull(),
-  brandId: integer("brand_id").notNull().references(() => brands.id),
-  deviceTypeId: integer("device_type_id").notNull().references(() => deviceTypes.id),
+  brand_id: integer("brand_id").notNull().references(() => brands.id),
+  device_type_id: integer("device_type_id").notNull().references(() => deviceTypes.id),
   active: boolean("active").default(true).notNull(),
   featured: boolean("featured").default(false).notNull(),
   variants: json("variants"),
@@ -267,8 +267,8 @@ export const deviceModels = pgTable("device_models", {
 // Device Model Variants - separate storage for each variant configuration
 export const deviceModelVariants = pgTable("device_model_variants", {
   id: serial("id").primaryKey(),
-  modelId: integer("model_id").notNull().references(() => deviceModels.id),
-  variantName: text("variant_name").notNull(), // e.g., "512GB Space Black"
+  model_id: integer("model_id").notNull().references(() => deviceModels.id),
+  variant_name: text("variant_name").notNull(), // e.g., "512GB Space Black"
   storage: text("storage"), // e.g., "512GB"
   color: text("color"), // e.g., "Space Black"
   ram: text("ram"), // e.g., "8GB"
