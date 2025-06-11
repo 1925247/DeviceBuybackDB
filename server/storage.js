@@ -12,6 +12,7 @@ import {
   deviceTypes,
   brands,
   deviceModels,
+  deviceModelVariants,
   brandDeviceTypes,
   featureToggles,
   // Question Management
