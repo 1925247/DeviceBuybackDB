@@ -381,5 +381,61 @@ export async function registerRoutes(app) {
     }
   });
 
+  // Buyback requests endpoint
+  app.post("/api/buyback-requests", async (req, res) => {
+    try {
+      console.log('Received buyback request:', req.body);
+      
+      // Validate required fields
+      const requiredFields = ['customerName', 'customerEmail', 'customerPhone'];
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+      
+      if (missingFields.length > 0) {
+        return res.status(400).json({ 
+          error: `Missing required fields: ${missingFields.join(', ')}` 
+        });
+      }
+      
+      const request = await storage.createBuybackRequest(req.body);
+      console.log('Created buyback request successfully:', request.id);
+      
+      res.status(201).json({ 
+        success: true, 
+        message: 'Buyback request created successfully',
+        data: request 
+      });
+    } catch (error) {
+      console.error('Error creating buyback request:', error);
+      console.error('Request body was:', req.body);
+      res.status(500).json({ 
+        error: 'Failed to create buyback request',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get buyback requests
+  app.get("/api/buyback-requests", async (req, res) => {
+    try {
+      const requests = await storage.getBuybackRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error('Error fetching buyback requests:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update buyback request
+  app.put("/api/buyback-requests/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const request = await storage.updateBuybackRequest(parseInt(id), req.body);
+      res.json(request);
+    } catch (error) {
+      console.error('Error updating buyback request:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return server;
 }

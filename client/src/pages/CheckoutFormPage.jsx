@@ -156,11 +156,18 @@ const CheckoutFormPage = () => {
       
       let result;
       try {
-        result = await response.json();
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+        
+        if (responseText.startsWith('<!DOCTYPE')) {
+          throw new Error('Server returned HTML instead of JSON. The API endpoint may not be properly configured.');
+        }
+        
+        result = JSON.parse(responseText);
         console.log('Response data:', result);
       } catch (parseError) {
         console.error('Failed to parse response:', parseError);
-        throw new Error('Invalid response from server');
+        throw new Error(`Invalid response from server: ${parseError.message}`);
       }
 
       if (response.ok) {
