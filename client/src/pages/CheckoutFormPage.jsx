@@ -52,10 +52,10 @@ const CheckoutFormPage = () => {
     setFormData(prev => ({ ...prev, pinCode }));
 
     // Auto-fill city and state when PIN code is 6 digits
-    if (pinCode.length === 6) {
+    if (pinCode.length === 6 && /^[1-9][0-9]{5}$/.test(pinCode)) {
       setLoading(true);
       try {
-        // Using Indian postal API
+        // Using Indian postal API with fallback
         const response = await fetch(`https://api.postalpincode.in/pincode/${pinCode}`);
         const data = await response.json();
         
@@ -67,16 +67,32 @@ const CheckoutFormPage = () => {
             state: postOffice.State
           }));
         } else {
-          // Fallback: Clear city and state if PIN code is invalid
-          setFormData(prev => ({
-            ...prev,
-            city: '',
-            state: ''
-          }));
+          // Try backup API
+          try {
+            const backupResponse = await fetch(`http://api.zippopotam.us/IN/${pinCode}`);
+            const backupData = await backupResponse.json();
+            
+            if (backupData && backupData.places && backupData.places.length > 0) {
+              const place = backupData.places[0];
+              setFormData(prev => ({
+                ...prev,
+                city: place['place name'],
+                state: place.state
+              }));
+            } else {
+              throw new Error('No data found');
+            }
+          } catch (backupError) {
+            console.error('Both APIs failed:', backupError);
+            setFormData(prev => ({
+              ...prev,
+              city: '',
+              state: ''
+            }));
+          }
         }
       } catch (error) {
         console.error('Error fetching PIN code data:', error);
-        // Fallback: Clear city and state on error
         setFormData(prev => ({
           ...prev,
           city: '',
@@ -85,6 +101,13 @@ const CheckoutFormPage = () => {
       } finally {
         setLoading(false);
       }
+    } else if (pinCode.length < 6) {
+      // Clear city and state if PIN code is incomplete
+      setFormData(prev => ({
+        ...prev,
+        city: '',
+        state: ''
+      }));
     }
   };
 

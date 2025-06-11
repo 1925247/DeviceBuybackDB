@@ -219,7 +219,7 @@ const DeviceListing = () => {
                             
                             <div className="flex items-center justify-between">
                               <span className="text-lg font-bold text-green-600">
-                                Starting from ${model.base_price || 'TBD'}
+                                Starting from ₹{model.base_price ? Math.round(model.base_price * 83).toLocaleString('en-IN') : 'TBD'}
                               </span>
                               <ChevronRight className="h-5 w-5 text-gray-400" />
                             </div>
@@ -289,7 +289,7 @@ const DeviceListing = () => {
                             <div className="border-t pt-3">
                               <div className="flex justify-between items-center">
                                 <span className="text-lg font-bold text-green-600">
-                                  ${variant.current_price}
+                                  ₹{Math.round(variant.current_price * 83).toLocaleString('en-IN')}
                                 </span>
                                 <button 
                                   className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"

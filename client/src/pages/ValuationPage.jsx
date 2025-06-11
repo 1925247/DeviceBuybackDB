@@ -104,14 +104,8 @@ const ValuationPage = () => {
   };
 
   const handleAcceptOffer = () => {
-    // Store valuation data for checkout
-    sessionStorage.setItem('deviceValuation', JSON.stringify({
-      ...valuation,
-      deviceInfo,
-      deviceType,
-      brand,
-      model
-    }));
+    // Store valuation data for checkout page
+    sessionStorage.setItem('valuationData', JSON.stringify(valuation));
     navigate(`/sell/${deviceType}/${brand}/${model}/checkout`);
   };
 
@@ -171,9 +165,9 @@ const ValuationPage = () => {
                   <DollarSign className="h-10 w-10 text-green-600" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  ${valuation?.estimatedValue}
+                  ₹{valuation?.estimatedValue?.toLocaleString('en-IN')}
                 </h2>
-                <p className="text-gray-600">Estimated Cash Value</p>
+                <p className="text-gray-600">Estimated Cash Value (INR)</p>
               </div>
 
               {/* Valuation Factors */}
