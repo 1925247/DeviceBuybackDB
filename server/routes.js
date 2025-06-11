@@ -92,26 +92,6 @@ export async function registerRoutes(app) {
   app.get(apiRouter("/fix-question-mappings"), fixDeviceQuestionMappings);
 
   // Question Groups Management API
-  import { 
-    getQuestionGroups, 
-    getQuestionGroup, 
-    createQuestionGroup, 
-    updateQuestionGroup, 
-    deleteQuestionGroup,
-    getGroupQuestions,
-    reorderQuestionGroup,
-    getQuestionGroupsByDeviceType 
-  } from './api/questionGroupsApi.js';
-  
-  import { 
-    getQuestions, 
-    getQuestion, 
-    createQuestion, 
-    updateQuestion, 
-    deleteQuestion,
-    getQuestionsForDeviceModels,
-    getQuestionsForBrands 
-  } from './api/questionsApi.js';
 
   // Question Groups endpoints
   app.get("/api/question-groups", getQuestionGroups);
