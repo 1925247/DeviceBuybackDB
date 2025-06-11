@@ -1,0 +1,401 @@
+// src/App.jsx
+import React, { lazy, Suspense } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ModelsProvider } from "./contexts/ModelsContext";
+
+// Shared Components
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import LoadingSpinner from "./components/ui/LoadingSpinner";
+
+// Client Pages
+import HomePage from "./pages/HomePage";
+import DeviceSelectionPage from "./pages/DeviceSelectionPage";
+import DeviceSelection from "./pages/sell/DeviceSelection";
+import ModelSelectionPage from "./pages/ModelSelectionPage";
+import ConditionAssessmentPage from "./pages/ConditionAssessmentPage";
+import ValuationPage from "./pages/ValuationPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import FAQPage from "./pages/FAQPage";
+import BlogPage from "./pages/BlogPage";
+import UserLogin from "./pages/UserLogin";
+import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
+
+// Admin Panel Pages - Lazy loaded to improve performance
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminLogin from "./pages/admin/AdminLogin";
+
+// Lazy loaded admin components
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypesFixed"));
+const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
+const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminPricing = lazy(() => import("./pages/admin/AdminPricing"));
+const AdminConfig = lazy(() => import("./pages/admin/AdminConfig"));
+const AdminCQS = lazy(() => import("./pages/admin/AdminCQS"));
+const AdminDiagnostic = lazy(() => import("./pages/admin/AdminDiagnostic"));
+const AdminBuybacks = lazy(() => import("./pages/admin/AdminBuybacks"));
+const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
+const AdminFeatureToggles = lazy(() => import("./pages/admin/AdminFeatureToggles"));
+const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQuestions"));
+const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions"));
+const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
+const AdminProductMapping = lazy(() => import("./pages/admin/AdminProductMapping"));
+const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
+const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
+const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
+const UserRoleManagement = lazy(() => import("./pages/admin/UserRoleManagement"));
+const RouteManagement = lazy(() => import("./pages/admin/RouteManagement"));
+const ManageRouteRules = lazy(() => import("./pages/admin/ManageRouteRules"));
+const PartnersManagement = lazy(() => import("./pages/admin/PartnersManagement"));
+const PartnerStaffManagement = lazy(() => import("./pages/admin/PartnerStaffManagement"));
+const PartnerWallets = lazy(() => import("./pages/admin/PartnerWallets"));
+const PinCodeAssignment = lazy(() => import("./pages/admin/PinCodeAssignment"));
+const PartnerOnboarding = lazy(() => import("./pages/admin/PartnerOnboarding"));
+
+// Partner Portal Pages
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import StaffManagement from "./pages/partner/StaffManagement";
+import StaffManagementDemo from "./pages/partner/StaffManagementDemo";
+
+// Not Found Page
+import NotFound from "./pages/NotFound";
+
+// Local protected route wrapper
+const LocalProtectedAdminRoute = () => {
+  const sessionToken = sessionStorage.getItem("adminToken");
+  const persistentToken = localStorage.getItem("adminToken");
+  const isAuthenticated = Boolean(sessionToken || persistentToken);
+
+  return isAuthenticated ? <Outlet /> : <Navigate to="/admin/login" replace />;
+};
+
+const AdminLogout = () => {
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    sessionStorage.removeItem("adminToken");
+    window.location.href = "/admin/login";
+  };
+
+  React.useEffect(() => {
+    handleLogout();
+  }, []);
+
+  return <div>Logging out...</div>;
+};
+
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Router>
+          <div className="flex flex-col min-h-screen">
+            <Routes>
+              {/* Public Routes */}
+              <Route
+                path="/"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <HomePage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/about"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <AboutPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/contact"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ContactPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/faq"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <FAQPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/blog"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <BlogPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/login"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <UserLogin />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <DeviceSelectionPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <DeviceSelectionPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <ModelSelectionPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/condition"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <ConditionAssessmentPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/valuation"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <ValuationPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/checkout"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <CheckoutPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/profile"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ProfilePage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+
+              {/* Partner Portal Routes */}
+              <Route
+                path="/partner/dashboard"
+                element={<PartnerDashboard />}
+              />
+              <Route
+                path="/partner/staff"
+                element={<StaffManagementDemo />}
+              />
+
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route element={<LocalProtectedAdminRoute />}>
+                <Route
+                  path="/admin/*"
+                  element={
+                    <ModelsProvider>
+                      <AdminLayout />
+                    </ModelsProvider>
+                  }
+                >
+                  <Route index element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+
+                  {/* Device Management */}
+                  <Route path="device-types" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDeviceTypes />
+                    </Suspense>
+                  } />
+                  <Route path="brands" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminBrands />
+                    </Suspense>
+                  } />
+                  <Route path="models" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminModels />
+                    </Suspense>
+                  } />
+
+                  {/* Q&A Management */}
+                  <Route
+                    path="condition-questions"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminConditionQuestions />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="device-model-questions"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DeviceModelQuestions />
+                      </Suspense>
+                    }
+                  />
+
+                  {/* Buyback Management */}
+                  <Route path="buyback" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminBuybacksNew />
+                    </Suspense>
+                  } />
+
+                  {/* Other Admin Routes */}
+                  <Route path="orders" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminOrders />
+                    </Suspense>
+                  } />
+                  <Route path="users" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminUsers />
+                    </Suspense>
+                  } />
+                  <Route path="settings" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminSettings />
+                    </Suspense>
+                  } />
+
+                  {/* Catch all admin route */}
+                  <Route path="*" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  } />
+                </Route>
+              </Route>
+
+              {/* Logout route */}
+              <Route path="/admin/logout" element={<AdminLogout />} />
+
+              {/* Catch all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </Router>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
+export default App;
