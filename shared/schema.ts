@@ -673,7 +673,7 @@ export const insertDeviceQuestionMappingSchema = createInsertSchema(deviceQuesti
 export type InsertDeviceQuestionMapping = z.infer<typeof insertDeviceQuestionMappingSchema>;
 export type DeviceQuestionMapping = typeof deviceQuestionMappings.$inferSelect;
 
-// Product Question Mapping schemas (legacy)
+// Product Question Mapping schemas (legacy - replaces interface definitions)
 export const insertProductQuestionMappingSchema = createInsertSchema(productQuestionMappings);
 export type InsertProductQuestionMapping = z.infer<typeof insertProductQuestionMappingSchema>;
 export type ProductQuestionMapping = typeof productQuestionMappings.$inferSelect;

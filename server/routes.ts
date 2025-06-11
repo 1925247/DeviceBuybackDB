@@ -16,6 +16,12 @@ import path from "path";
 import { uploadSingleImage, getFileUrl } from "./middleware/upload";
 import { getConditionQuestions } from "./conditionQuestionsHandler";
 import { getConditionQuestionsForModel, ensureDeviceQuestionMappingsTable, fixDeviceQuestionMappings } from "./api/conditionQuestions";
+import { 
+  getDeviceModelQuestions, 
+  mapQuestionsToDeviceModel, 
+  getAvailableQuestions,
+  getQuestionMappingStats 
+} from "./api/deviceModelQuestions";
 
 // Import API routes
 import partnerStaffRoutes from "./api/partnerStaff";
@@ -93,6 +99,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(apiRouter("/model-condition-questions/:modelId"), getConditionQuestionsForModel);
   app.get(apiRouter("/ensure-mappings-table"), ensureDeviceQuestionMappingsTable);
   app.get(apiRouter("/fix-question-mappings"), fixDeviceQuestionMappings);
+
+  // Comprehensive Device Model Question Mapping endpoints
+  app.get(apiRouter("/device-models/:modelId/questions"), getDeviceModelQuestions);
+  app.post(apiRouter("/device-models/:modelId/questions"), mapQuestionsToDeviceModel);
+  app.get(apiRouter("/questions/available"), getAvailableQuestions);
+  app.get(apiRouter("/question-mappings/stats"), getQuestionMappingStats);
 
   // Database status endpoint
   app.get(apiRouter("/status"), async (_req: Request, res: Response) => {
