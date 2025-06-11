@@ -78,13 +78,17 @@ const ValuationPage = () => {
       
       // Apply condition impact (percentage-based)
       const adjustmentFactor = 1 + (totalImpact / 100);
-      const finalValue = Math.max(50, Math.round(basePrice * adjustmentFactor));
+      const finalValueUSD = Math.max(50, Math.round(basePrice * adjustmentFactor));
       
-      console.log('Valuation calculation:', { basePrice, totalImpact, adjustmentFactor, finalValue });
+      // Convert to Indian Rupees (1 USD = 83 INR approximately)
+      const finalValueINR = Math.round(finalValueUSD * 83);
+      const basePriceINR = Math.round(basePrice * 83);
+      
+      console.log('Valuation calculation:', { basePrice, basePriceINR, totalImpact, adjustmentFactor, finalValueUSD, finalValueINR });
 
       setValuation({
-        estimatedValue: finalValue,
-        basePrice: basePrice,
+        estimatedValue: finalValueINR,
+        basePrice: basePriceINR,
         condition: getConditionDescription(totalImpact),
         factors: [
           { name: 'Device Model', impact: '+$150', positive: true },

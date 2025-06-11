@@ -417,11 +417,37 @@ export class DatabaseStorage {
   }
 
   async createBuybackRequest(insertRequest) {
-    const [request] = await db
-      .insert(buybackRequests)
-      .values(insertRequest)
-      .returning();
-    return request;
+    try {
+      console.log('Inserting buyback request:', insertRequest);
+      
+      // Map the request data to match database schema
+      const dbRequest = {
+        user_id: insertRequest.user_id || 1,
+        device_type: insertRequest.deviceType || insertRequest.device_type,
+        manufacturer: insertRequest.manufacturer || insertRequest.brand,
+        model: insertRequest.model,
+        condition: insertRequest.condition,
+        offered_price: parseFloat(insertRequest.offeredPrice || insertRequest.offered_price),
+        status: insertRequest.status || 'pending',
+        customer_name: insertRequest.customerName || insertRequest.customer_name,
+        customer_email: insertRequest.customerEmail || insertRequest.customer_email,
+        customer_phone: insertRequest.customerPhone || insertRequest.customer_phone,
+        pickup_address: insertRequest.pickupAddress || insertRequest.pickup_address,
+        device_model_id: insertRequest.deviceModelId || insertRequest.device_model_id,
+        notes: insertRequest.notes || '',
+        order_id: insertRequest.orderId || insertRequest.order_id,
+        condition_answers: insertRequest.conditionAnswers || insertRequest.condition_answers
+      };
+      
+      const [request] = await db
+        .insert(buybackRequests)
+        .values(dbRequest)
+        .returning();
+      return request;
+    } catch (error) {
+      console.error('Database error in createBuybackRequest:', error);
+      throw error;
+    }
   }
 
   async updateBuybackRequest(id, updateData) {

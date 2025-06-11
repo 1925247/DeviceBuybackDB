@@ -29,6 +29,8 @@ import CheckoutPage from "./pages/CheckoutPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import DeviceListing from "./pages/DeviceListing";
+import CheckoutFormPage from "./pages/CheckoutFormPage";
+import BuybackSuccessPage from "./pages/BuybackSuccessPage";
 import FAQPage from "./pages/FAQPage";
 import BlogPage from "./pages/BlogPage";
 import UserLogin from "./pages/UserLogin";
@@ -265,9 +267,20 @@ const App = () => {
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <ModelsProvider>
-                        <CheckoutPage />
-                      </ModelsProvider>
+                      <CheckoutFormPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/buyback-success"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <BuybackSuccessPage />
                     </main>
                     <Footer />
                   </>
