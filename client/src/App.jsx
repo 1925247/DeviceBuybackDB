@@ -57,6 +57,7 @@ const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups
 const AdminQuestionBuilder = lazy(() => import("./pages/admin/AdminQuestionBuilder"));
 const AdminAssessmentDemo = lazy(() => import("./pages/admin/AdminAssessmentDemo"));
 const AdminQuestionSystemDemo = lazy(() => import("./pages/admin/AdminQuestionSystemDemo"));
+const AdminQuestionOverview = lazy(() => import("./pages/admin/AdminQuestionOverview"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
@@ -373,6 +374,14 @@ const App = () => {
                   } />
 
                   {/* Q&A Management */}
+                  <Route
+                    path="question-overview"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminQuestionOverview />
+                      </Suspense>
+                    }
+                  />
                   <Route
                     path="question-groups"
                     element={
