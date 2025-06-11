@@ -62,6 +62,12 @@ const Navbar = () => {
                   Sell Device
                 </Link>
                 <Link
+                  to="/devices"
+                  className="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Browse Devices
+                </Link>
+                <Link
                   to="/about"
                   className="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >

@@ -170,6 +170,19 @@ const App = () => {
               />
               
               <Route
+                path="/devices"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <DeviceListing />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
                 path="/sell"
                 element={
                   <>
@@ -313,6 +326,16 @@ const App = () => {
                   <Route path="models" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminModels />
+                    </Suspense>
+                  } />
+                  <Route path="create-model" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminModelCreation />
+                    </Suspense>
+                  } />
+                  <Route path="model-variants" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminModelVariants />
                     </Suspense>
                   } />
 
