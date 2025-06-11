@@ -58,7 +58,17 @@ export class DatabaseStorage {
   }
 
   async getUsers() {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    return await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      partnerId: users.partnerId,
+      regionId: users.regionId,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt
+    }).from(users).orderBy(desc(users.createdAt));
   }
 
   async updateUser(id, updateData) {
