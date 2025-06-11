@@ -35,6 +35,8 @@ import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMapp
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes.js";
 import answerChoicesRoutes from "./api/answerChoicesApi.js";
 import productsRoutes from "./api/products.js";
+import errorReportsRoutes from "./api/errorReports.js";
+import userFeedbackRoutes from "./api/userFeedback.js";
 
 export async function registerRoutes(app) {
   // Set up API prefix
@@ -48,6 +50,8 @@ export async function registerRoutes(app) {
   app.use('/api/device-types', deviceTypesRoutes);
   app.use('/api/brand-device-types', brandDeviceTypesRoutes);
   app.use('/api/products', productsRoutes);
+  app.use('/api/error-reports', errorReportsRoutes);
+  app.use('/api/user-feedback', userFeedbackRoutes);
   app.use('/api/question-groups', questionGroupsRoutes);
   app.use('/api/questions', simpleQARoutes);
   app.use('/api/product-question-mappings', simpleProductQuestionMappingsRoutes);
