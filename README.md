@@ -1,166 +1,379 @@
-# GadgetSwap - Device Buyback & Refurbished Marketplace Platform
+# Device Buyback & Refurbished Electronics Marketplace
 
-GadgetSwap is a sophisticated device buyback and refurbished gadget marketplace platform that leverages advanced technology to create an intuitive and sustainable consumer electronics exchange experience.
+A comprehensive Indian localized device buyback platform with advanced question-based assessment system, real-time pricing calculations, and device-specific targeting capabilities.
 
-## Core Features
+## 🚀 Features
 
-- **Buyback Program**: Complete flow for device trade-ins with dynamic pricing based on condition assessment
-- **Marketplace**: Fully functional e-commerce platform for refurbished devices with inventory management
-- **Advanced Admin Panel**: Comprehensive management interface with Shopify-like functionality
-- **Multi-Tenant Architecture**: Support for partners with separate databases and customizable storefronts
-- **PIN Code-Based Routing**: Intelligent lead assignment to partners based on geographic location
-- **Environmental Impact Tracking**: Calculate and display environmental benefits of device recycling
-- **Dynamic Pricing**: Condition-based assessments with brand-specific questionnaires
-- **Region-Based Rules**: Geographic restrictions for products and partners
+### Core Platform
+- **Indian Market Localization**: INR pricing, PIN code validation, state/city auto-fill
+- **Device Assessment System**: Question-based evaluation with condition-specific pricing
+- **Multi-Device Support**: Smartphones, laptops, tablets, smartwatches, headphones
+- **Real-time Pricing**: Dynamic price calculation based on device condition
+- **Partner Network**: Multi-partner staff management and buyback routing
 
-## Tech Stack
+### Advanced Question Management
+- **Question Groups**: Categorized assessment (screen, battery, physical, functional)
+- **Device Targeting**: Model-specific and brand-specific question assignment
+- **Severity Levels**: Answer choices with impact percentages (none, minor, major, critical)
+- **Assessment Demo**: Live testing interface for question validation
+- **Admin Dashboard**: Comprehensive management interface
 
-- **Frontend**: React.js with TypeScript
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL with Drizzle ORM
-- **UI Framework**: Tailwind CSS with shadcn/ui components
-- **State Management**: TanStack Query (React Query)
-- **Forms**: React Hook Form with Zod validation
-- **Routing**: React Router DOM
+### Technical Stack
+- **Frontend**: React.js with TypeScript, Tailwind CSS, Shadcn/UI
+- **Backend**: Node.js with Express, Drizzle ORM
+- **Database**: PostgreSQL with real-time synchronization
+- **Deployment**: Docker-ready with health checks
 
-## Key Modules
+## 📋 Prerequisites
 
-### 1. Buyback Management
-- **Device Selection**: Intuitive flow for selecting device type, brand, and model
-- **Condition Assessment**: Dynamic questionnaires based on device type and brand
-- **Instant Valuation**: Real-time pricing based on device condition and market value
-- **Request Management**: Track buyback requests from submission to completion
+- Node.js 20+ 
+- PostgreSQL 14+
+- npm or yarn package manager
 
-### 2. Partner Management
-- **Partner Dashboard**: Dedicated interface for partners to manage inventory and requests
-- **Commission Setup**: Configure tiered commission structures for partners
-- **Lead Routing**: PIN code-based assignment of buyback requests to partners
-- **Payment Processing**: Manage partner payments and wallet transactions
+## 🛠️ Installation & Setup
 
-### 3. Device Management
-- **Device Catalog**: Comprehensive database of device types, brands, and models
-- **Condition Questions**: Configure assessment questionnaires for accurate valuations
-- **Pricing Rules**: Set base prices and condition-based adjustments by device
-- **Variant Management**: Handle different storage capacities and configurations
-
-### 4. Marketplace
-- **Product Listings**: Showcase refurbished devices with detailed specifications
-- **Shopping Cart**: Seamless checkout experience with multiple payment options
-- **Order Management**: Track orders from placement to fulfillment
-- **Customer Accounts**: User registration, profile management, and order history
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18 or later)
-- PostgreSQL database
-
-### Installation
-
-1. Clone the repository
+### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/gadgetswap.git
-cd gadgetswap
+git clone <repository-url>
+cd device-buyback-platform
 ```
 
-2. Install dependencies
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-3. Set up environment variables (create .env file in the root directory)
-```
-DATABASE_URL=postgresql://username:password@localhost:5432/gadgetswap
-SESSION_SECRET=your-secure-session-secret
+### 3. Environment Configuration
+Create `.env` file in root directory:
+```env
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/buyback_platform
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=buyback_platform
+PGUSER=your_username
+PGPASSWORD=your_password
+
+# Application Settings
+NODE_ENV=development
+PORT=5000
+
+# Optional: External Services
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+SENDGRID_API_KEY=your_sendgrid_key
 ```
 
-4. Run database migrations
+### 4. Database Setup
 ```bash
-npm run db:push
+# Create database
+createdb buyback_platform
+
+# Run migrations and seed data
+npm run db:setup
 ```
 
-5. Start the development server
+### 5. Start Development Server
 ```bash
 npm run dev
 ```
 
-## Database Schema Overview
+Application will be available at:
+- **Frontend**: http://localhost:5000
+- **Admin Panel**: http://localhost:5000/admin
+- **API Endpoints**: http://localhost:5000/api
 
-The database schema is designed around several core entities:
+## 📊 Database Schema
 
-- **device_types**: Categories of devices (e.g., Smartphones, Tablets, Laptops)
-- **brands**: Device manufacturers (e.g., Apple, Samsung, Google)
-- **device_models**: Specific models of devices with their characteristics
-- **products**: Marketplace listings with pricing and inventory information
-- **question_groups**: Groups of condition assessment questions
-- **questions**: Individual condition questions for buyback assessment
-- **answer_choices**: Possible answers for condition questions with value impact
-- **product_question_mappings**: Associations between products and assessment questions
-- **buyback_requests**: Customer requests to sell their devices
-- **orders**: Customer purchases of refurbished devices
-- **users**: User accounts for customers, admins, and partners
-- **partners**: Partner organizations that participate in the buyback program
+### Core Tables
 
-## Project Structure
+#### Users & Authentication
+- `users` - User accounts and authentication
+- `sessions` - User session management
 
-- `/client` - Frontend React application
-  - `/src/components` - Reusable UI components
-  - `/src/contexts` - React context providers
-  - `/src/hooks` - Custom React hooks
-  - `/src/pages` - Page components organized by feature
-  - `/src/lib` - Utility functions and API clients
-  
-- `/server` - Backend Express API
-  - `/api` - API route handlers organized by resource
-  - `/middleware` - Express middleware
-  - `/storage.ts` - Database access layer
-  - `/db.ts` - Database connection setup
-  
-- `/shared` - Shared types and schemas
-  - `/schema.ts` - Database schema definitions using Drizzle ORM
-  
-- `/migrations` - Database migrations
-- `/public` - Static assets
+#### Partner Network
+- `partners` - Partner organizations
+- `partner_staff` - Staff members under each partner
+- `partner_wallets` - Financial tracking for partners
+- `route_rules` - Geographic routing rules for buyback requests
 
-## Admin Credentials
+#### Device Management
+- `device_types` - Device categories (smartphone, laptop, etc.)
+- `brands` - Device manufacturers (Apple, Samsung, etc.)
+- `device_models` - Specific device models with pricing
+- `device_model_variants` - Storage/color variants
 
-- **Email**: admin@gadgetswap.com
-- **Password**: admin123
+#### Question & Assessment System
+- `question_groups` - Categorized question collections
+- `questions` - Individual assessment questions with device targeting
+- `answer_choices` - Answer options with price impact percentages
+- `device_question_mappings` - Model-specific question assignments
 
-## API Reference
+#### Transaction Management
+- `buyback_requests` - Customer buyback submissions
+- `wallet_transactions` - Financial transaction records
+- `withdrawal_requests` - Partner withdrawal requests
 
-The API follows RESTful principles and is organized by resource:
+#### Indian Localization
+- `indian_states` - Indian state master data
+- `indian_cities` - City data with state relationships
+- `indian_postal_codes` - PIN code validation and auto-fill
 
-- `/api/device-types` - Device category endpoints
-- `/api/brands` - Device brand endpoints
-- `/api/device-models` - Device model endpoints
-- `/api/condition-questions` - Condition assessment question endpoints
-- `/api/buyback-requests` - Buyback request management
-- `/api/products` - Marketplace product management
-- `/api/orders` - Order management
-- `/api/users` - User management
-- `/api/partners` - Partner management
-- `/api/indian` - Indian geographic data (states, cities, PIN codes)
+## 🎯 Key Functionality
 
-## GitHub Synchronization
+### Question Management System
 
-To keep your GitHub repository in sync with changes made in Replit:
+#### 1. Question Groups
+Create categorized question collections:
+```javascript
+// Admin Dashboard → Q&A Management → Question Groups
+Categories: screen, battery, physical, functional, connectivity
+Device Types: smartphone, tablet, laptop, smartwatch
+```
 
-1. Use `./track-changes.sh` to identify modified files
-2. Use `./export-changes.sh` to export only modified files as a ZIP
-3. Use `./update-github.sh` to create a complete project export
+#### 2. Question Builder
+Build targeted questions for specific devices:
+```javascript
+// Device-specific targeting
+deviceModelIds: ['2', '3'] // iPhone 13, Samsung Galaxy S24
+brandIds: ['1', '2']       // Apple, Samsung
+```
 
-See [GITHUB-SYNC.md](GITHUB-SYNC.md) for detailed instructions.
+#### 3. Answer Impact Configuration
+Configure price impacts for each answer choice:
+```javascript
+answerChoices: [
+  { text: "Excellent", impact: 0, severity: "none" },
+  { text: "Good", impact: -5, severity: "minor" },
+  { text: "Fair", impact: -15, severity: "major" },
+  { text: "Poor", impact: -30, severity: "critical" }
+]
+```
 
-## Deployment
+### PIN Code Auto-Fill
+Automatic city/state population using Indian Postal Service API:
+```javascript
+// Format: 6-digit PIN code
+// API: https://api.postalpincode.in/pincode/{pinCode}
+// Auto-fills: City, State, District
+```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+### Pricing Calculation
+Dynamic pricing based on condition assessment:
+```javascript
+basePrice = deviceModel.basePrice * 83; // USD to INR
+adjustmentFactor = 1 + (totalImpact / 100);
+finalPrice = Math.max(minimumPrice, basePrice * adjustmentFactor);
+```
 
-## Project Status
+## 🔧 API Endpoints
 
-See [PROJECT-STATUS.md](PROJECT-STATUS.md) for current development status and roadmap.
+### Question Management
+```bash
+# Question Groups
+GET    /api/question-groups
+POST   /api/question-groups
+PUT    /api/question-groups/:id
+DELETE /api/question-groups/:id
 
-## License
+# Questions
+GET    /api/questions
+POST   /api/questions
+PUT    /api/questions/:id
+DELETE /api/questions/:id
 
-[MIT](LICENSE)
+# Model-specific questions
+GET    /api/questions/models?modelIds=1,2,3
+GET    /api/questions/brands?brandIds=1,2
+```
+
+### Device Management
+```bash
+# Device Models
+GET    /api/device-models
+POST   /api/device-models
+PUT    /api/device-models/:id
+
+# Brands
+GET    /api/brands
+POST   /api/brands
+
+# Device Types
+GET    /api/device-types
+POST   /api/device-types
+```
+
+### Assessment & Buyback
+```bash
+# Condition Questions
+GET    /api/condition-questions?deviceType=smartphones&brand=apple&model=iphone-13
+
+# Buyback Requests
+POST   /api/buyback-requests
+GET    /api/buyback-requests
+PUT    /api/buyback-requests/:id
+```
+
+## 🏗️ Project Structure
+
+```
+├── client/                    # React frontend
+│   ├── src/
+│   │   ├── components/       # Reusable UI components
+│   │   ├── pages/           # Application pages
+│   │   │   ├── admin/       # Admin panel pages
+│   │   │   ├── partner/     # Partner portal
+│   │   │   └── public/      # Public pages
+│   │   ├── contexts/        # React contexts
+│   │   └── lib/            # Utilities and configurations
+├── server/                   # Node.js backend
+│   ├── api/                 # API route handlers
+│   ├── middleware/          # Express middleware
+│   ├── services/           # Business logic services
+│   └── helpers/            # Utility functions
+├── shared/                  # Shared types and schemas
+│   └── schema.js           # Database schema definitions
+├── migrations/             # Database migration files
+└── public/                # Static assets
+```
+
+## 🔐 Admin Panel Access
+
+### Default Admin Credentials
+```
+URL: http://localhost:5000/admin/login
+Username: admin@buyback.com
+Password: admin123
+```
+
+### Admin Features
+- **Dashboard**: System overview and statistics
+- **Device Management**: Brands, models, variants, types
+- **Question Management**: Groups, questions, assessments
+- **Buyback Management**: Request processing and status tracking
+- **Partner Management**: Partner onboarding and staff management
+- **User Management**: Customer account administration
+
+## 🧪 Testing & Development
+
+### Question System Testing
+1. **Question Groups**: `/admin/question-groups`
+2. **Question Builder**: `/admin/question-builder`
+3. **Assessment Demo**: `/admin/assessment-demo`
+4. **System Status**: `/admin/question-system-demo`
+
+### Sample Test Flow
+```bash
+# 1. Create question group
+curl -X POST http://localhost:5000/api/question-groups \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Screen Assessment","category":"screen"}'
+
+# 2. Add questions with targeting
+curl -X POST http://localhost:5000/api/questions \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Screen condition?","deviceModelIds":["2"]}'
+
+# 3. Test assessment
+curl "http://localhost:5000/api/condition-questions?deviceType=smartphones&brand=apple&model=iphone-13"
+```
+
+## 📦 Deployment
+
+### Docker Deployment
+```bash
+# Build and run with Docker
+docker-compose up --build
+
+# Production deployment
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Environment Variables for Production
+```env
+NODE_ENV=production
+DATABASE_URL=postgresql://prod_user:prod_pass@db_host:5432/buyback_db
+PORT=80
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Database Connection Issues
+```bash
+# Check PostgreSQL service
+sudo systemctl status postgresql
+
+# Verify connection
+psql -h localhost -U username -d buyback_platform
+```
+
+#### Port Conflicts
+```bash
+# Check port usage
+lsof -i :5000
+
+# Use different port
+PORT=3000 npm run dev
+```
+
+#### Missing Dependencies
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## 📈 Performance Optimization
+
+### Database Indexing
+```sql
+-- Index frequently queried columns
+CREATE INDEX idx_device_models_brand ON device_models(brand_id);
+CREATE INDEX idx_questions_group ON questions(question_group_id);
+CREATE INDEX idx_buyback_status ON buyback_requests(status);
+```
+
+### Caching Strategy
+- Redis for session management
+- Application-level caching for device models
+- CDN for static assets
+
+## 🤝 Contributing
+
+### Development Guidelines
+1. Follow existing code structure and naming conventions
+2. Add appropriate error handling and logging
+3. Update tests for new functionality
+4. Document API changes in this README
+
+### Code Quality
+```bash
+# Run linting
+npm run lint
+
+# Run tests
+npm run test
+
+# Format code
+npm run format
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For technical support or questions:
+- Create an issue in the repository
+- Check the troubleshooting section above
+- Review API documentation in `/docs` folder
+
+---
+
+**Last Updated**: June 2025
+**Version**: 2.0.0
+**Node.js**: 20+
+**Database**: PostgreSQL 14+
