@@ -397,12 +397,13 @@ export async function registerRoutes(app) {
       }
       
       const request = await storage.createBuybackRequest(req.body);
-      console.log('Created buyback request successfully:', request.id);
+      console.log('Created buyback request successfully:', request.id || request.order_id);
       
       res.status(201).json({ 
         success: true, 
         message: 'Buyback request created successfully',
-        data: request 
+        data: request,
+        orderId: request.order_id || request.id
       });
     } catch (error) {
       console.error('Error creating buyback request:', error);

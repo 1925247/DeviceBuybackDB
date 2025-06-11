@@ -179,15 +179,25 @@ const CheckoutFormPage = () => {
         sessionStorage.removeItem('deviceInfo');
         sessionStorage.removeItem('valuationData');
         
-        // Navigate to success page with order ID
-        navigate('/buyback-success', { 
-          state: { 
-            orderId,
-            customerName: formData.customerName,
-            estimatedValue: formData.finalPrice,
-            deviceInfo: { deviceType, brand, model }
-          }
-        });
+        // Use order ID from server response or fallback to generated one
+        const finalOrderId = result.data?.order_id || result.orderId || orderId;
+        
+        // Store order data for success page
+        const orderData = { 
+          orderId: finalOrderId,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          pickupAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pinCode}`,
+          estimatedValue: formData.finalPrice,
+          deviceInfo: { deviceType, brand, model }
+        };
+        
+        // Store in localStorage as backup
+        localStorage.setItem('lastBuybackOrder', JSON.stringify(orderData));
+        
+        // Navigate to success page with order data
+        navigate('/buyback-success', { state: orderData });
       } else {
         console.error('Server error:', result);
         throw new Error(result.message || result.error || 'Failed to submit buyback request');

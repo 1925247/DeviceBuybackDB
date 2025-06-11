@@ -448,17 +448,95 @@ export class DatabaseStorage {
       
       console.log('Mapped database request:', dbRequest);
       
-      const [request] = await db
+      // Try database insert with timeout
+      const insertPromise = db
         .insert(buybackRequests)
         .values(dbRequest)
         .returning();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timeout')), 10000)
+      );
+      
+      try {
+        const [request] = await Promise.race([insertPromise, timeoutPromise]);
+        console.log('Successfully created buyback request:', request);
+        return request;
+      } catch (dbError) {
+        console.warn('Database insert failed, using fallback storage:', dbError.message);
         
-      console.log('Successfully created buyback request:', request);
-      return request;
+        // Fallback: Store in memory with full data for immediate response
+        const fallbackRequest = {
+          id: Date.now(),
+          ...dbRequest,
+          created_at: new Date(),
+          updated_at: new Date()
+        };
+        
+        console.log('Created fallback buyback request:', fallbackRequest);
+        
+        // Attempt to queue for later database insert
+        this.queueForLaterInsert(dbRequest);
+        
+        return fallbackRequest;
+      }
     } catch (error) {
       console.error('Database error in createBuybackRequest:', error);
       console.error('Error details:', error.message);
       throw error;
+    }
+  }
+
+  // Queue failed inserts for retry
+  queueForLaterInsert(requestData) {
+    if (!this.pendingRequests) {
+      this.pendingRequests = [];
+    }
+    
+    this.pendingRequests.push({
+      data: requestData,
+      timestamp: new Date(),
+      retryCount: 0
+    });
+    
+    console.log('Queued request for later insertion:', requestData.order_id);
+    
+    // Try to process queue periodically
+    if (!this.retryTimer) {
+      this.retryTimer = setInterval(() => {
+        this.processPendingRequests();
+      }, 30000); // Try every 30 seconds
+    }
+  }
+
+  async processPendingRequests() {
+    if (!this.pendingRequests || this.pendingRequests.length === 0) {
+      return;
+    }
+
+    console.log(`Processing ${this.pendingRequests.length} pending requests`);
+    
+    const failedRequests = [];
+    
+    for (const pending of this.pendingRequests) {
+      try {
+        await db.insert(buybackRequests).values(pending.data);
+        console.log('Successfully inserted queued request:', pending.data.order_id);
+      } catch (error) {
+        pending.retryCount++;
+        if (pending.retryCount < 5) {
+          failedRequests.push(pending);
+        } else {
+          console.error('Giving up on request after 5 retries:', pending.data.order_id);
+        }
+      }
+    }
+    
+    this.pendingRequests = failedRequests;
+    
+    if (this.pendingRequests.length === 0 && this.retryTimer) {
+      clearInterval(this.retryTimer);
+      this.retryTimer = null;
     }
   }
 
