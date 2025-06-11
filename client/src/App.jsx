@@ -9,8 +9,8 @@ import {
 } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { ModelsProvider } from "./contexts/ModelsContext";
 
 // Shared Components
@@ -46,28 +46,9 @@ const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
-const AdminPricing = lazy(() => import("./pages/admin/AdminPricing"));
-const AdminConfig = lazy(() => import("./pages/admin/AdminConfig"));
-const AdminCQS = lazy(() => import("./pages/admin/AdminCQS"));
-const AdminDiagnostic = lazy(() => import("./pages/admin/AdminDiagnostic"));
-const AdminBuybacks = lazy(() => import("./pages/admin/AdminBuybacks"));
 const AdminBuybacksNew = lazy(() => import("./pages/admin/AdminBuybacksNew"));
-const AdminFeatureToggles = lazy(() => import("./pages/admin/AdminFeatureToggles"));
 const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQuestions"));
-const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions"));
-const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
-const AdminProductMapping = lazy(() => import("./pages/admin/AdminProductMapping"));
 const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
-const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
-const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
-const UserRoleManagement = lazy(() => import("./pages/admin/UserRoleManagement"));
-const RouteManagement = lazy(() => import("./pages/admin/RouteManagement"));
-const ManageRouteRules = lazy(() => import("./pages/admin/ManageRouteRules"));
-const PartnersManagement = lazy(() => import("./pages/admin/PartnersManagement"));
-const PartnerStaffManagement = lazy(() => import("./pages/admin/PartnerStaffManagement"));
-const PartnerWallets = lazy(() => import("./pages/admin/PartnerWallets"));
-const PinCodeAssignment = lazy(() => import("./pages/admin/PinCodeAssignment"));
-const PartnerOnboarding = lazy(() => import("./pages/admin/PartnerOnboarding"));
 
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
