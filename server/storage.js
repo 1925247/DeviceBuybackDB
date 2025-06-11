@@ -420,32 +420,44 @@ export class DatabaseStorage {
     try {
       console.log('Inserting buyback request:', insertRequest);
       
+      // Generate order ID if not provided
+      const orderId = insertRequest.orderId || insertRequest.order_id || `BR-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      
       // Map the request data to match database schema
       const dbRequest = {
         user_id: insertRequest.user_id || 1,
-        device_type: insertRequest.deviceType || insertRequest.device_type,
-        manufacturer: insertRequest.manufacturer || insertRequest.brand,
-        model: insertRequest.model,
-        condition: insertRequest.condition,
-        offered_price: parseFloat(insertRequest.offeredPrice || insertRequest.offered_price),
+        device_type: insertRequest.deviceType || insertRequest.device_type || 'smartphones',
+        manufacturer: insertRequest.manufacturer || insertRequest.brand || 'unknown',
+        model: insertRequest.model || 'unknown',
+        condition: insertRequest.condition || 'pending-assessment',
+        offered_price: parseFloat(insertRequest.offeredPrice || insertRequest.offered_price || 0),
         status: insertRequest.status || 'pending',
-        customer_name: insertRequest.customerName || insertRequest.customer_name,
-        customer_email: insertRequest.customerEmail || insertRequest.customer_email,
-        customer_phone: insertRequest.customerPhone || insertRequest.customer_phone,
-        pickup_address: insertRequest.pickupAddress || insertRequest.pickup_address,
-        device_model_id: insertRequest.deviceModelId || insertRequest.device_model_id,
+        customer_name: insertRequest.customerName || insertRequest.customer_name || '',
+        customer_email: insertRequest.customerEmail || insertRequest.customer_email || '',
+        customer_phone: insertRequest.customerPhone || insertRequest.customer_phone || '',
+        pickup_address: insertRequest.pickupAddress || insertRequest.pickup_address || '',
+        pickup_date: insertRequest.pickup_date || null,
+        pickup_time: insertRequest.pickup_time || null,
+        device_model_id: insertRequest.deviceModelId || insertRequest.device_model_id || null,
         notes: insertRequest.notes || '',
-        order_id: insertRequest.orderId || insertRequest.order_id,
-        condition_answers: insertRequest.conditionAnswers || insertRequest.condition_answers
+        order_id: orderId,
+        condition_answers: insertRequest.conditionAnswers || insertRequest.condition_answers || null,
+        pin_code: insertRequest.pin_code || null,
+        final_price: parseFloat(insertRequest.final_price || insertRequest.offeredPrice || insertRequest.offered_price || 0)
       };
+      
+      console.log('Mapped database request:', dbRequest);
       
       const [request] = await db
         .insert(buybackRequests)
         .values(dbRequest)
         .returning();
+        
+      console.log('Successfully created buyback request:', request);
       return request;
     } catch (error) {
       console.error('Database error in createBuybackRequest:', error);
+      console.error('Error details:', error.message);
       throw error;
     }
   }

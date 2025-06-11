@@ -152,9 +152,19 @@ const CheckoutFormPage = () => {
         body: JSON.stringify(buybackData)
       });
 
+      console.log('Response status:', response.status);
+      
+      let result;
+      try {
+        result = await response.json();
+        console.log('Response data:', result);
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        throw new Error('Invalid response from server');
+      }
+
       if (response.ok) {
-        const result = await response.json();
-        console.log('Buyback request created:', result);
+        console.log('Buyback request created successfully:', result);
         
         // Clear session storage
         sessionStorage.removeItem('conditionAnswers');
@@ -172,7 +182,8 @@ const CheckoutFormPage = () => {
           }
         });
       } else {
-        throw new Error('Failed to submit buyback request');
+        console.error('Server error:', result);
+        throw new Error(result.message || result.error || 'Failed to submit buyback request');
       }
     } catch (error) {
       console.error('Error submitting buyback request:', error);
