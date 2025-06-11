@@ -91,26 +91,64 @@ export async function registerRoutes(app) {
   app.get(apiRouter("/ensure-mappings-table"), ensureDeviceQuestionMappingsTable);
   app.get(apiRouter("/fix-question-mappings"), fixDeviceQuestionMappings);
 
-  // Question Groups Management API
+  // Question Groups Management API - Basic implementation
+  app.get("/api/question-groups", async (req, res) => {
+    try {
+      const groups = await db.select().from(questionGroups).orderBy(asc(questionGroups.id));
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching question groups:", error);
+      res.status(500).json({ error: "Failed to fetch question groups" });
+    }
+  });
 
-  // Question Groups endpoints
-  app.get("/api/question-groups", getQuestionGroups);
-  app.get("/api/question-groups/:id", getQuestionGroup);
-  app.post("/api/question-groups", createQuestionGroup);
-  app.put("/api/question-groups/:id", updateQuestionGroup);
-  app.delete("/api/question-groups/:id", deleteQuestionGroup);
-  app.get("/api/question-groups/:id/questions", getGroupQuestions);
-  app.put("/api/question-groups/:id/reorder", reorderQuestionGroup);
-  app.get("/api/question-groups/device/:deviceType", getQuestionGroupsByDeviceType);
+  app.get("/api/question-groups/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [group] = await db.select().from(questionGroups).where(eq(questionGroups.id, parseInt(id)));
+      if (!group) return res.status(404).json({ error: "Question group not found" });
+      res.json(group);
+    } catch (error) {
+      console.error("Error fetching question group:", error);
+      res.status(500).json({ error: "Failed to fetch question group" });
+    }
+  });
 
-  // Questions endpoints
-  app.get("/api/questions", getQuestions);
-  app.get("/api/questions/:id", getQuestion);
-  app.post("/api/questions", createQuestion);
-  app.put("/api/questions/:id", updateQuestion);
-  app.delete("/api/questions/:id", deleteQuestion);
-  app.get("/api/questions/models", getQuestionsForDeviceModels);
-  app.get("/api/questions/brands", getQuestionsForBrands);
+  app.post("/api/question-groups", async (req, res) => {
+    try {
+      const { name, statement, category, device_types, active } = req.body;
+      const [newGroup] = await db.insert(questionGroups).values({
+        name,
+        statement: statement || name,
+        category: category || 'general',
+        device_types: device_types || null,
+        active: active !== undefined ? active : true
+      }).returning();
+      res.status(201).json(newGroup);
+    } catch (error) {
+      console.error("Error creating question group:", error);
+      res.status(500).json({ error: "Failed to create question group" });
+    }
+  });
+
+  app.get("/api/question-groups/:id/questions", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const groupQuestions = await db.select().from(questions).where(eq(questions.questionGroupId, parseInt(id)));
+      
+      const questionsWithAnswers = await Promise.all(
+        groupQuestions.map(async (question) => {
+          const answers = await db.select().from(answerChoices).where(eq(answerChoices.questionId, question.id));
+          return { ...question, answers };
+        })
+      );
+      
+      res.json(questionsWithAnswers);
+    } catch (error) {
+      console.error("Error fetching group questions:", error);
+      res.status(500).json({ error: "Failed to fetch group questions" });
+    }
+  });
 
   // Comprehensive Device Model Question Mapping endpoints (legacy)
   app.get(apiRouter("/device-models/:modelId/questions"), getDeviceModelQuestions);

@@ -370,6 +370,38 @@ const App = () => {
 
                   {/* Q&A Management */}
                   <Route
+                    path="question-groups"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminQuestionGroups />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="question-builder"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminQuestionBuilder />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="assessment-demo"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminAssessmentDemo />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="question-system-demo"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdminQuestionSystemDemo />
+                      </Suspense>
+                    }
+                  />
+                  <Route
                     path="condition-questions"
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
