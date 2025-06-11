@@ -91,10 +91,28 @@ const ConditionAssessmentPage = () => {
   };
 
   const handleSubmit = async () => {
-    setSubmitting(true);
     try {
-      // Store answers in sessionStorage for valuation page
+      setSubmitting(true);
+      console.log('Submitting answers:', answers);
+      
+      // Calculate valuation based on answers
+      let totalImpact = 0;
+      Object.entries(answers).forEach(([questionId, answerValue]) => {
+        const question = questions.find(q => q.id === parseInt(questionId));
+        const option = question?.options?.find(opt => opt.value === answerValue);
+        if (option && option.impact !== undefined) {
+          totalImpact += option.impact;
+        }
+      });
+
+      console.log('Total impact calculated:', totalImpact);
+
+      // Store answers and impact for valuation page
       sessionStorage.setItem('conditionAnswers', JSON.stringify(answers));
+      sessionStorage.setItem('totalImpact', totalImpact.toString());
+      sessionStorage.setItem('deviceInfo', JSON.stringify({ deviceType, brand, model }));
+
+      // Navigate to valuation page
       navigate(`/sell/${deviceType}/${brand}/${model}/valuation`);
     } catch (error) {
       console.error('Error submitting answers:', error);

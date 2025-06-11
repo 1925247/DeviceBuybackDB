@@ -17,7 +17,7 @@ const ValuationPage = () => {
 
   const fetchDeviceInfo = async () => {
     try {
-      const response = await fetch(`/api/device-models?deviceType=${deviceType}&brand=${brand}&model=${model}`);
+      const response = await fetch(`/api/device-models`);
       const models = await response.json();
       const foundModel = models.find(m => m.slug === model);
       setDeviceInfo(foundModel);
@@ -26,28 +26,66 @@ const ValuationPage = () => {
     }
   };
 
+  const getConditionDescription = (impact) => {
+    if (impact >= -5) return 'Excellent';
+    if (impact >= -20) return 'Good';
+    if (impact >= -40) return 'Fair';
+    return 'Poor';
+  };
+
   const calculateValuation = async () => {
     try {
       setLoading(true);
       const conditionAnswers = JSON.parse(sessionStorage.getItem('conditionAnswers') || '{}');
+      const totalImpact = parseFloat(sessionStorage.getItem('totalImpact') || '0');
+      const storedDeviceInfo = JSON.parse(sessionStorage.getItem('deviceInfo') || '{}');
       
-      // Simulate valuation calculation based on condition answers
-      const basePrice = 300; // This would come from your pricing algorithm
-      let adjustedPrice = basePrice;
+      console.log('Calculating valuation with:', { conditionAnswers, totalImpact, storedDeviceInfo });
       
-      // Apply condition-based adjustments
-      Object.values(conditionAnswers).forEach(answer => {
-        if (typeof answer === 'string') {
-          if (answer.toLowerCase().includes('excellent')) adjustedPrice *= 1.0;
-          else if (answer.toLowerCase().includes('good')) adjustedPrice *= 0.85;
-          else if (answer.toLowerCase().includes('fair')) adjustedPrice *= 0.7;
-          else if (answer.toLowerCase().includes('poor')) adjustedPrice *= 0.5;
+      // Try to fetch actual model data for pricing
+      let basePrice = 300; // Default fallback
+      
+      try {
+        const modelsResponse = await fetch('/api/device-models');
+        const models = await modelsResponse.json();
+        
+        // Find the specific model
+        const selectedModel = models.find(m => 
+          m.slug === model && 
+          m.active === true
+        );
+        
+        if (selectedModel) {
+          console.log('Found model for valuation:', selectedModel);
+          
+          // Try to get variants for better pricing
+          const variantsResponse = await fetch(`/api/device-models/${selectedModel.id}/variants`);
+          const variants = await variantsResponse.json();
+          
+          if (variants.length > 0) {
+            // Use average variant price as base
+            const avgPrice = variants.reduce((sum, v) => sum + (v.current_price || 0), 0) / variants.length;
+            basePrice = Math.round(avgPrice * 0.6); // 60% of current market price for buyback
+            console.log('Calculated base price from variants:', basePrice);
+          } else if (selectedModel.base_price) {
+            basePrice = Math.round(selectedModel.base_price * 0.6);
+            console.log('Calculated base price from model:', basePrice);
+          }
         }
-      });
+      } catch (error) {
+        console.error('Error fetching model data for pricing:', error);
+      }
+      
+      // Apply condition impact (percentage-based)
+      const adjustmentFactor = 1 + (totalImpact / 100);
+      const finalValue = Math.max(50, Math.round(basePrice * adjustmentFactor));
+      
+      console.log('Valuation calculation:', { basePrice, totalImpact, adjustmentFactor, finalValue });
 
       setValuation({
-        estimatedValue: Math.round(adjustedPrice),
-        condition: 'Good',
+        estimatedValue: finalValue,
+        basePrice: basePrice,
+        condition: getConditionDescription(totalImpact),
         factors: [
           { name: 'Device Model', impact: '+$150', positive: true },
           { name: 'Market Demand', impact: '+$25', positive: true },

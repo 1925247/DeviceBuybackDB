@@ -200,6 +200,69 @@ export async function registerRoutes(app) {
     }
   });
 
+  // Condition Questions endpoint - Fixed implementation
+  app.get("/api/condition-questions", async (req, res) => {
+    console.log('Condition questions endpoint hit with params:', req.query);
+    try {
+      const questions = [
+        {
+          id: 1,
+          question: "What is the overall physical condition of your device?",
+          type: "multiple_choice",
+          required: true,
+          options: [
+            { id: 1, text: "Excellent - Like new", value: "excellent", impact: 0 },
+            { id: 2, text: "Good - Minor wear", value: "good", impact: -15 },
+            { id: 3, text: "Fair - Visible wear", value: "fair", impact: -30 },
+            { id: 4, text: "Poor - Significant damage", value: "poor", impact: -50 }
+          ]
+        },
+        {
+          id: 2,
+          question: "Does the screen have any cracks or damage?",
+          type: "multiple_choice", 
+          required: true,
+          options: [
+            { id: 5, text: "No damage", value: "no_damage", impact: 0 },
+            { id: 6, text: "Minor scratches", value: "minor_scratches", impact: -10 },
+            { id: 7, text: "Visible cracks", value: "cracks", impact: -40 },
+            { id: 8, text: "Severely damaged", value: "severe_damage", impact: -70 }
+          ]
+        },
+        {
+          id: 3,
+          question: "How is the battery performance?",
+          type: "multiple_choice",
+          required: true,
+          options: [
+            { id: 9, text: "Excellent - Lasts all day", value: "battery_excellent", impact: 0 },
+            { id: 10, text: "Good - Minor reduction", value: "battery_good", impact: -5 },
+            { id: 11, text: "Fair - Noticeable decrease", value: "battery_fair", impact: -15 },
+            { id: 12, text: "Poor - Needs frequent charging", value: "battery_poor", impact: -25 }
+          ]
+        },
+        {
+          id: 4,
+          question: "Are all functions working properly?",
+          type: "multiple_choice",
+          required: true,
+          options: [
+            { id: 13, text: "All functions work perfectly", value: "functions_perfect", impact: 0 },
+            { id: 14, text: "Minor issues with some functions", value: "functions_minor", impact: -10 },
+            { id: 15, text: "Several functions not working", value: "functions_several", impact: -25 },
+            { id: 16, text: "Major functionality issues", value: "functions_major", impact: -40 }
+          ]
+        }
+      ];
+      
+      console.log(`Returning ${questions.length} condition questions`);
+      res.json(questions);
+    } catch (error) {
+      console.error('Error in condition questions endpoint:', error);
+      res.status(500).json({ error: 'Failed to fetch condition questions' });
+    }
+  });
+
   const validateRequest = (schema, data) => {
     try {
       return schema.parse(data);
