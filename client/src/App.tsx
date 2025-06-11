@@ -61,6 +61,7 @@ const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQ
 const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions"));
 const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
 const AdminProductMapping = lazy(() => import("./pages/admin/AdminProductMapping"));
+const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
 const AdminInvoiceTemplates = lazy(() => import("./pages/admin/AdminInvoiceTemplates"));
 const RegionsManagement = lazy(() => import("./pages/admin/RegionsManagement"));
 const UserRoleManagement = lazy(() => import("./pages/admin/UserRoleManagement"));
@@ -408,6 +409,14 @@ function App() {
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <AdminConditionQuestions />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="device-model-questions"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DeviceModelQuestions />
                       </Suspense>
                     }
                   />

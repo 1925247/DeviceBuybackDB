@@ -311,6 +311,18 @@ const AdminLayout: React.FC = () => {
                   </Link>
 
                   <Link
+                    to="/admin/device-model-questions"
+                    className={`flex items-center px-4 py-2 text-sm rounded-lg ml-5 ${
+                      isActive("/admin/device-model-questions")
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Settings className="w-5 h-5 mr-3" />
+                    <span>Device Model Questions</span>
+                  </Link>
+
+                  <Link
                     to="/admin/valuations"
                     className={`flex items-center px-4 py-2 text-sm rounded-lg ${
                       isActive("/admin/valuations")
