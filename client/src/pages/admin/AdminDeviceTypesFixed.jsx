@@ -29,13 +29,7 @@ const AdminDeviceTypesFixed = () => {
       }
     } catch (error) {
       console.error('Error fetching device types:', error);
-      // Mock data fallback
-      setDeviceTypes([
-        { id: 1, name: 'Smartphone', slug: 'smartphone', description: 'Mobile phones and smartphones', icon: 'smartphone' },
-        { id: 2, name: 'Laptop', slug: 'laptop', description: 'Portable computers and laptops', icon: 'laptop' },
-        { id: 3, name: 'Tablet', slug: 'tablet', description: 'Tablets and iPad devices', icon: 'tablet' },
-        { id: 4, name: 'Smartwatch', slug: 'smartwatch', description: 'Wearable smart devices', icon: 'watch' }
-      ]);
+      setDeviceTypes([]);
     } finally {
       setLoading(false);
     }

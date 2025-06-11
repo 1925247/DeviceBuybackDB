@@ -23,77 +23,7 @@ const AdminBuybacksNew = () => {
         const data = await response.json();
         setRequests(data);
       } else {
-        // Mock data fallback
-        setRequests([
-          {
-            id: 'REQ-001',
-            customerName: 'John Doe',
-            customerEmail: 'john.doe@email.com',
-            device: 'iPhone 13 Pro',
-            brand: 'Apple',
-            estimatedValue: 450,
-            finalValue: null,
-            status: 'pending',
-            submittedAt: '2024-01-15T10:30:00Z',
-            notes: 'Customer reported excellent condition',
-            conditionAnswers: {
-              overall: 'excellent',
-              screen: 'no_damage',
-              battery: 'good'
-            }
-          },
-          {
-            id: 'REQ-002',
-            customerName: 'Sarah Johnson',
-            customerEmail: 'sarah.j@email.com',
-            device: 'Galaxy S23 Ultra',
-            brand: 'Samsung',
-            estimatedValue: 520,
-            finalValue: 480,
-            status: 'completed',
-            submittedAt: '2024-01-14T14:20:00Z',
-            notes: 'Minor scratches on back',
-            conditionAnswers: {
-              overall: 'good',
-              screen: 'minor_scratches',
-              battery: 'excellent'
-            }
-          },
-          {
-            id: 'REQ-003',
-            customerName: 'Mike Chen',
-            customerEmail: 'mike.chen@email.com',
-            device: 'MacBook Air M2',
-            brand: 'Apple',
-            estimatedValue: 850,
-            finalValue: null,
-            status: 'in_review',
-            submittedAt: '2024-01-13T09:15:00Z',
-            notes: 'Awaiting physical inspection',
-            conditionAnswers: {
-              overall: 'excellent',
-              screen: 'no_damage',
-              keyboard: 'excellent'
-            }
-          },
-          {
-            id: 'REQ-004',
-            customerName: 'Lisa Wang',
-            customerEmail: 'lisa.wang@email.com',
-            device: 'iPad Pro 12.9"',
-            brand: 'Apple',
-            estimatedValue: 600,
-            finalValue: 550,
-            status: 'approved',
-            submittedAt: '2024-01-12T16:45:00Z',
-            notes: 'Approved for payment',
-            conditionAnswers: {
-              overall: 'good',
-              screen: 'minor_scratches',
-              accessories: 'included'
-            }
-          }
-        ]);
+        setRequests([]);
       }
     } catch (error) {
       console.error('Error fetching buyback requests:', error);

@@ -43,40 +43,8 @@ const AdminConditionQuestions = () => {
         setQuestions(questionsData);
         setDeviceTypes(deviceTypesData);
       } else {
-        // Mock data fallback
-        setQuestions([
-          {
-            id: 1,
-            question: 'What is the overall condition of your device?',
-            device_type_id: 1,
-            order: 1,
-            active: true,
-            options: [
-              { text: 'Excellent - Like new', value: 'excellent', impact: 0 },
-              { text: 'Good - Minor wear', value: 'good', impact: -15 },
-              { text: 'Fair - Visible wear', value: 'fair', impact: -30 },
-              { text: 'Poor - Significant damage', value: 'poor', impact: -50 }
-            ]
-          },
-          {
-            id: 2,
-            question: 'Does the screen have any cracks or damage?',
-            device_type_id: 1,
-            order: 2,
-            active: true,
-            options: [
-              { text: 'No damage', value: 'no_damage', impact: 0 },
-              { text: 'Minor scratches', value: 'minor_scratches', impact: -10 },
-              { text: 'Visible cracks', value: 'cracks', impact: -40 },
-              { text: 'Severely damaged', value: 'severe_damage', impact: -70 }
-            ]
-          }
-        ]);
-        setDeviceTypes([
-          { id: 1, name: 'Smartphone' },
-          { id: 2, name: 'Laptop' },
-          { id: 3, name: 'Tablet' }
-        ]);
+        setQuestions([]);
+        setDeviceTypes([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);

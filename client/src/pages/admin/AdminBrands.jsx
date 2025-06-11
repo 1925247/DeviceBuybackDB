@@ -29,15 +29,7 @@ const AdminBrands = () => {
       }
     } catch (error) {
       console.error('Error fetching brands:', error);
-      // Mock data fallback
-      setBrands([
-        { id: 1, name: 'Apple', slug: 'apple', logo: '/api/placeholder/50/50', description: 'Premium consumer electronics' },
-        { id: 2, name: 'Samsung', slug: 'samsung', logo: '/api/placeholder/50/50', description: 'Global technology leader' },
-        { id: 3, name: 'Google', slug: 'google', logo: '/api/placeholder/50/50', description: 'Search and mobile technology' },
-        { id: 4, name: 'Microsoft', slug: 'microsoft', logo: '/api/placeholder/50/50', description: 'Software and hardware solutions' },
-        { id: 5, name: 'Sony', slug: 'sony', logo: '/api/placeholder/50/50', description: 'Entertainment and electronics' },
-        { id: 6, name: 'OnePlus', slug: 'oneplus', logo: '/api/placeholder/50/50', description: 'Never Settle premium devices' }
-      ]);
+      setBrands([]);
     } finally {
       setLoading(false);
     }

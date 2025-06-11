@@ -48,22 +48,9 @@ const AdminModels = () => {
         setBrands(brandsData);
         setDeviceTypes(deviceTypesData);
       } else {
-        // Mock data fallback
-        setModels([
-          { id: 1, name: 'iPhone 15 Pro', slug: 'iphone-15-pro', brand_id: 1, device_type_id: 1, release_year: 2023, image_url: '/api/placeholder/100/100', description: 'Latest flagship iPhone' },
-          { id: 2, name: 'Galaxy S24 Ultra', slug: 'galaxy-s24-ultra', brand_id: 2, device_type_id: 1, release_year: 2024, image_url: '/api/placeholder/100/100', description: 'Premium Android flagship' },
-          { id: 3, name: 'MacBook Pro 16"', slug: 'macbook-pro-16', brand_id: 1, device_type_id: 2, release_year: 2023, image_url: '/api/placeholder/100/100', description: 'Professional laptop' }
-        ]);
-        setBrands([
-          { id: 1, name: 'Apple' },
-          { id: 2, name: 'Samsung' },
-          { id: 3, name: 'Google' }
-        ]);
-        setDeviceTypes([
-          { id: 1, name: 'Smartphone' },
-          { id: 2, name: 'Laptop' },
-          { id: 3, name: 'Tablet' }
-        ]);
+        setModels([]);
+        setBrands([]);
+        setDeviceTypes([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
