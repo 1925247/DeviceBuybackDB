@@ -10,9 +10,11 @@ const AdminLeadAnalytics = () => {
   const [dateRange, setDateRange] = useState('7d');
   const [selectedSource, setSelectedSource] = useState('all');
 
-  const { data: requests = [], isLoading } = useQuery({
+  const { data: requests = [], isLoading, error } = useQuery({
     queryKey: ['/api/buyback-requests'],
-    refetchInterval: 30000
+    refetchInterval: 30000,
+    retry: 3,
+    retryDelay: 1000
   });
 
   // Process lead analytics data
@@ -157,6 +159,26 @@ const AdminLeadAnalytics = () => {
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Error fetching data:', error);
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <h3 className="text-red-800 font-medium">Error Loading Analytics</h3>
+          <p className="text-red-600 text-sm mt-1">
+            Failed to load analytics data. Please refresh the page.
+          </p>
+          <details className="mt-2">
+            <summary className="text-red-700 cursor-pointer text-sm">Error Details</summary>
+            <pre className="text-xs text-red-600 mt-1 bg-red-100 p-2 rounded overflow-auto">
+              {JSON.stringify(error, null, 2)}
+            </pre>
+          </details>
         </div>
       </div>
     );

@@ -82,7 +82,7 @@ const AdminLayout = () => {
       current: location.pathname === '/admin/users'
     },
     {
-      name: 'Analytics',
+      name: 'Lead Analytics',
       href: '/admin/analytics',
       icon: BarChart3,
       current: location.pathname === '/admin/analytics'
