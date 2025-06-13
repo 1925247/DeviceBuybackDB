@@ -418,11 +418,16 @@ export async function registerRoutes(app) {
   // Get buyback requests
   app.get("/api/buyback-requests", async (req, res) => {
     try {
+      console.log('Fetching buyback requests...');
       const requests = await storage.getBuybackRequests();
+      console.log(`Retrieved ${requests.length} requests`);
       res.json(requests);
     } catch (error) {
       console.error('Error fetching buyback requests:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ 
+        error: 'Failed to fetch buyback requests', 
+        details: error.message 
+      });
     }
   });
 

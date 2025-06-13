@@ -123,10 +123,21 @@ This is a comprehensive Indian localized device buyback and refurbished electron
 - **Performance Monitoring**: Query optimization and response time tracking
 - **Audit Trails**: User action logging for compliance
 
+## Recent Changes
+
+- June 13, 2025: Comprehensive platform upgrade for Indian market
+  - Fixed critical database connectivity issues
+  - Enhanced lead analytics with Indian social media tracking
+  - Added comprehensive Indian market utilities and validation
+  - Implemented advanced price calculation algorithms
+  - Created market-specific brand preferences and regional adjustments
+  - Added support for Indian payment methods and city tier classifications
+
 ## Changelog
 
-- June 13, 2025. Initial setup
+- June 13, 2025. Initial setup and comprehensive upgrade
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Target market: Indian customers with localized features and pricing.
