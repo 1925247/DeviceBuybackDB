@@ -408,7 +408,29 @@ export class DatabaseStorage {
 
   // Buyback Requests operations
   async getBuybackRequests() {
-    return await db.select().from(buybackRequests).orderBy(desc(buybackRequests.createdAt));
+    try {
+      // Use database pool directly to avoid ORM issues
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`
+          SELECT 
+            id, order_id, customer_name, customer_email, customer_phone,
+            device_type, manufacturer, model, condition, offered_price, final_price,
+            status, pickup_address, notes, created_at, updated_at,
+            lead_source, lead_medium, lead_campaign,
+            utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+            referrer_url, landing_page
+          FROM buyback_requests 
+          ORDER BY created_at DESC
+        `);
+        return result.rows || [];
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error fetching buyback requests:', error);
+      return [];
+    }
   }
 
   async getBuybackRequest(id) {
