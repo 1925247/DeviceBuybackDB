@@ -100,10 +100,10 @@ const AdminLayout = () => {
       current: location.pathname === '/admin/question-groups'
     },
     {
-      name: 'Settings',
-      href: '/admin/settings',
+      name: 'Configuration',
+      href: '/admin/configuration',
       icon: Settings,
-      current: location.pathname === '/admin/settings'
+      current: location.pathname === '/admin/configuration'
     }
   ];
 

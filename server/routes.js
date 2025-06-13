@@ -29,7 +29,7 @@ import { featureToggleRouter } from "./api/featureToggleApi.js";
 import deviceModelsRoutes from "./api/deviceModels.js";
 import brandsRoutes from "./api/brands.js";
 import deviceTypesRoutes from "./api/deviceTypes.js";
-import questionGroupsRoutes from "./api/questionGroups.js";
+// Import will be done dynamically below
 import simpleQARoutes from "./api/simpleQA.js";
 import simpleProductQuestionMappingsRoutes from "./api/simpleProductQuestionMappings.js";
 import brandDeviceTypesRoutes from "./api/brandDeviceTypes.js";
