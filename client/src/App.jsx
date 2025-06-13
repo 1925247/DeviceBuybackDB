@@ -453,6 +453,11 @@ const App = () => {
                       <AdminUsers />
                     </Suspense>
                   } />
+                  <Route path="analytics" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminAnalyticsSimple />
+                    </Suspense>
+                  } />
                   <Route path="settings" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminSettings />
