@@ -22,9 +22,9 @@ const QuestionGroupManager = () => {
 
   // Fetch question groups
   const { data: questionGroups = [], isLoading } = useQuery({
-    queryKey: ['question-groups'],
+    queryKey: ['question-groups-advanced'],
     queryFn: async () => {
-      const response = await fetch('/api/question-groups');
+      const response = await fetch('/api/question-groups-advanced');
       if (!response.ok) throw new Error('Failed to fetch question groups');
       return response.json();
     }
@@ -43,7 +43,7 @@ const QuestionGroupManager = () => {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (groupData) => {
-      const response = await fetch('/api/question-groups', {
+      const response = await fetch('/api/question-groups-advanced', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(groupData)
@@ -52,7 +52,7 @@ const QuestionGroupManager = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['question-groups']);
+      queryClient.invalidateQueries(['question-groups-advanced']);
       setShowAddForm(false);
       setNewGroup({ name: '', description: '', groupType: 'assessment', deductionRate: '0' });
     }
@@ -61,14 +61,14 @@ const QuestionGroupManager = () => {
   // Delete group mutation
   const deleteGroupMutation = useMutation({
     mutationFn: async (groupId) => {
-      const response = await fetch(`/api/question-groups/${groupId}`, {
+      const response = await fetch(`/api/question-groups-advanced/${groupId}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete group');
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['question-groups']);
+      queryClient.invalidateQueries(['question-groups-advanced']);
     }
   });
 
@@ -88,7 +88,7 @@ const QuestionGroupManager = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['question-groups']);
+      queryClient.invalidateQueries(['question-groups-advanced']);
       setShowMappingModal(false);
     }
   });

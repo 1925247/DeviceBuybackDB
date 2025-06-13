@@ -443,5 +443,58 @@ export async function registerRoutes(app) {
     }
   });
 
+  // Import advanced admin APIs
+  const { 
+    getModelsWithPricing, createModelPricing, updateModelPricing, deleteModelPricing,
+    getPricingTiers, createPricingTier, calculateModelPrice, bulkUpdatePricing
+  } = await import('./api/modelPricing.js');
+  
+  const {
+    getQuestionGroups, getQuestionGroup, createQuestionGroup, updateQuestionGroup,
+    deleteQuestionGroup, mapGroupToModel, removeGroupModelMapping, reorderQuestionGroups,
+    getQuestionGroupsByDeviceType
+  } = await import('./api/questionGroups.js');
+
+  const {
+    getAdminConfigurations, getAdminConfiguration, createAdminConfiguration,
+    updateAdminConfiguration, deleteAdminConfiguration, getConfigValue,
+    bulkUpdateConfigurations, initializeDefaultConfigurations
+  } = await import('./api/adminConfigurations.js');
+
+  // Advanced pricing routes
+  app.get('/api/models-pricing', getModelsWithPricing);
+  app.post('/api/model-pricing', createModelPricing);
+  app.patch('/api/model-pricing/:id', updateModelPricing);
+  app.delete('/api/model-pricing/:id', deleteModelPricing);
+  app.post('/api/model-pricing/calculate', calculateModelPrice);
+  app.post('/api/model-pricing/bulk-update', bulkUpdatePricing);
+  
+  // Pricing tiers routes
+  app.get('/api/pricing-tiers', getPricingTiers);
+  app.post('/api/pricing-tiers', createPricingTier);
+  
+  // Question groups routes (advanced)
+  app.get('/api/question-groups-advanced', getQuestionGroups);
+  app.get('/api/question-groups-advanced/:id', getQuestionGroup);
+  app.post('/api/question-groups-advanced', createQuestionGroup);
+  app.patch('/api/question-groups-advanced/:id', updateQuestionGroup);
+  app.delete('/api/question-groups-advanced/:id', deleteQuestionGroup);
+  app.post('/api/question-groups-advanced/reorder', reorderQuestionGroups);
+  app.get('/api/question-groups-advanced/device-type/:deviceTypeId', getQuestionGroupsByDeviceType);
+  
+  // Question-model mappings routes
+  app.post('/api/question-model-mappings', mapGroupToModel);
+  app.delete('/api/question-model-mappings/:mappingId', removeGroupModelMapping);
+
+  // Admin configurations routes
+  app.get('/api/admin-configurations', getAdminConfigurations);
+  app.get('/api/admin-configurations/:key', getAdminConfiguration);
+  app.post('/api/admin-configurations', createAdminConfiguration);
+  app.patch('/api/admin-configurations/:id', updateAdminConfiguration);
+  app.delete('/api/admin-configurations/:id', deleteAdminConfiguration);
+  app.get('/api/config-value/:key', getConfigValue);
+  app.post('/api/admin-configurations/bulk-update', bulkUpdateConfigurations);
+  app.post('/api/admin-configurations/initialize', initializeDefaultConfigurations);
+
   return server;
 }

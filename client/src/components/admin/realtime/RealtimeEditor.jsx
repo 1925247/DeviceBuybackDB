@@ -44,6 +44,9 @@ const RealtimeEditor = ({
       
       // Invalidate relevant queries
       queryClient.invalidateQueries([endpoint]);
+      if (endpoint.includes('question-groups')) {
+        queryClient.invalidateQueries(['question-groups-advanced']);
+      }
       
       if (onSuccess) {
         onSuccess(data);
