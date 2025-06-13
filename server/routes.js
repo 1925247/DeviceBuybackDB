@@ -52,7 +52,7 @@ export async function registerRoutes(app) {
   app.use('/api/products', productsRoutes);
   app.use('/api/error-reports', errorReportsRoutes);
   app.use('/api/user-feedback', userFeedbackRoutes);
-  app.use('/api/question-groups', questionGroupsRoutes);
+  // Question groups will be handled via dynamic imports below
   app.use('/api/questions', simpleQARoutes);
   app.use('/api/product-question-mappings', simpleProductQuestionMappingsRoutes);
   app.use('/api/answer-choices', answerChoicesRoutes);
