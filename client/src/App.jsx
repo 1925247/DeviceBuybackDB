@@ -62,6 +62,8 @@ const BuybackSuccess = lazy(() => import("./pages/BuybackSuccess"));
 const AdminBuybackRequests = lazy(() => import("./pages/admin/AdminBuybackRequests"));
 const AdminLeadAnalytics = lazy(() => import("./pages/admin/AdminLeadAnalytics"));
 const AdminAnalyticsSimple = lazy(() => import("./pages/admin/AdminAnalyticsSimple"));
+const ModelPricingManager = lazy(() => import("./components/admin/realtime/ModelPricingManager"));
+const QuestionGroupManager = lazy(() => import("./components/admin/realtime/QuestionGroupManager"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
@@ -456,6 +458,16 @@ const App = () => {
                   <Route path="analytics" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminAnalyticsSimple />
+                    </Suspense>
+                  } />
+                  <Route path="pricing-manager" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <ModelPricingManager />
+                    </Suspense>
+                  } />
+                  <Route path="question-groups" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <QuestionGroupManager />
                     </Suspense>
                   } />
                   <Route path="settings" element={

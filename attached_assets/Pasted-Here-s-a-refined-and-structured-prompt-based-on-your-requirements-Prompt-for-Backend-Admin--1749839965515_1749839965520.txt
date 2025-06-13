@@ -1,0 +1,44 @@
+Here's a refined and structured prompt based on your requirements:
+
+---
+
+**Prompt for Backend Admin Panel Development:**
+
+We need a fully customizable admin panel with the following features:
+
+1. **Real-time Editing & Updates:**
+   - All fields in the admin panel should support real-time updates, with changes immediately reflected in the database and frontend.
+
+2. **Model & Variant Pricing System:**
+   - When adding a model, allow setting a **base price** that applies to all its variants.  
+   - The customer-facing price should be calculated dynamically based on:  
+     - The model’s base price.  
+     - A **deduction rate** (configurable per model or variant).  
+   - Example: If base price = $100 and deduction rate = 10%, display price = $90.
+
+3. **Question-Answer Management:**  
+   - **Grouped Questions:** Support creating groups (e.g., "Group 22") with configurable questions.  
+   - **Deduction Rate Mapping:** Each question group should be mappable to a model’s deduction rate (e.g., selecting a model auto-fills its rate for calculations).  
+
+4. **Full CRUD Functionality:**  
+   - **Editable:** Modify any field (e.g., base price, deduction rates, questions).  
+   - **Deletable:** Remove models, variants, or questions without conflicts.  
+   - **Customizable:** Add new brands, models, or questions dynamically.  
+
+5. **Scalability:**  
+   - Allow adding revolutionary features/changes (e.g., new pricing tiers, question types) via the admin panel without backend code changes.  
+
+**Technical Notes:**  
+- Use real-time database (e.g., Firebase, WebSockets) for instant updates.  
+- Ensure frontend syncs with admin panel changes (e.g., via APIs or subscriptions).  
+- Role-based access control (if needed) for admin actions.  
+
+--- 
+
+**Example Workflow:**  
+1. Admin adds a *Model X* with base price = $200.  
+2. Sets deduction rate = 15% for *Model X*.  
+3. Links *Question Group 22* to *Model X* (auto-applies the 15% rate).  
+4. Customers see price as $170 (200 - 15%).  
+
+Let me know if you'd like to emphasize specific technologies or UI/UX requirements!

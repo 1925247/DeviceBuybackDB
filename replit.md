@@ -132,6 +132,10 @@ This is a comprehensive Indian localized device buyback and refurbished electron
   - Implemented advanced price calculation algorithms
   - Created market-specific brand preferences and regional adjustments
   - Added support for Indian payment methods and city tier classifications
+  - Built fully customizable admin panel with real-time editing capabilities
+  - Implemented model & variant pricing system with dynamic deduction rates
+  - Created advanced question group management with model mappings
+  - Added scalable pricing tiers and bulk update functionality
 
 ## Changelog
 

@@ -88,6 +88,18 @@ const AdminLayout = () => {
       current: location.pathname === '/admin/analytics'
     },
     {
+      name: 'Pricing Manager',
+      href: '/admin/pricing-manager',
+      icon: Tag,
+      current: location.pathname === '/admin/pricing-manager'
+    },
+    {
+      name: 'Question Groups',
+      href: '/admin/question-groups',
+      icon: HelpCircle,
+      current: location.pathname === '/admin/question-groups'
+    },
+    {
       name: 'Settings',
       href: '/admin/settings',
       icon: Settings,
