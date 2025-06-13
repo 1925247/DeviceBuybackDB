@@ -443,7 +443,18 @@ export class DatabaseStorage {
         order_id: orderId,
         condition_answers: insertRequest.conditionAnswers || insertRequest.condition_answers || null,
         pin_code: insertRequest.pin_code || null,
-        final_price: parseFloat(insertRequest.final_price || insertRequest.offeredPrice || insertRequest.offered_price || 0)
+        final_price: parseFloat(insertRequest.final_price || insertRequest.offeredPrice || insertRequest.offered_price || 0),
+        // Lead tracking fields
+        lead_source: insertRequest.leadSource || insertRequest.lead_source || null,
+        lead_medium: insertRequest.leadMedium || insertRequest.lead_medium || null,
+        lead_campaign: insertRequest.leadCampaign || insertRequest.lead_campaign || null,
+        utm_source: insertRequest.utmSource || insertRequest.utm_source || null,
+        utm_medium: insertRequest.utmMedium || insertRequest.utm_medium || null,
+        utm_campaign: insertRequest.utmCampaign || insertRequest.utm_campaign || null,
+        utm_term: insertRequest.utmTerm || insertRequest.utm_term || null,
+        utm_content: insertRequest.utmContent || insertRequest.utm_content || null,
+        referrer_url: insertRequest.referrerUrl || insertRequest.referrer_url || null,
+        landing_page: insertRequest.landingPage || insertRequest.landing_page || null
       };
       
       console.log('Mapped database request:', dbRequest);

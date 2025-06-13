@@ -60,6 +60,7 @@ const AdminQuestionSystemDemo = lazy(() => import("./pages/admin/AdminQuestionSy
 const AdminQuestionOverview = lazy(() => import("./pages/admin/AdminQuestionOverview"));
 const BuybackSuccess = lazy(() => import("./pages/BuybackSuccess"));
 const AdminBuybackRequests = lazy(() => import("./pages/admin/AdminBuybackRequests"));
+const AdminLeadAnalytics = lazy(() => import("./pages/admin/AdminLeadAnalytics"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));

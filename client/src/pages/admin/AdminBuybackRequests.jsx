@@ -3,8 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Package, Search, Filter, Download, Eye, Edit, 
   CheckCircle, XCircle, Clock, AlertTriangle,
-  Phone, Mail, MapPin, Calendar, Smartphone
+  Phone, Mail, MapPin, Calendar, Smartphone, 
+  TrendingUp, ExternalLink, Target
 } from 'lucide-react';
+import LeadSourceBadge from '../../components/LeadSourceBadge';
 
 const AdminBuybackRequests = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,6 +62,35 @@ const AdminBuybackRequests = () => {
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getLeadSourceInfo = (request) => {
+    const source = request.lead_source || request.utm_source || 'unknown';
+    const medium = request.lead_medium || request.utm_medium || 'unknown';
+    const campaign = request.lead_campaign || request.utm_campaign;
+    
+    const sourceColors = {
+      'google': 'bg-blue-100 text-blue-800',
+      'facebook': 'bg-blue-100 text-blue-800',
+      'instagram': 'bg-pink-100 text-pink-800',
+      'twitter': 'bg-blue-100 text-blue-800',
+      'linkedin': 'bg-blue-100 text-blue-800',
+      'direct': 'bg-green-100 text-green-800',
+      'organic': 'bg-green-100 text-green-800',
+      'referral': 'bg-purple-100 text-purple-800',
+      'email': 'bg-orange-100 text-orange-800',
+      'unknown': 'bg-gray-100 text-gray-800'
+    };
+    
+    const color = sourceColors[source] || sourceColors[medium] || sourceColors['unknown'];
+    
+    return {
+      source,
+      medium,
+      campaign,
+      color,
+      display: campaign ? `${source}/${campaign}` : `${source}/${medium}`
+    };
   };
 
   const formatDate = (dateString) => {
@@ -235,6 +266,9 @@ const AdminBuybackRequests = () => {
                     Device
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Lead Source
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Value
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -283,6 +317,21 @@ const AdminBuybackRequests = () => {
                           <div className="text-sm text-gray-500 capitalize">
                             {request.device_type} • {request.condition}
                           </div>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <LeadSourceBadge 
+                            source={request.lead_source || request.utm_source}
+                            medium={request.lead_medium || request.utm_medium}
+                            campaign={request.utm_campaign}
+                          />
+                          {request.utm_term && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Term: {request.utm_term}
+                            </div>
+                          )}
                         </div>
                       </td>
                       
@@ -422,6 +471,49 @@ const AdminBuybackRequests = () => {
                       {formatDate(selectedRequest.created_at)}
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Lead Source Details */}
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium text-gray-900 mb-3">Lead Source Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Source</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {selectedRequest.lead_source || selectedRequest.utm_source || 'Direct'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Medium</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {selectedRequest.lead_medium || selectedRequest.utm_medium || 'None'}
+                    </p>
+                  </div>
+                  {selectedRequest.utm_campaign && (
+                    <div>
+                      <p className="text-sm text-gray-600">Campaign</p>
+                      <p className="text-sm font-medium text-gray-900">{selectedRequest.utm_campaign}</p>
+                    </div>
+                  )}
+                  {selectedRequest.utm_term && (
+                    <div>
+                      <p className="text-sm text-gray-600">Search Term</p>
+                      <p className="text-sm font-medium text-gray-900">{selectedRequest.utm_term}</p>
+                    </div>
+                  )}
+                  {selectedRequest.referrer_url && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-600">Referrer URL</p>
+                      <p className="text-sm font-medium text-gray-900 break-all">{selectedRequest.referrer_url}</p>
+                    </div>
+                  )}
+                  {selectedRequest.landing_page && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-600">Landing Page</p>
+                      <p className="text-sm font-medium text-gray-900 break-all">{selectedRequest.landing_page}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
