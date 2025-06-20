@@ -19,6 +19,15 @@ const DeviceSelectionPage = () => {
     }
   }, [deviceType]);
 
+  const handleDeviceSelect = (device) => {
+    setSelectedDevice(device);
+    navigate(`/sell/${device.slug}`);
+  };
+
+  const handleBrandSelect = (brand) => {
+    navigate(`/sell/${deviceType}/${brand.slug}`);
+  };
+
   const fetchDeviceTypes = async () => {
     try {
       const response = await fetch('/api/device-types');
@@ -45,15 +54,6 @@ const DeviceSelectionPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDeviceSelect = (device) => {
-    setSelectedDevice(device);
-    navigate(`/sell/${device.slug}`);
-  };
-
-  const handleBrandSelect = (brand) => {
-    navigate(`/sell/${deviceType}/${brand.slug}`);
   };
 
   if (loading && deviceType) {

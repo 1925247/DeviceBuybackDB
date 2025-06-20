@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Smartphone, Laptop, Watch, Tablet, ArrowRight, Shield, DollarSign, Clock } from 'lucide-react';
+import { ArrowRight, Shield, DollarSign, Clock } from 'lucide-react';
+import DeviceIcon from '../components/ui/DeviceIcon';
 
 const HomePage = () => {
-  const deviceTypes = [
-    { id: 1, name: 'Smartphones', icon: Smartphone, path: '/sell/smartphone', color: 'bg-blue-500' },
-    { id: 2, name: 'Laptops', icon: Laptop, path: '/sell/laptop', color: 'bg-green-500' },
-    { id: 3, name: 'Tablets', icon: Tablet, path: '/sell/tablet', color: 'bg-purple-500' },
-    { id: 4, name: 'Smartwatches', icon: Watch, path: '/sell/smartwatch', color: 'bg-orange-500' }
-  ];
+  const [deviceTypes, setDeviceTypes] = useState([]);
+
+  useEffect(() => {
+    fetchDeviceTypes();
+  }, []);
+
+  const fetchDeviceTypes = async () => {
+    try {
+      const response = await fetch('/api/device-types');
+      const data = await response.json();
+      setDeviceTypes(data.filter(dt => dt.active).slice(0, 4)); // Show max 4 on homepage
+    } catch (error) {
+      console.error('Error fetching device types:', error);
+    }
+  };
 
   const features = [
     {
