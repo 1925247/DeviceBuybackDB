@@ -28,12 +28,13 @@ router.get('/', async (req, res) => {
               CASE WHEN dmv.id IS NOT NULL THEN
                 json_build_object(
                   'id', dmv.id,
-                  'name', dmv.name,
+                  'name', dmv.variant_name,
                   'storage', dmv.storage,
-                  'price', dmv.price,
-                  'priority', dmv.priority
+                  'price', dmv.current_price,
+                  'basePrice', dmv.base_price
                 )
               END
+              ORDER BY dmv.base_price ASC
             ) FILTER (WHERE dmv.id IS NOT NULL), 
             '[]'
           ) as variants
