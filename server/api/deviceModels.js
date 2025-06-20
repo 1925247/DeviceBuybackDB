@@ -1,33 +1,69 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { deviceModels, brands, deviceTypes } from '../../shared/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
-// Get all device models with brand and device type info
-router.get('/', async (_req, res) => {
+// Get all device models with brand and device type info, with optional filtering
+router.get('/', async (req, res) => {
   try {
-    const result = await db
-      .select({
-        id: deviceModels.id,
-        name: deviceModels.name,
-        slug: deviceModels.slug,
-        image: deviceModels.image,
-        active: deviceModels.active,
-        featured: deviceModels.featured,
-        brandId: deviceModels.brand_id,
-        brandName: brands.name,
-        deviceTypeId: deviceModels.device_type_id,
-        deviceTypeName: deviceTypes.name,
-        createdAt: deviceModels.createdAt,
-        updatedAt: deviceModels.updatedAt
-      })
-      .from(deviceModels)
-      .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
-      .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id));
+    const { deviceType, brand } = req.query;
     
-    res.json(result);
+    if (deviceType && brand) {
+      // Filter by both device type and brand using raw SQL for complex joins
+      const result = await db.execute(`
+        SELECT 
+          dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+          dm.brand_id as "brandId", b.name as "brandName",
+          dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
+        FROM device_models dm
+        JOIN brands b ON dm.brand_id = b.id
+        JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dt.slug = $1 AND b.slug = $2 AND dm.active = true
+        ORDER BY dm.name
+      `, [deviceType, brand]);
+      res.json(result.rows);
+    } else if (deviceType) {
+      // Filter by device type only
+      const result = await db.execute(`
+        SELECT 
+          dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+          dm.brand_id as "brandId", b.name as "brandName",
+          dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
+        FROM device_models dm
+        JOIN brands b ON dm.brand_id = b.id
+        JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dt.slug = $1 AND dm.active = true
+        ORDER BY dm.name
+      `, [deviceType]);
+      res.json(result.rows);
+    } else {
+      // Get all active models
+      const result = await db
+        .select({
+          id: deviceModels.id,
+          name: deviceModels.name,
+          slug: deviceModels.slug,
+          image: deviceModels.image,
+          active: deviceModels.active,
+          featured: deviceModels.featured,
+          brandId: deviceModels.brand_id,
+          brandName: brands.name,
+          deviceTypeId: deviceModels.device_type_id,
+          deviceTypeName: deviceTypes.name,
+          createdAt: deviceModels.createdAt,
+          updatedAt: deviceModels.updatedAt
+        })
+        .from(deviceModels)
+        .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
+        .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
+        .where(eq(deviceModels.active, true));
+      
+      res.json(result);
+    }
   } catch (error) {
     console.error('Error fetching device models:', error);
     res.status(500).json({ message: 'Failed to fetch device models' });
