@@ -9,25 +9,41 @@ const router = Router();
 // Get all brands with device type mappings
 router.get('/', async (req, res) => {
   try {
-    const { deviceType, includeDeviceTypes = false, slug } = req.query;
+    const { deviceType, includeDeviceTypes = false, slug, hasModels = false } = req.query;
     
     if (slug) {
       // Get specific brand by slug
       const result = await db.select().from(brands).where(eq(brands.slug, slug));
       res.json(Array.isArray(result) ? result : []);
     } else if (deviceType) {
-      // Get brands that support the specific device type
-      const result = await db.execute(sql`
-        SELECT DISTINCT b.*, 
-               COALESCE(array_agg(DISTINCT dt.name) FILTER (WHERE dt.name IS NOT NULL), '{}') as device_types
-        FROM brands b
-        JOIN brand_device_types bdt ON b.id = bdt.brand_id
-        JOIN device_types dt ON bdt.device_type_id = dt.id
-        WHERE dt.slug = ${deviceType} AND b.active = true
-        GROUP BY b.id
-        ORDER BY b.priority DESC, b.name
-      `);
-      res.json(Array.isArray(result.rows) ? result.rows : Array.isArray(result) ? result : []);
+      // Get brands that have models for the specific device type
+      if (hasModels === 'true') {
+        const result = await db.execute(sql`
+          SELECT DISTINCT b.*, 
+                 COUNT(dm.id) as model_count
+          FROM brands b
+          LEFT JOIN device_models dm ON b.id = dm.brand_id
+          LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+          WHERE dt.slug = ${deviceType} AND b.active = true AND dm.active = true
+          GROUP BY b.id
+          HAVING COUNT(dm.id) > 0
+          ORDER BY b.priority DESC, b.name
+        `);
+        res.json(Array.isArray(result.rows) ? result.rows : Array.isArray(result) ? result : []);
+      } else {
+        // Get brands that support the specific device type (legacy behavior)
+        const result = await db.execute(sql`
+          SELECT DISTINCT b.*, 
+                 COALESCE(array_agg(DISTINCT dt.name) FILTER (WHERE dt.name IS NOT NULL), '{}') as device_types
+          FROM brands b
+          JOIN brand_device_types bdt ON b.id = bdt.brand_id
+          JOIN device_types dt ON bdt.device_type_id = dt.id
+          WHERE dt.slug = ${deviceType} AND b.active = true
+          GROUP BY b.id
+          ORDER BY b.priority DESC, b.name
+        `);
+        res.json(Array.isArray(result.rows) ? result.rows : Array.isArray(result) ? result : []);
+      }
     } else {
       // Get all brands with optional device types
       let query = db.select({

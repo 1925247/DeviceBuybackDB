@@ -44,9 +44,10 @@ const HomePage = () => {
 
   const fetchBrands = async () => {
     try {
-      const response = await fetch('/api/brands');
+      // Fetch brands that have smartphone models
+      const response = await fetch('/api/brands?deviceType=smartphone&hasModels=true');
       const data = await response.json();
-      setBrands(data.filter(b => b.active && b.featured).slice(0, 4));
+      setBrands(data.filter(b => b.active).slice(0, 4));
     } catch (error) {
       console.error('Error fetching brands:', error);
     }
