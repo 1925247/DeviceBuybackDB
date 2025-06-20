@@ -47,7 +47,8 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypesEnhanced"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminBrandsEnhanced = lazy(() => import("./pages/admin/AdminBrandsEnhanced"));
-const AdminModels = lazy(() => import("./pages/admin/AdvancedModelManagement"));
+const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
+const AdminModelsAdvanced = lazy(() => import("./pages/admin/AdminModelsAdvanced"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
@@ -370,6 +371,11 @@ const App = () => {
                   <Route path="models" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminModels />
+                    </Suspense>
+                  } />
+                  <Route path="models-advanced" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminModelsAdvanced />
                     </Suspense>
                   } />
 
