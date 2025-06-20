@@ -241,7 +241,12 @@ export const brands = pgTable("brands", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   logo: text("logo"),
+  logoType: text("logo_type").default("url"), // 'url' or 'upload'
+  description: text("description"),
+  website: text("website"),
   active: boolean("active").default(true),
+  featured: boolean("featured").default(false),
+  priority: integer("priority").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
