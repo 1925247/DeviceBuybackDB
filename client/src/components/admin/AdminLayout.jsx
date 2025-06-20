@@ -55,7 +55,8 @@ const AdminLayout = () => {
       children: [
         { name: 'Device Types', href: '/admin/device-types', current: location.pathname === '/admin/device-types' },
         { name: 'Brands', href: '/admin/brands', current: location.pathname === '/admin/brands' },
-        { name: 'Models', href: '/admin/models', current: location.pathname === '/admin/models' }
+        { name: 'Models', href: '/admin/models', current: location.pathname === '/admin/models' },
+        { name: 'Models Advanced', href: '/admin/models-advanced', current: location.pathname === '/admin/models-advanced' }
       ]
     },
     {
