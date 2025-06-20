@@ -374,21 +374,13 @@ const App = () => {
                       <AdminModels />
                     </Suspense>
                   } />
-                  <Route path="models-advanced" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminModelsAdvanced />
-                    </Suspense>
-                  } />
+
                   <Route path="create-model" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminModelCreation />
                     </Suspense>
                   } />
-                  <Route path="model-variants" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminModelVariants />
-                    </Suspense>
-                  } />
+
                   <Route path="advanced-model-management" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdvancedModelManagement />
