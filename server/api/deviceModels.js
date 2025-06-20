@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     console.log('Device models API called with:', { deviceType, brand, includeDetails });
     
     if (deviceType && brand) {
-      // Filter by both device type and brand - direct database query
+      // Filter by both device type and brand
       const queryText = `
         SELECT 
           dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
       `;
       
       const result = await pool.query(queryText, [deviceType, brand]);
-      res.json(result.rows || result);
+      res.json(result.rows);
       
     } else if (deviceType) {
       // Filter by device type only
@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
       `;
       
       const result = await pool.query(queryText, [deviceType]);
-      res.json(result.rows || result);
+      res.json(result.rows);
       
     } else {
       // Get all models with full details for admin interface
@@ -68,11 +68,11 @@ router.get('/', async (req, res) => {
           ORDER BY dm.priority DESC, dm.name
         `;
         
-        const result = await db.execute(queryText);
-        res.json(result.rows || result);
+        const result = await pool.query(queryText);
+        res.json(result.rows);
         
       } else {
-        // Get basic model info for public API using simple query
+        // Get basic model info for public API
         const queryText = `
           SELECT 
             dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
@@ -85,8 +85,8 @@ router.get('/', async (req, res) => {
           ORDER BY dm.name
         `;
         
-        const result = await db.execute(queryText);
-        res.json(result.rows || result);
+        const result = await pool.query(queryText);
+        res.json(result.rows);
       }
     }
   } catch (error) {
@@ -115,23 +115,24 @@ router.post('/upload-image', uploadSingleImage, async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.execute(sql`
+    const queryText = `
       SELECT 
         dm.*, 
-        b.name as "brandName", 
+        b.name as "brandName",
         dt.name as "deviceTypeName"
       FROM device_models dm
       LEFT JOIN brands b ON dm.brand_id = b.id
       LEFT JOIN device_types dt ON dm.device_type_id = dt.id
-      WHERE dm.id = ${parseInt(id)}
-    `);
+      WHERE dm.id = $1
+    `;
     
-    const rows = result.rows || result;
-    if (!rows || rows.length === 0) {
+    const result = await pool.query(queryText, [parseInt(id)]);
+    
+    if (!result.rows || result.rows.length === 0) {
       return res.status(404).json({ message: 'Model not found' });
     }
     
-    res.json(rows[0]);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching device model:', error);
     res.status(500).json({ message: 'Failed to fetch device model' });
@@ -141,26 +142,37 @@ router.get('/:id', async (req, res) => {
 // Create new device model
 router.post('/', async (req, res) => {
   try {
-    const modelData = {
-      name: req.body.name,
-      slug: req.body.slug,
-      brand_id: req.body.brand_id || req.body.brandId,
-      device_type_id: req.body.device_type_id || req.body.deviceTypeId,
-      year: req.body.year || new Date().getFullYear(),
-      base_price: req.body.base_price || req.body.basePrice || 0,
-      image: req.body.image || null,
-      description: req.body.description || null,
-      specifications: req.body.specifications || null,
-      featured: req.body.featured || false,
-      active: req.body.active !== false,
-      priority: req.body.priority || 0
-    };
-
-    const result = await db.insert(deviceModels).values(modelData).returning();
-    res.status(201).json(result[0]);
+    console.log('Creating model with data:', req.body);
+    
+    const insertQuery = `
+      INSERT INTO device_models (
+        name, slug, brand_id, device_type_id, year, base_price, 
+        image, description, specifications, featured, active, priority
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `;
+    
+    const values = [
+      req.body.name,
+      req.body.slug,
+      parseInt(req.body.brand_id) || parseInt(req.body.brandId),
+      parseInt(req.body.device_type_id) || parseInt(req.body.deviceTypeId),
+      parseInt(req.body.year) || new Date().getFullYear(),
+      parseFloat(req.body.base_price) || parseFloat(req.body.basePrice) || 0,
+      req.body.image || null,
+      req.body.description || null,
+      req.body.specifications || null,
+      req.body.featured || false,
+      req.body.active !== false,
+      parseInt(req.body.priority) || 0
+    ];
+    
+    const result = await pool.query(insertQuery, values);
+    res.status(201).json(result.rows[0]);
+    
   } catch (error) {
     console.error('Error creating device model:', error);
-    res.status(500).json({ message: 'Failed to create device model' });
+    res.status(500).json({ message: 'Failed to create device model', error: error.message });
   }
 });
 
@@ -168,36 +180,53 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = {
-      name: req.body.name,
-      slug: req.body.slug,
-      brand_id: req.body.brand_id || req.body.brandId,
-      device_type_id: req.body.device_type_id || req.body.deviceTypeId,
-      year: req.body.year,
-      base_price: req.body.base_price || req.body.basePrice || 0,
-      image: req.body.image || null,
-      description: req.body.description || null,
-      specifications: req.body.specifications || null,
-      featured: req.body.featured || false,
-      active: req.body.active !== false,
-      priority: req.body.priority || 0,
-      updated_at: new Date()
-    };
-
-    const result = await db
-      .update(deviceModels)
-      .set(updateData)
-      .where(eq(deviceModels.id, parseInt(id)))
-      .returning();
-
-    if (!result.length) {
+    console.log('Updating model with data:', req.body);
+    
+    const updateQuery = `
+      UPDATE device_models SET
+        name = $1,
+        slug = $2,
+        brand_id = $3,
+        device_type_id = $4,
+        year = $5,
+        base_price = $6,
+        image = $7,
+        description = $8,
+        specifications = $9,
+        featured = $10,
+        active = $11,
+        priority = $12,
+        updated_at = NOW()
+      WHERE id = $13
+      RETURNING *
+    `;
+    
+    const values = [
+      req.body.name,
+      req.body.slug,
+      parseInt(req.body.brand_id) || parseInt(req.body.brandId),
+      parseInt(req.body.device_type_id) || parseInt(req.body.deviceTypeId),
+      parseInt(req.body.year),
+      parseFloat(req.body.base_price) || parseFloat(req.body.basePrice) || 0,
+      req.body.image || null,
+      req.body.description || null,
+      req.body.specifications || null,
+      req.body.featured || false,
+      req.body.active !== false,
+      parseInt(req.body.priority) || 0,
+      parseInt(id)
+    ];
+    
+    const result = await pool.query(updateQuery, values);
+    
+    if (!result.rows || result.rows.length === 0) {
       return res.status(404).json({ message: 'Model not found' });
     }
-
-    res.json(result[0]);
+    
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating device model:', error);
-    res.status(500).json({ message: 'Failed to update device model' });
+    res.status(500).json({ message: 'Failed to update device model', error: error.message });
   }
 });
 
@@ -206,15 +235,13 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const result = await db
-      .delete(deviceModels)
-      .where(eq(deviceModels.id, parseInt(id)))
-      .returning();
-
-    if (!result.length) {
+    const deleteQuery = `DELETE FROM device_models WHERE id = $1 RETURNING *`;
+    const result = await pool.query(deleteQuery, [parseInt(id)]);
+    
+    if (!result.rows || result.rows.length === 0) {
       return res.status(404).json({ message: 'Model not found' });
     }
-
+    
     res.json({ message: 'Model deleted successfully' });
   } catch (error) {
     console.error('Error deleting device model:', error);
@@ -231,12 +258,12 @@ router.post('/bulk-delete', async (req, res) => {
       return res.status(400).json({ message: 'Invalid model IDs' });
     }
 
-    const result = await db
-      .delete(deviceModels)
-      .where(inArray(deviceModels.id, ids.map(id => parseInt(id))))
-      .returning();
-
-    res.json({ message: `${result.length} models deleted successfully` });
+    const placeholders = ids.map((_, index) => `$${index + 1}`).join(',');
+    const deleteQuery = `DELETE FROM device_models WHERE id IN (${placeholders}) RETURNING id`;
+    
+    const result = await pool.query(deleteQuery, ids.map(id => parseInt(id)));
+    
+    res.json({ message: `${result.rows.length} models deleted successfully` });
   } catch (error) {
     console.error('Error bulk deleting models:', error);
     res.status(500).json({ message: 'Failed to delete models' });

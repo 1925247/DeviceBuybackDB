@@ -187,10 +187,10 @@ const AdminModelsAdvanced = () => {
         setFormData({
           name: modelData.name,
           slug: modelData.slug,
-          brandId: modelData.brandId || modelData.brand_id || '',
-          deviceTypeId: modelData.deviceTypeId || modelData.device_type_id || '',
+          brandId: modelData.brand_id || modelData.brandId || '',
+          deviceTypeId: modelData.device_type_id || modelData.deviceTypeId || '',
           year: modelData.year || new Date().getFullYear(),
-          basePrice: modelData.basePrice || modelData.base_price || '',
+          basePrice: modelData.base_price || modelData.basePrice || '',
           image: modelData.image || '',
           imageType: 'url',
           description: modelData.description || '',
