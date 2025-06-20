@@ -125,13 +125,13 @@ This is a comprehensive Indian localized device buyback and refurbished electron
 
 ## Recent Changes
 
-- June 20, 2025: Restored Advanced Model Management to previous version
-  - Rollback completed as requested by user
-  - Restored both AdminModels.jsx and AdminModelsAdvanced.jsx implementations
-  - Re-added models-advanced route for enhanced model management
-  - Maintained both basic and advanced model management interfaces
-  - Basic AdminModels for simple model CRUD operations
-  - Advanced AdminModelsAdvanced with expandable models and search functionality
+- June 20, 2025: Restored Advanced Model Management to 2 hours prior version
+  - Rollback to original comprehensive implementation with full variant support
+  - Restored complete variant functionality for model variants management
+  - Maintained both AdminModels.jsx and AdminModelsAdvanced.jsx implementations
+  - AdvancedModelManagement.jsx with full variant CRUD operations
+  - AdminModelsAdvanced.jsx with expandable models and search functionality
+  - Restored all variant handling including add, edit, delete operations
 
 - June 13, 2025: Comprehensive platform upgrade for Indian market
   - Fixed critical database connectivity issues
