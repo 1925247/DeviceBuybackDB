@@ -71,6 +71,7 @@ const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants")
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 const AdminModelsAdvanced = lazy(() => import("./pages/admin/AdminModelsAdvanced"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
+const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
 
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
@@ -239,7 +240,7 @@ const App = () => {
                     <Navbar />
                     <main className="flex-grow">
                       <ModelsProvider>
-                        <ModelSelectionPage />
+                        <DeviceModelsPage />
                       </ModelsProvider>
                     </main>
                     <Footer />

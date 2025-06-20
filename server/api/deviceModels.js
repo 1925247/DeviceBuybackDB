@@ -12,20 +12,38 @@ router.get('/', async (req, res) => {
     const { deviceType, brand, includeDetails = false } = req.query;
     
     if (deviceType && brand) {
-      // Filter by both device type and brand using raw SQL for complex joins
-      const result = await db.execute(`
-        SELECT 
-          dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
-          dm.brand_id as "brandId", b.name as "brandName",
-          dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
-          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
-        FROM device_models dm
-        JOIN brands b ON dm.brand_id = b.id
-        JOIN device_types dt ON dm.device_type_id = dt.id
-        WHERE dt.slug = $1 AND b.slug = $2 AND dm.active = true
-        ORDER BY dm.name
-      `, [deviceType, brand]);
-      res.json(result.rows);
+      // Filter by both device type and brand
+      const result = await db
+        .select({
+          id: deviceModels.id,
+          name: deviceModels.name,
+          slug: deviceModels.slug,
+          image: deviceModels.image,
+          active: deviceModels.active,
+          featured: deviceModels.featured,
+          basePrice: deviceModels.base_price,
+          year: deviceModels.year,
+          description: deviceModels.description,
+          specifications: deviceModels.specifications,
+          priority: deviceModels.priority,
+          brandId: deviceModels.brand_id,
+          brandName: brands.name,
+          deviceTypeId: deviceModels.device_type_id,
+          deviceTypeName: deviceTypes.name,
+          createdAt: deviceModels.created_at,
+          updatedAt: deviceModels.updated_at
+        })
+        .from(deviceModels)
+        .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
+        .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
+        .where(and(
+          eq(deviceTypes.slug, deviceType),
+          eq(brands.slug, brand),
+          eq(deviceModels.active, true)
+        ))
+        .orderBy(deviceModels.name);
+      
+      res.json(result);
     } else if (deviceType) {
       // Filter by device type only
       const result = await db.execute(`
