@@ -186,7 +186,11 @@ const HomePage = () => {
                                   {model.brandName} • {model.deviceTypeName}
                                   {model.year && ` • ${model.year}`}
                                 </div>
-                                {model.basePrice > 0 && (
+                                {model.variants && model.variants.length > 0 ? (
+                                  <div className="text-sm text-green-600 font-medium">
+                                    Starting from ₹{model.variants[0].price.toLocaleString('en-IN')}
+                                  </div>
+                                ) : model.basePrice > 0 && (
                                   <div className="text-sm text-green-600 font-medium">
                                     Starting from ₹{model.basePrice.toLocaleString('en-IN')}
                                   </div>
