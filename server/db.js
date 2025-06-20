@@ -21,10 +21,13 @@ export const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false }
     : false,
-  max: 10, // Reduce maximum connections to avoid timeout
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Increase timeout to 10 seconds
-  acquireTimeoutMillis: 10000, // Wait up to 10 seconds for connection
+  max: 3, // Minimal connections
+  min: 1, // Keep at least one connection
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 60000, // 60 second timeout
+  acquireTimeoutMillis: 60000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 0,
 });
 
 // Create Drizzle ORM instance with proper type options

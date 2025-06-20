@@ -8,14 +8,26 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Test database connection
-try {
-  console.log('Database URL defined:', !!process.env.DATABASE_URL);
-  await db.execute(sql`SELECT 1 as test`);
-  console.log('Database connection test successful');
-} catch (error) {
-  console.error('Database connection failed:', error.message);
-}
+// Test database connection with retry logic
+const testDatabaseConnection = async (retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log('Database URL defined:', !!process.env.DATABASE_URL);
+      await db.execute(sql`SELECT 1 as test`);
+      console.log('Database connection test successful');
+      return true;
+    } catch (error) {
+      console.error(`Database connection attempt ${i + 1} failed:`, error.message);
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+      }
+    }
+  }
+  console.error('All database connection attempts failed');
+  return false;
+};
+
+await testDatabaseConnection();
 
 (async () => {
   const server = app.listen(5000, "0.0.0.0", () => {
