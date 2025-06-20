@@ -69,6 +69,7 @@ const ConfigurationManager = lazy(() => import("./components/admin/realtime/Conf
 const AdminWorkingHours = lazy(() => import("./pages/admin/AdminWorkingHours"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
+const AdminModelsAdvanced = lazy(() => import("./pages/admin/AdminModelsAdvanced"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 
 // Partner Portal Pages
@@ -369,6 +370,11 @@ const App = () => {
                   <Route path="models" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminModels />
+                    </Suspense>
+                  } />
+                  <Route path="models-advanced" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminModelsAdvanced />
                     </Suspense>
                   } />
                   <Route path="create-model" element={
