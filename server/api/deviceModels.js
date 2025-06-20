@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../db.js';
+import { db, pool } from '../db.js';
 import { deviceModels, brands, deviceTypes } from '../../shared/schema.js';
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { uploadSingleImage } from '../middleware/upload.js';
@@ -10,10 +10,11 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const { deviceType, brand, includeDetails = false } = req.query;
+    console.log('Device models API called with:', { deviceType, brand, includeDetails });
     
     if (deviceType && brand) {
-      // Filter by both device type and brand using raw SQL for reliability
-      const result = await db.execute(`
+      // Filter by both device type and brand - direct database query
+      const queryText = `
         SELECT 
           dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
           dm.year, dm.base_price as "basePrice", dm.description, 
@@ -26,12 +27,14 @@ router.get('/', async (req, res) => {
         LEFT JOIN device_types dt ON dm.device_type_id = dt.id
         WHERE dt.slug = $1 AND b.slug = $2 AND dm.active = true
         ORDER BY dm.priority DESC, dm.name
-      `, [deviceType, brand]);
+      `;
       
+      const result = await pool.query(queryText, [deviceType, brand]);
       res.json(result.rows || result);
+      
     } else if (deviceType) {
-      // Filter by device type only using raw SQL
-      const result = await db.execute(`
+      // Filter by device type only
+      const queryText = `
         SELECT 
           dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
           dm.year, dm.base_price as "basePrice", dm.description,
@@ -43,13 +46,15 @@ router.get('/', async (req, res) => {
         LEFT JOIN device_types dt ON dm.device_type_id = dt.id
         WHERE dt.slug = $1 AND dm.active = true
         ORDER BY dm.name
-      `, [deviceType]);
+      `;
       
+      const result = await pool.query(queryText, [deviceType]);
       res.json(result.rows || result);
+      
     } else {
       // Get all models with full details for admin interface
       if (includeDetails === 'true') {
-        const result = await db.execute(`
+        const queryText = `
           SELECT 
             dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
             dm.year, dm.base_price as "basePrice", dm.description, 
@@ -61,37 +66,33 @@ router.get('/', async (req, res) => {
           LEFT JOIN brands b ON dm.brand_id = b.id
           LEFT JOIN device_types dt ON dm.device_type_id = dt.id
           ORDER BY dm.priority DESC, dm.name
-        `);
+        `;
         
+        const result = await db.execute(queryText);
         res.json(result.rows || result);
-      } else {
-        // Get basic model info for public API
-        const result = await db
-          .select({
-            id: deviceModels.id,
-            name: deviceModels.name,
-            slug: deviceModels.slug,
-            image: deviceModels.image,
-            active: deviceModels.active,
-            featured: deviceModels.featured,
-            brandId: deviceModels.brand_id,
-            brandName: brands.name,
-            deviceTypeId: deviceModels.device_type_id,
-            deviceTypeName: deviceTypes.name,
-            createdAt: deviceModels.createdAt,
-            updatedAt: deviceModels.updatedAt
-          })
-          .from(deviceModels)
-          .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
-          .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
-          .where(eq(deviceModels.active, true));
         
-        res.json(result);
+      } else {
+        // Get basic model info for public API using simple query
+        const queryText = `
+          SELECT 
+            dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+            dm.brand_id as "brandId", b.name as "brandName",
+            dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName"
+          FROM device_models dm
+          LEFT JOIN brands b ON dm.brand_id = b.id
+          LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+          WHERE dm.active = true
+          ORDER BY dm.name
+        `;
+        
+        const result = await db.execute(queryText);
+        res.json(result.rows || result);
       }
     }
   } catch (error) {
     console.error('Error fetching device models:', error);
-    res.status(500).json({ message: 'Failed to fetch device models' });
+    console.error('Error details:', error.message);
+    res.status(500).json({ message: 'Failed to fetch device models', error: error.message });
   }
 });
 
