@@ -37,6 +37,7 @@ import answerChoicesRoutes from "./api/answerChoicesApi.js";
 import productsRoutes from "./api/products.js";
 import errorReportsRoutes from "./api/errorReports.js";
 import userFeedbackRoutes from "./api/userFeedback.js";
+import deviceModelVariantsRoutes from "./api/deviceModelVariants.js";
 
 export async function registerRoutes(app) {
   // Set up API prefix
@@ -46,6 +47,7 @@ export async function registerRoutes(app) {
   app.use('/api/partner-staff', partnerStaffRoutes);
   app.use('/api/indian', indianDataRoutes);
   app.use('/api/device-models', deviceModelsRoutes);
+  app.use('/api/device-model-variants', deviceModelVariantsRoutes);
   app.use('/api/brands', brandsRoutes);
   app.use('/api/device-types', deviceTypesRoutes);
   app.use('/api/brand-device-types', brandDeviceTypesRoutes);
