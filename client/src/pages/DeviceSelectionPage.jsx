@@ -32,10 +32,12 @@ const DeviceSelectionPage = () => {
     try {
       const response = await fetch('/api/device-types');
       const data = await response.json();
-      setDeviceTypes(data);
+      // Ensure data is always an array
+      const deviceTypesArray = Array.isArray(data) ? data : [];
+      setDeviceTypes(deviceTypesArray);
       
-      if (deviceType) {
-        const selected = data.find(dt => dt.slug === deviceType);
+      if (deviceType && deviceTypesArray.length > 0) {
+        const selected = deviceTypesArray.find(dt => dt.slug === deviceType);
         setSelectedDevice(selected);
       }
     } catch (error) {
@@ -48,9 +50,12 @@ const DeviceSelectionPage = () => {
       setLoading(true);
       const response = await fetch(`/api/brands?deviceType=${deviceTypeSlug}`);
       const data = await response.json();
-      setBrands(data);
+      // Ensure data is always an array
+      const brandsArray = Array.isArray(data) ? data : [];
+      setBrands(brandsArray);
     } catch (error) {
       console.error('Error fetching brands:', error);
+      setBrands([]);
     } finally {
       setLoading(false);
     }

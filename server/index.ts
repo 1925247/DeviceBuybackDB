@@ -19,8 +19,8 @@ const testDatabaseConnection = async (retries = 3) => {
     } catch (error) {
       console.error(`Database connection attempt ${i + 1} failed:`, error.message);
       if (i < retries - 1) {
-        console.log(`Retrying in 3 seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retry
+        console.log(`Retrying in 2 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
       }
     }
   }

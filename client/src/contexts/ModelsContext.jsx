@@ -54,9 +54,10 @@ export const ModelsProvider = ({ children }) => {
         }
         const modelsData = await modelsResponse.json();
 
-        setDeviceTypes(deviceTypesData);
-        setBrands(brandsData);
-        setDeviceModels(modelsData);
+        // Ensure data is always an array
+        setDeviceTypes(Array.isArray(deviceTypesData) ? deviceTypesData : []);
+        setBrands(Array.isArray(brandsData) ? brandsData : []);
+        setDeviceModels(Array.isArray(modelsData) ? modelsData : []);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(err.message);

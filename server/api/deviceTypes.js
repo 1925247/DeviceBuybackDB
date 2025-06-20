@@ -9,10 +9,12 @@ const router = Router();
 router.get('/', async (_req, res) => {
   try {
     const result = await db.select().from(deviceTypes);
-    res.json(result);
+    // Always return an array, even if empty
+    res.json(Array.isArray(result) ? result : []);
   } catch (error) {
     console.error('Error fetching device types:', error);
-    res.status(500).json({ message: 'Failed to fetch device types' });
+    // Return empty array on error to prevent frontend crashes
+    res.status(200).json([]);
   }
 });
 

@@ -17,8 +17,8 @@ router.get('/', async (req, res) => {
       const queryText = `
         SELECT 
           dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
-          dm.year, dm.base_price as "basePrice", dm.description, 
-          dm.specifications, dm.priority,
+          dm.year, COALESCE(dm.base_price, 0) as "basePrice", dm.description, 
+          dm.specifications, COALESCE(dm.priority, 0) as priority,
           dm.brand_id as "brandId", b.name as "brandName",
           dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
           dm.created_at as "createdAt", dm.updated_at as "updatedAt"
@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
         LEFT JOIN brands b ON dm.brand_id = b.id
         LEFT JOIN device_types dt ON dm.device_type_id = dt.id
         WHERE dt.slug = $1 AND b.slug = $2 AND dm.active = true
-        ORDER BY dm.priority DESC, dm.name
+        ORDER BY COALESCE(dm.priority, 0) DESC, dm.name
       `;
       
       const result = await pool.query(queryText, [deviceType, brand]);
