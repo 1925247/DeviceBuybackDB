@@ -1,20 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smartphone, Laptop, Watch, Tablet } from 'lucide-react';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import DeviceIcon from '../../components/ui/DeviceIcon';
 
 const DeviceSelection = () => {
   const navigate = useNavigate();
+  const [deviceTypes, setDeviceTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const deviceTypes = [
-    { id: 1, name: 'Smartphones', icon: Smartphone, path: '/sell/smartphone', color: 'bg-blue-500' },
-    { id: 2, name: 'Laptops', icon: Laptop, path: '/sell/laptop', color: 'bg-green-500' },
-    { id: 3, name: 'Tablets', icon: Tablet, path: '/sell/tablet', color: 'bg-purple-500' },
-    { id: 4, name: 'Smartwatches', icon: Watch, path: '/sell/smartwatch', color: 'bg-orange-500' }
-  ];
+  useEffect(() => {
+    fetchDeviceTypes();
+  }, []);
 
-  const handleDeviceSelect = (path) => {
-    navigate(path);
+  const fetchDeviceTypes = async () => {
+    try {
+      const response = await fetch('/api/device-types');
+      const data = await response.json();
+      setDeviceTypes(data.filter(dt => dt.active));
+    } catch (error) {
+      console.error('Error fetching device types:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleDeviceSelect = (device) => {
+    navigate(`/sell/${device.slug}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -29,22 +49,21 @@ const DeviceSelection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {deviceTypes.map((device) => {
-            const IconComponent = device.icon;
-            return (
-              <button
-                key={device.id}
-                onClick={() => handleDeviceSelect(device.path)}
-                className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 p-8 text-center"
-              >
-                <div className={`${device.color} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
-                  <IconComponent className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{device.name}</h3>
-                <p className="text-gray-600">Get instant quotes for your {device.name.toLowerCase()}</p>
-              </button>
-            );
-          })}
+          {deviceTypes.map((device) => (
+            <button
+              key={device.id}
+              onClick={() => handleDeviceSelect(device)}
+              className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 p-8 text-center"
+            >
+              <DeviceIcon 
+                deviceType={device} 
+                size="md"
+                className="mx-auto mb-4 group-hover:scale-110 transition-transform"
+              />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">{device.name}</h3>
+              <p className="text-gray-600">{device.description || `Get instant quotes for your ${device.name.toLowerCase()}`}</p>
+            </button>
+          ))}
         </div>
       </div>
     </div>

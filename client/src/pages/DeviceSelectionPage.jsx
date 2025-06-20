@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Smartphone, Laptop, Watch, Tablet, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import DeviceIcon from '../components/ui/DeviceIcon';
 
 const DeviceSelectionPage = () => {
   const { deviceType } = useParams();
@@ -10,13 +11,6 @@ const DeviceSelectionPage = () => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDevice, setSelectedDevice] = useState(null);
-
-  const deviceIcons = {
-    smartphone: Smartphone,
-    laptop: Laptop,
-    tablet: Tablet,
-    smartwatch: Watch
-  };
 
   useEffect(() => {
     fetchDeviceTypes();
@@ -86,23 +80,22 @@ const DeviceSelectionPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {deviceTypes.map((device) => {
-                const IconComponent = deviceIcons[device.slug] || Smartphone;
-                return (
-                  <button
-                    key={device.id}
-                    onClick={() => handleDeviceSelect(device)}
-                    className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 p-8 text-center"
-                  >
-                    <div className="bg-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                      <IconComponent className="h-8 w-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{device.name}</h3>
-                    <p className="text-gray-600">{device.description}</p>
-                    <ArrowRight className="h-5 w-5 text-blue-600 mx-auto mt-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                );
-              })}
+              {deviceTypes.map((device) => (
+                <button
+                  key={device.id}
+                  onClick={() => handleDeviceSelect(device)}
+                  className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 p-8 text-center"
+                >
+                  <DeviceIcon 
+                    deviceType={device} 
+                    size="md"
+                    className="mx-auto mb-4 group-hover:scale-110 transition-transform"
+                  />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{device.name}</h3>
+                  <p className="text-gray-600">{device.description || `Get instant quotes for your ${device.name.toLowerCase()}`}</p>
+                  <ArrowRight className="h-5 w-5 text-blue-600 mx-auto mt-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              ))}
             </div>
           </div>
         ) : (

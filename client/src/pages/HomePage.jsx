@@ -57,24 +57,23 @@ const HomePage = () => {
             What Device Are You Selling?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {deviceTypes.map((device) => {
-              const IconComponent = device.icon;
-              return (
-                <Link
-                  key={device.id}
-                  to={device.path}
-                  className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
-                >
-                  <div className="p-8 text-center">
-                    <div className={`${device.color} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
-                      <IconComponent className="h-8 w-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{device.name}</h3>
-                    <p className="text-gray-600">Get instant quotes for your {device.name.toLowerCase()}</p>
-                  </div>
-                </Link>
-              );
-            })}
+            {deviceTypes.map((device) => (
+              <Link
+                key={device.id}
+                to={`/sell/${device.slug}`}
+                className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <div className="p-8 text-center">
+                  <DeviceIcon 
+                    deviceType={device} 
+                    size="md"
+                    className="mx-auto mb-4 group-hover:scale-110 transition-transform"
+                  />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{device.name}</h3>
+                  <p className="text-gray-600">{device.description || `Get instant quotes for your ${device.name.toLowerCase()}`}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
