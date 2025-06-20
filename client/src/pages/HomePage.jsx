@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, DollarSign, Clock, Search, Check, ChevronRight } from 'lucide-react';
 import DeviceIcon from '../components/ui/DeviceIcon';
@@ -7,11 +7,29 @@ const HomePage = () => {
   const [deviceTypes, setDeviceTypes] = useState([]);
   const [brands, setBrands] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchDeviceTypes();
     fetchBrands();
+  }, []);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const fetchDeviceTypes = async () => {
@@ -34,11 +52,48 @@ const HomePage = () => {
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate(`/sell?search=${encodeURIComponent(searchTerm)}`);
+      await performSearch(searchTerm);
     }
+  };
+
+  const performSearch = async (term) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/device-models?search=${encodeURIComponent(term)}&includeDetails=true`);
+      const data = await response.json();
+      setSearchResults(Array.isArray(data) ? data : []);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Error searching models:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchInputChange = async (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Perform live search when user types
+    if (value.length >= 2) {
+      await performSearch(value);
+    } else {
+      setShowSearchResults(false);
+      setSearchResults([]);
+    }
+  };
+
+  const handleModelSelect = (model) => {
+    // Navigate to condition assessment for the selected model
+    const deviceTypeSlug = model.deviceTypeName?.toLowerCase().replace(/s$/, '') || 'smartphone';
+    const brandSlug = model.brandName?.toLowerCase() || 'unknown';
+    navigate(`/sell/${deviceTypeSlug}/${brandSlug}/${model.slug}/condition`);
+    setShowSearchResults(false);
+    setSearchTerm('');
   };
 
   const features = [
@@ -88,15 +143,75 @@ const HomePage = () => {
 
             {/* Search Bar */}
             <form onSubmit={handleSearch} className="mb-12">
-              <div className="relative max-w-2xl">
+              <div className="relative max-w-2xl" ref={searchRef}>
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchInputChange}
                   placeholder="Search your Mobile Phone to sell"
                   className="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
                 />
+                
+                {/* Search Results Dropdown */}
+                {showSearchResults && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-4 text-center text-gray-500">
+                        Searching...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div>
+                        <div className="p-3 text-sm text-gray-500 border-b">
+                          {searchResults.length} model{searchResults.length !== 1 ? 's' : ''} found
+                        </div>
+                        {searchResults.map((model) => (
+                          <button
+                            key={model.id}
+                            onClick={() => handleModelSelect(model)}
+                            className="w-full text-left p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              {model.image && (
+                                <img
+                                  src={model.image}
+                                  alt={model.name}
+                                  className="w-12 h-12 object-contain rounded"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">{model.name}</div>
+                                <div className="text-sm text-gray-500">
+                                  {model.brandName} • {model.deviceTypeName}
+                                  {model.year && ` • ${model.year}`}
+                                </div>
+                                {model.basePrice > 0 && (
+                                  <div className="text-sm text-green-600 font-medium">
+                                    Starting from ₹{model.basePrice.toLocaleString('en-IN')}
+                                  </div>
+                                )}
+                              </div>
+                              <ArrowRight className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : searchTerm.length >= 2 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        No models found for "{searchTerm}"
+                        <div className="mt-2">
+                          <Link
+                            to="/sell"
+                            className="text-blue-600 hover:text-blue-700 text-sm"
+                            onClick={() => setShowSearchResults(false)}
+                          >
+                            Browse all devices
+                          </Link>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </form>
 

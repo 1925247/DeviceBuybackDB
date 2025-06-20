@@ -9,10 +9,40 @@ const router = Router();
 // Get all device models with brand and device type info, with optional filtering
 router.get('/', async (req, res) => {
   try {
-    const { deviceType, brand, includeDetails = false } = req.query;
-    console.log('Device models API called with:', { deviceType, brand, includeDetails });
+    const { deviceType, brand, includeDetails = false, search } = req.query;
+    console.log('Device models API called with:', { deviceType, brand, includeDetails, search });
     
-    if (deviceType && brand) {
+    if (search) {
+      // Search functionality - find models by name, brand name, or specifications
+      const searchTerm = `%${search.toLowerCase()}%`;
+      const queryText = `
+        SELECT 
+          dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+          dm.year, COALESCE(dm.base_price, 0) as "basePrice", dm.description, 
+          dm.specifications, COALESCE(dm.priority, 0) as priority,
+          dm.brand_id as "brandId", b.name as "brandName",
+          dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
+        FROM device_models dm
+        LEFT JOIN brands b ON dm.brand_id = b.id
+        LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dm.active = true AND (
+          LOWER(dm.name) LIKE $1 OR 
+          LOWER(b.name) LIKE $1 OR
+          LOWER(dt.name) LIKE $1 OR
+          LOWER(dm.description) LIKE $1
+        )
+        ORDER BY 
+          CASE WHEN LOWER(dm.name) LIKE $1 THEN 1 ELSE 2 END,
+          COALESCE(dm.priority, 0) DESC, 
+          dm.name
+        LIMIT 10
+      `;
+      
+      const result = await pool.query(queryText, [searchTerm]);
+      res.json(Array.isArray(result.rows) ? result.rows : []);
+      
+    } else if (deviceType && brand) {
       // Filter by both device type and brand
       const queryText = `
         SELECT 
