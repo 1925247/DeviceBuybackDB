@@ -125,6 +125,14 @@ This is a comprehensive Indian localized device buyback and refurbished electron
 
 ## Recent Changes
 
+- June 20, 2025: Simplified Advanced Model Management system
+  - Removed variant functionality to eliminate database constraint conflicts
+  - Kept single AdvancedModelManagement.jsx implementation with essential features
+  - Removed AdminModelsAdvanced.jsx and AdminModelVariants.jsx files
+  - Simplified model management with inline editing and delete functionality
+  - Fixed database unique constraint errors related to model variants
+  - Streamlined admin routes for better navigation and reduced complexity
+
 - June 13, 2025: Comprehensive platform upgrade for Indian market
   - Fixed critical database connectivity issues
   - Enhanced lead analytics with Indian social media tracking
@@ -133,7 +141,6 @@ This is a comprehensive Indian localized device buyback and refurbished electron
   - Created market-specific brand preferences and regional adjustments
   - Added support for Indian payment methods and city tier classifications
   - Built fully customizable admin panel with real-time editing capabilities
-  - Implemented model & variant pricing system with dynamic deduction rates
   - Created advanced question group management with model mappings
   - Added scalable pricing tiers and bulk update functionality
 

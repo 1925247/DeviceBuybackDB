@@ -47,7 +47,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypesEnhanced"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminBrandsEnhanced = lazy(() => import("./pages/admin/AdminBrandsEnhanced"));
-const AdminModels = lazy(() => import("./pages/admin/AdminModelsAdvanced"));
+const AdminModels = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
@@ -67,9 +67,7 @@ const ModelPricingManager = lazy(() => import("./components/admin/realtime/Model
 const QuestionGroupManager = lazy(() => import("./components/admin/realtime/QuestionGroupManager"));
 const ConfigurationManager = lazy(() => import("./components/admin/realtime/ConfigurationManager"));
 const AdminWorkingHours = lazy(() => import("./pages/admin/AdminWorkingHours"));
-const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
-const AdminModelsAdvanced = lazy(() => import("./pages/admin/AdminModelsAdvanced"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
