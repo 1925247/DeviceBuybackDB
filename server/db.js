@@ -19,11 +19,11 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
-  max: 5, // Reduce max connections for stability
-  min: 1, // Reduce minimum connections
-  idleTimeoutMillis: 30000, // Reduce idle timeout
-  connectionTimeoutMillis: 10000, // Reduce timeout
-  acquireTimeoutMillis: 10000,
+  max: 3, // Further reduce max connections for stability
+  min: 0, // Allow zero minimum connections
+  idleTimeoutMillis: 20000, // Reduce idle timeout
+  connectionTimeoutMillis: 15000, // Increase timeout slightly
+  acquireTimeoutMillis: 15000,
   keepAlive: true,
   keepAliveInitialDelayMillis: 0,
 });
