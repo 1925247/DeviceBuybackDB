@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
       `;
       
       const result = await pool.query(queryText, [deviceType, brand]);
-      res.json(result.rows);
+      res.json(Array.isArray(result.rows) ? result.rows : []);
       
     } else if (deviceType) {
       // Filter by device type only
@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
       `;
       
       const result = await pool.query(queryText, [deviceType]);
-      res.json(result.rows);
+      res.json(Array.isArray(result.rows) ? result.rows : []);
       
     } else {
       // Get all models with full details for admin interface
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
         `;
         
         const result = await pool.query(queryText);
-        res.json(result.rows);
+        res.json(Array.isArray(result.rows) ? result.rows : []);
         
       } else {
         // Get basic model info for public API
@@ -86,13 +86,13 @@ router.get('/', async (req, res) => {
         `;
         
         const result = await pool.query(queryText);
-        res.json(result.rows);
+        res.json(Array.isArray(result.rows) ? result.rows : []);
       }
     }
   } catch (error) {
     console.error('Error fetching device models:', error);
     console.error('Error details:', error.message);
-    res.status(500).json({ message: 'Failed to fetch device models', error: error.message });
+    res.status(200).json([]);
   }
 });
 

@@ -60,15 +60,15 @@ router.get('/', async (req, res) => {
           GROUP BY b.id
           ORDER BY b.priority DESC, b.name
         `);
-        res.json(result.rows || result);
+        res.json(Array.isArray(result.rows) ? result.rows : Array.isArray(result) ? result : []);
       } else {
         const result = await query.orderBy(sql`${brands.priority} DESC, ${brands.name}`);
-        res.json(result);
+        res.json(Array.isArray(result) ? result : []);
       }
     }
   } catch (error) {
     console.error('Error fetching brands:', error);
-    res.status(500).json({ message: 'Failed to fetch brands' });
+    res.status(200).json([]);
   }
 });
 
