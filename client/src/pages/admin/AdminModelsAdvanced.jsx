@@ -474,7 +474,7 @@ const AdminModelsAdvanced = () => {
                   </span>
                 )}
                 <button
-                  onClick={() => setEditingModel(model.id)}
+                  onClick={() => setEditingModel(editingModel === model.id ? null : model.id)}
                   className="text-blue-600 hover:text-blue-700 p-1"
                 >
                   <Edit2 className="h-4 w-4" />
@@ -487,6 +487,60 @@ const AdminModelsAdvanced = () => {
                 </button>
               </div>
             </div>
+
+            {/* Edit Model Form */}
+            {editingModel === model.id && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <input
+                    type="text"
+                    defaultValue={model.name}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Model Name"
+                    onBlur={async (e) => {
+                      try {
+                        const response = await fetch(`/api/device-models/${model.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: e.target.value })
+                        });
+                        if (response.ok) {
+                          await fetchData();
+                        }
+                      } catch (error) {
+                        console.error('Error updating model:', error);
+                      }
+                    }}
+                  />
+                  <input
+                    type="number"
+                    defaultValue={model.basePrice}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Base Price"
+                    onBlur={async (e) => {
+                      try {
+                        const response = await fetch(`/api/device-models/${model.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ base_price: parseFloat(e.target.value) })
+                        });
+                        if (response.ok) {
+                          await fetchData();
+                        }
+                      } catch (error) {
+                        console.error('Error updating model:', error);
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={() => setEditingModel(null)}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  Done Editing
+                </button>
+              </div>
+            )}
 
             {/* Variants Section */}
             {expandedModels[model.id] && (
@@ -583,7 +637,7 @@ const AdminModelsAdvanced = () => {
                           <div className="flex items-center gap-3 flex-1">
                             <input
                               type="text"
-                              defaultValue={variant.name}
+                              defaultValue={variant.name || variant.variantName}
                               className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
                               onBlur={(e) => {
                                 const updatedData = { ...variant, variantName: e.target.value };
@@ -621,7 +675,7 @@ const AdminModelsAdvanced = () => {
                         ) : (
                           <div className="flex items-center justify-between flex-1">
                             <div className="flex items-center gap-4">
-                              <span className="font-medium">{variant.name}</span>
+                              <span className="font-medium">{variant.name || variant.variantName}</span>
                               <span className="text-sm text-gray-600">{variant.storage}</span>
                               {variant.ram && (
                                 <span className="text-sm text-gray-600">{variant.ram}</span>
