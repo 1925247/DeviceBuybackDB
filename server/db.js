@@ -18,14 +18,12 @@ if (!process.env.DATABASE_URL) {
 // Create connection pool with proper SSL configuration and optimized settings
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
   max: 3, // Minimal connections
   min: 1, // Keep at least one connection
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 60000, // 60 second timeout
-  acquireTimeoutMillis: 60000,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000, // 10 second timeout
+  acquireTimeoutMillis: 10000,
   keepAlive: true,
   keepAliveInitialDelayMillis: 0,
 });
