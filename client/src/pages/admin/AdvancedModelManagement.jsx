@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Upload, IndianRupee } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Upload, IndianRupee, Search } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const AdvancedModelManagement = () => {
@@ -369,6 +369,24 @@ const AdvancedModelManagement = () => {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search models..."
+            value={models.length > 0 ? '' : ''}
+            onChange={(e) => {
+              // Simple search implementation
+              const searchTerm = e.target.value.toLowerCase();
+              // This would typically filter the models array
+            }}
+            className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
       {/* Models List */}
       <div className="space-y-6">
         {models.map((model) => (
@@ -380,6 +398,9 @@ const AdvancedModelManagement = () => {
                     src={model.image}
                     alt={model.name}
                     className="w-16 h-16 object-contain rounded-lg bg-gray-100"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
                   />
                 )}
                 <div>
@@ -407,8 +428,68 @@ const AdvancedModelManagement = () => {
                     Featured
                   </span>
                 )}
+                <button
+                  onClick={() => setEditingModel(model.id === editingModel ? null : model.id)}
+                  className="text-blue-600 hover:text-blue-700 text-sm p-1"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
+
+            {/* Edit Model Form */}
+            {editingModel === model.id && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <input
+                    type="text"
+                    defaultValue={model.name}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Model Name"
+                    onBlur={async (e) => {
+                      try {
+                        const response = await fetch(`/api/device-models/${model.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: e.target.value })
+                        });
+                        if (response.ok) {
+                          await fetchData();
+                        }
+                      } catch (error) {
+                        console.error('Error updating model:', error);
+                      }
+                    }}
+                  />
+                  <input
+                    type="number"
+                    defaultValue={model.basePrice}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Base Price"
+                    onBlur={async (e) => {
+                      try {
+                        const response = await fetch(`/api/device-models/${model.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ base_price: parseFloat(e.target.value) })
+                        });
+                        if (response.ok) {
+                          await fetchData();
+                        }
+                      } catch (error) {
+                        console.error('Error updating model:', error);
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={() => setEditingModel(null)}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  Done Editing
+                </button>
+              </div>
+            )}
 
             {/* Variants Section */}
             <div className="border-t pt-4">
@@ -441,17 +522,17 @@ const AdvancedModelManagement = () => {
                       className="px-3 py-2 border border-gray-300 rounded text-sm"
                     />
                     <input
-                      type="number"
-                      placeholder="Base Price"
-                      value={newVariant.basePrice}
-                      onChange={(e) => setNewVariant(prev => ({ ...prev, basePrice: e.target.value }))}
+                      type="text"
+                      placeholder="RAM"
+                      value={newVariant.ram}
+                      onChange={(e) => setNewVariant(prev => ({ ...prev, ram: e.target.value }))}
                       className="px-3 py-2 border border-gray-300 rounded text-sm"
                     />
                     <input
                       type="number"
-                      placeholder="Current Price"
-                      value={newVariant.currentPrice}
-                      onChange={(e) => setNewVariant(prev => ({ ...prev, currentPrice: e.target.value }))}
+                      placeholder="Base Price"
+                      value={newVariant.basePrice}
+                      onChange={(e) => setNewVariant(prev => ({ ...prev, basePrice: e.target.value }))}
                       className="px-3 py-2 border border-gray-300 rounded text-sm"
                     />
                   </div>
@@ -481,7 +562,7 @@ const AdvancedModelManagement = () => {
                         <div className="flex items-center gap-3 flex-1">
                           <input
                             type="text"
-                            defaultValue={variant.name}
+                            defaultValue={variant.name || variant.variantName}
                             className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
                             onBlur={(e) => {
                               const updatedData = { ...variant, variantName: e.target.value };
@@ -506,24 +587,18 @@ const AdvancedModelManagement = () => {
                               handleUpdateVariant(variant.id, updatedData);
                             }}
                           />
-                          <input
-                            type="number"
-                            defaultValue={variant.price}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                            onBlur={(e) => {
-                              const updatedData = { ...variant, currentPrice: e.target.value };
-                              handleUpdateVariant(variant.id, updatedData);
-                            }}
-                          />
                         </div>
                       ) : (
                         <div className="flex items-center justify-between flex-1">
                           <div className="flex items-center gap-4">
-                            <span className="font-medium">{variant.name}</span>
+                            <span className="font-medium">{variant.name || variant.variantName}</span>
                             <span className="text-sm text-gray-600">{variant.storage}</span>
+                            {variant.ram && (
+                              <span className="text-sm text-gray-600">{variant.ram}</span>
+                            )}
                             <span className="text-sm text-green-600 font-semibold flex items-center gap-1">
                               <IndianRupee className="h-3 w-3" />
-                              {variant.price?.toLocaleString('en-IN')}
+                              {(variant.price || variant.basePrice || 0).toLocaleString('en-IN')}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
