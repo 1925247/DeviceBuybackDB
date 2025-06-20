@@ -4,7 +4,7 @@ import {
   Globe, Star, ArrowUp, ArrowDown, Check, X,
   Image as ImageIcon, ExternalLink, Settings
 } from 'lucide-react';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const AdminBrandsEnhanced = () => {
   const [brands, setBrands] = useState([]);
