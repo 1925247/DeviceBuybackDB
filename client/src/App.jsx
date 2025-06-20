@@ -47,7 +47,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminDeviceTypes = lazy(() => import("./pages/admin/AdminDeviceTypesFixed"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminBrandsEnhanced = lazy(() => import("./pages/admin/AdminBrandsEnhanced"));
-const AdminModels = lazy(() => import("./pages/admin/AdminModels"));
+const AdminModels = lazy(() => import("./pages/admin/AdminModelsAdvanced"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
