@@ -19,16 +19,16 @@ const testDatabaseConnection = async (retries = 3) => {
     } catch (error) {
       console.error(`Database connection attempt ${i + 1} failed:`, error.message);
       if (i < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+        console.log(`Retrying in 3 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retry
       }
     }
   }
-  console.error('All database connection attempts failed');
+  console.warn('Database connection failed, but continuing startup...');
   return false;
 };
 
-await testDatabaseConnection();
-
+// Start server first, then test database
 (async () => {
   const server = app.listen(5000, "0.0.0.0", () => {
     log(`serving on port 5000`);
@@ -41,4 +41,7 @@ await testDatabaseConnection();
   } else {
     serveStatic(app);
   }
+
+  // Test database connection after server starts
+  testDatabaseConnection().catch(console.error);
 })();
