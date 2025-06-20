@@ -97,11 +97,11 @@ router.get('/:id', async (req, res) => {
       GROUP BY b.id
     `);
     
-    if (!result.length) {
+    if (!result.rows || !result.rows.length) {
       return res.status(404).json({ message: 'Brand not found' });
     }
     
-    res.json(result[0]);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching brand:', error);
     res.status(500).json({ message: 'Failed to fetch brand' });

@@ -163,7 +163,7 @@ const AdminBrandsEnhanced = () => {
           name: brandData.name,
           slug: brandData.slug,
           logo: brandData.logo || '',
-          logoType: brandData.logoType || 'url',
+          logoType: brandData.logo_type || brandData.logoType || 'url',
           description: brandData.description || '',
           website: brandData.website || '',
           active: brandData.active,
@@ -172,9 +172,13 @@ const AdminBrandsEnhanced = () => {
           deviceTypeIds: brandData.device_type_ids || []
         });
         setShowForm(true);
+      } else {
+        console.error('Failed to fetch brand details:', response.status);
+        alert('Failed to load brand details. Please try again.');
       }
     } catch (error) {
       console.error('Error fetching brand details:', error);
+      alert('Error loading brand details. Please try again.');
     }
   };
 
@@ -184,9 +188,14 @@ const AdminBrandsEnhanced = () => {
         const response = await fetch(`/api/brands/${id}`, { method: 'DELETE' });
         if (response.ok) {
           await fetchBrands();
+          alert('Brand deleted successfully!');
+        } else {
+          console.error('Failed to delete brand:', response.status);
+          alert('Failed to delete brand. Please try again.');
         }
       } catch (error) {
         console.error('Error deleting brand:', error);
+        alert('Error deleting brand. Please try again.');
       }
     }
   };
