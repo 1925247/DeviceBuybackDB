@@ -76,30 +76,28 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('Fetching brand with ID:', id);
+    const brandId = parseInt(id);
     
-    // Use storage class method for consistency
-    const { storage } = await import('../storage.js');
-    const allBrands = await storage.getBrands();
-    const brand = allBrands.find(b => b.id === parseInt(id));
+    // Use Drizzle ORM for consistency
+    const brandQuery = await db.select().from(brands).where(eq(brands.id, brandId));
     
-    if (!brand) {
-      console.log('Brand not found for ID:', id);
+    if (brandQuery.length === 0) {
       return res.status(404).json({ message: 'Brand not found' });
     }
     
-    // Get device type mappings
-    const deviceTypeMappings = await db.execute(sql`
+    const brand = brandQuery[0];
+    
+    // Get device type mappings using raw SQL since it works
+    const deviceTypesResult = await db.execute(sql`
       SELECT dt.id, dt.name, dt.slug
       FROM device_types dt
       JOIN brand_device_types bdt ON dt.id = bdt.device_type_id
-      WHERE bdt.brand_id = ${parseInt(id)}
+      WHERE bdt.brand_id = ${brandId}
     `);
     
-    const device_types = (deviceTypeMappings.rows || deviceTypeMappings) || [];
+    const device_types = deviceTypesResult.rows || deviceTypesResult || [];
     const device_type_ids = device_types.map(dt => dt.id);
     
-    console.log('Found brand:', brand.name);
     res.json({
       ...brand,
       device_types,
