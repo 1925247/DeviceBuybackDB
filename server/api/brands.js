@@ -1,15 +1,31 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { brands } from '../../shared/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 const router = Router();
 
-// Get all brands
-router.get('/', async (_req, res) => {
+// Get all brands or filter by device type
+router.get('/', async (req, res) => {
   try {
-    const result = await db.select().from(brands);
-    res.json(result);
+    const { deviceType } = req.query;
+    
+    if (deviceType) {
+      // Get brands that support the specific device type
+      const result = await db.execute(`
+        SELECT DISTINCT b.* 
+        FROM brands b
+        JOIN brand_device_types bdt ON b.id = bdt.brand_id
+        JOIN device_types dt ON bdt.device_type_id = dt.id
+        WHERE dt.slug = $1 AND b.active = true
+        ORDER BY b.name
+      `, [deviceType]);
+      res.json(result.rows);
+    } else {
+      // Get all brands
+      const result = await db.select().from(brands);
+      res.json(result);
+    }
   } catch (error) {
     console.error('Error fetching brands:', error);
     res.status(500).json({ message: 'Failed to fetch brands' });
