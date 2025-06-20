@@ -76,32 +76,35 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('Fetching brand with ID:', id);
     
-    const result = await db.execute(sql`
-      SELECT b.*, 
-             COALESCE(
-               json_agg(
-                 json_build_object(
-                   'id', dt.id,
-                   'name', dt.name,
-                   'slug', dt.slug
-                 )
-               ) FILTER (WHERE dt.id IS NOT NULL), 
-               '[]'
-             ) as device_types,
-             COALESCE(array_agg(dt.id) FILTER (WHERE dt.id IS NOT NULL), '{}') as device_type_ids
-      FROM brands b
-      LEFT JOIN brand_device_types bdt ON b.id = bdt.brand_id
-      LEFT JOIN device_types dt ON bdt.device_type_id = dt.id
-      WHERE b.id = ${parseInt(id)}
-      GROUP BY b.id
-    `);
+    // Use storage class method for consistency
+    const { storage } = await import('../storage.js');
+    const allBrands = await storage.getBrands();
+    const brand = allBrands.find(b => b.id === parseInt(id));
     
-    if (!result.rows || !result.rows.length) {
+    if (!brand) {
+      console.log('Brand not found for ID:', id);
       return res.status(404).json({ message: 'Brand not found' });
     }
     
-    res.json(result.rows[0]);
+    // Get device type mappings
+    const deviceTypeMappings = await db.execute(sql`
+      SELECT dt.id, dt.name, dt.slug
+      FROM device_types dt
+      JOIN brand_device_types bdt ON dt.id = bdt.device_type_id
+      WHERE bdt.brand_id = ${parseInt(id)}
+    `);
+    
+    const device_types = (deviceTypeMappings.rows || deviceTypeMappings) || [];
+    const device_type_ids = device_types.map(dt => dt.id);
+    
+    console.log('Found brand:', brand.name);
+    res.json({
+      ...brand,
+      device_types,
+      device_type_ids
+    });
   } catch (error) {
     console.error('Error fetching brand:', error);
     res.status(500).json({ message: 'Failed to fetch brand' });
