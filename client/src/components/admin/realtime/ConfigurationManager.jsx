@@ -195,7 +195,7 @@ const ConfigurationManager = () => {
                     placeholder='{"enabled": true, "value": 100, "options": ["option1", "option2"]}'
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Enter a valid JSON value. Examples: "string", 123, true, {"key": "value"}, ["item1", "item2"]
+                    Enter a valid JSON value. Examples: "string", 123, true, {`{"key": "value"}`}, ["item1", "item2"]
                   </p>
                 </div>
               </div>
