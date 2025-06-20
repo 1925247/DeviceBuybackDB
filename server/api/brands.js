@@ -9,9 +9,13 @@ const router = Router();
 // Get all brands with device type mappings
 router.get('/', async (req, res) => {
   try {
-    const { deviceType, includeDeviceTypes = false } = req.query;
+    const { deviceType, includeDeviceTypes = false, slug } = req.query;
     
-    if (deviceType) {
+    if (slug) {
+      // Get specific brand by slug
+      const result = await db.select().from(brands).where(eq(brands.slug, slug));
+      res.json(Array.isArray(result) ? result : []);
+    } else if (deviceType) {
       // Get brands that support the specific device type
       const result = await db.execute(sql`
         SELECT DISTINCT b.*, 
@@ -23,7 +27,7 @@ router.get('/', async (req, res) => {
         GROUP BY b.id
         ORDER BY b.priority DESC, b.name
       `);
-      res.json(result.rows || result);
+      res.json(Array.isArray(result.rows) ? result.rows : Array.isArray(result) ? result : []);
     } else {
       // Get all brands with optional device types
       let query = db.select({

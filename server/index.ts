@@ -28,13 +28,14 @@ const testDatabaseConnection = async (retries = 3) => {
   return false;
 };
 
-// Start server first, then test database
+// Start server
 (async () => {
+  // Register routes first
+  registerRoutes(app);
+
   const server = app.listen(5000, "0.0.0.0", () => {
     log(`serving on port 5000`);
   });
-
-  registerRoutes(app);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
@@ -42,6 +43,8 @@ const testDatabaseConnection = async (retries = 3) => {
     serveStatic(app);
   }
 
-  // Test database connection after server starts
-  testDatabaseConnection().catch(console.error);
+  // Test database connection after server starts (non-blocking)
+  setTimeout(() => {
+    testDatabaseConnection().catch(console.error);
+  }, 1000);
 })();

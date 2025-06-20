@@ -6,11 +6,19 @@ import { eq } from 'drizzle-orm';
 const router = Router();
 
 // Get all device types
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const result = await db.select().from(deviceTypes);
-    // Always return an array, even if empty
-    res.json(Array.isArray(result) ? result : []);
+    const { slug } = req.query;
+    
+    if (slug) {
+      // Get specific device type by slug
+      const result = await db.select().from(deviceTypes).where(eq(deviceTypes.slug, slug));
+      res.json(Array.isArray(result) ? result : []);
+    } else {
+      // Get all device types
+      const result = await db.select().from(deviceTypes);
+      res.json(Array.isArray(result) ? result : []);
+    }
   } catch (error) {
     console.error('Error fetching device types:', error);
     // Return empty array on error to prevent frontend crashes
