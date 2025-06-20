@@ -227,8 +227,14 @@ export const deviceTypes = pgTable("device_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  icon: text("icon"),
+  description: text("description"),
+  icon: text("icon").default("smartphone"),
+  iconType: text("icon_type").default("lucide"), // lucide, custom, emoji
+  customIcon: text("custom_icon"), // SVG string or emoji for custom icons
+  iconColor: text("icon_color").default("#3B82F6"),
+  backgroundColor: text("background_color").default("#EFF6FF"),
   active: boolean("active").default(true),
+  priority: integer("priority").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
