@@ -12,96 +12,58 @@ router.get('/', async (req, res) => {
     const { deviceType, brand, includeDetails = false } = req.query;
     
     if (deviceType && brand) {
-      // Filter by both device type and brand
-      const result = await db
-        .select({
-          id: deviceModels.id,
-          name: deviceModels.name,
-          slug: deviceModels.slug,
-          image: deviceModels.image,
-          active: deviceModels.active,
-          featured: deviceModels.featured,
-          basePrice: deviceModels.base_price,
-          year: deviceModels.year,
-          description: deviceModels.description,
-          specifications: deviceModels.specifications,
-          priority: deviceModels.priority,
-          brandId: deviceModels.brand_id,
-          brandName: brands.name,
-          deviceTypeId: deviceModels.device_type_id,
-          deviceTypeName: deviceTypes.name,
-          createdAt: deviceModels.created_at,
-          updatedAt: deviceModels.updated_at
-        })
-        .from(deviceModels)
-        .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
-        .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
-        .where(and(
-          eq(deviceTypes.slug, deviceType),
-          eq(brands.slug, brand),
-          eq(deviceModels.active, true)
-        ))
-        .orderBy(deviceModels.name);
+      // Filter by both device type and brand using raw SQL for reliability
+      const result = await db.execute(`
+        SELECT 
+          dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+          dm.year, dm.base_price as "basePrice", dm.description, 
+          dm.specifications, dm.priority,
+          dm.brand_id as "brandId", b.name as "brandName",
+          dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
+        FROM device_models dm
+        LEFT JOIN brands b ON dm.brand_id = b.id
+        LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dt.slug = $1 AND b.slug = $2 AND dm.active = true
+        ORDER BY dm.priority DESC, dm.name
+      `, [deviceType, brand]);
       
-      res.json(result);
+      res.json(result.rows || result);
     } else if (deviceType) {
-      // Filter by device type only
-      const result = await db
-        .select({
-          id: deviceModels.id,
-          name: deviceModels.name,
-          slug: deviceModels.slug,
-          image: deviceModels.image,
-          active: deviceModels.active,
-          featured: deviceModels.featured,
-          basePrice: deviceModels.base_price,
-          year: deviceModels.year,
-          brandId: deviceModels.brand_id,
-          brandName: brands.name,
-          deviceTypeId: deviceModels.device_type_id,
-          deviceTypeName: deviceTypes.name,
-          createdAt: deviceModels.created_at,
-          updatedAt: deviceModels.updated_at
-        })
-        .from(deviceModels)
-        .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
-        .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
-        .where(and(
-          eq(deviceTypes.slug, deviceType),
-          eq(deviceModels.active, true)
-        ))
-        .orderBy(deviceModels.name);
+      // Filter by device type only using raw SQL
+      const result = await db.execute(`
+        SELECT 
+          dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+          dm.year, dm.base_price as "basePrice", dm.description,
+          dm.brand_id as "brandId", b.name as "brandName",
+          dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
+        FROM device_models dm
+        LEFT JOIN brands b ON dm.brand_id = b.id
+        LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dt.slug = $1 AND dm.active = true
+        ORDER BY dm.name
+      `, [deviceType]);
       
-      res.json(result);
+      res.json(result.rows || result);
     } else {
       // Get all models with full details for admin interface
       if (includeDetails === 'true') {
-        const result = await db
-          .select({
-            id: deviceModels.id,
-            name: deviceModels.name,
-            slug: deviceModels.slug,
-            image: deviceModels.image,
-            active: deviceModels.active,
-            featured: deviceModels.featured,
-            basePrice: deviceModels.base_price,
-            year: deviceModels.year,
-            description: deviceModels.description,
-            specifications: deviceModels.specifications,
-            priority: deviceModels.priority,
-            brandId: deviceModels.brand_id,
-            brandName: brands.name,
-            deviceTypeId: deviceModels.device_type_id,
-            deviceTypeName: deviceTypes.name,
-            createdAt: deviceModels.created_at,
-            updatedAt: deviceModels.updated_at
-          })
-          .from(deviceModels)
-          .leftJoin(brands, eq(deviceModels.brand_id, brands.id))
-          .leftJoin(deviceTypes, eq(deviceModels.device_type_id, deviceTypes.id))
-          .orderBy(deviceModels.name);
+        const result = await db.execute(`
+          SELECT 
+            dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
+            dm.year, dm.base_price as "basePrice", dm.description, 
+            dm.specifications, dm.priority,
+            dm.brand_id as "brandId", b.name as "brandName",
+            dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+            dm.created_at as "createdAt", dm.updated_at as "updatedAt"
+          FROM device_models dm
+          LEFT JOIN brands b ON dm.brand_id = b.id
+          LEFT JOIN device_types dt ON dm.device_type_id = dt.id
+          ORDER BY dm.priority DESC, dm.name
+        `);
         
-        res.json(result);
+        res.json(result.rows || result);
       } else {
         // Get basic model info for public API
         const result = await db
@@ -181,10 +143,10 @@ router.post('/', async (req, res) => {
     const modelData = {
       name: req.body.name,
       slug: req.body.slug,
-      brand_id: req.body.brandId,
-      device_type_id: req.body.deviceTypeId,
+      brand_id: req.body.brand_id || req.body.brandId,
+      device_type_id: req.body.device_type_id || req.body.deviceTypeId,
       year: req.body.year || new Date().getFullYear(),
-      base_price: req.body.basePrice || 0,
+      base_price: req.body.base_price || req.body.basePrice || 0,
       image: req.body.image || null,
       description: req.body.description || null,
       specifications: req.body.specifications || null,
@@ -208,10 +170,10 @@ router.put('/:id', async (req, res) => {
     const updateData = {
       name: req.body.name,
       slug: req.body.slug,
-      brand_id: req.body.brandId,
-      device_type_id: req.body.deviceTypeId,
+      brand_id: req.body.brand_id || req.body.brandId,
+      device_type_id: req.body.device_type_id || req.body.deviceTypeId,
       year: req.body.year,
-      base_price: req.body.basePrice || 0,
+      base_price: req.body.base_price || req.body.basePrice || 0,
       image: req.body.image || null,
       description: req.body.description || null,
       specifications: req.body.specifications || null,

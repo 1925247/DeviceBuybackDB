@@ -149,10 +149,10 @@ const AdminModelsAdvanced = () => {
       const submitData = {
         ...formData,
         image: imageUrl,
-        brandId: parseInt(formData.brandId),
-        deviceTypeId: parseInt(formData.deviceTypeId),
+        brand_id: parseInt(formData.brandId),
+        device_type_id: parseInt(formData.deviceTypeId),
         year: parseInt(formData.year),
-        basePrice: parseFloat(formData.basePrice) || 0,
+        base_price: parseFloat(formData.basePrice) || 0,
         priority: parseInt(formData.priority) || 0
       };
       
