@@ -40,7 +40,9 @@ const AdminBrandsEnhanced = () => {
       const response = await fetch('/api/brands?includeDeviceTypes=true');
       if (response.ok) {
         const data = await response.json();
-        setBrands(data);
+        setBrands(Array.isArray(data) ? data : []);
+      } else {
+        setBrands([]);
       }
     } catch (error) {
       console.error('Error fetching brands:', error);
@@ -248,10 +250,10 @@ const AdminBrandsEnhanced = () => {
     setLogoFile(null);
   };
 
-  const filteredBrands = brands.filter(brand =>
+  const filteredBrands = Array.isArray(brands) ? brands.filter(brand =>
     brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (brand.description && brand.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) : [];
 
   if (loading) {
     return (

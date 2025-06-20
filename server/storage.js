@@ -416,10 +416,12 @@ export class DatabaseStorage {
           SELECT 
             id, order_id, customer_name, customer_email, customer_phone,
             device_type, manufacturer, model, condition, offered_price, final_price,
-            status, pickup_address, notes, created_at, updated_at,
-            lead_source, lead_medium, lead_campaign,
+            status, pickup_address, pickup_date, pickup_time, notes, 
+            created_at, updated_at, lead_source, lead_medium, lead_campaign,
             utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-            referrer_url, landing_page
+            referrer_url, landing_page, device_model_id, condition_answers,
+            pin_code, device_age_months, market_demand, regional_adjustment,
+            pickup_estimated_days, gst_amount
           FROM buyback_requests 
           ORDER BY created_at DESC
         `);

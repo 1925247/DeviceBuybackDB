@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
         GROUP BY b.id
         ORDER BY b.priority DESC, b.name
       `);
-      res.json(result);
+      res.json(result.rows || result);
     } else {
       // Get all brands with optional device types
       let query = db.select({
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
           GROUP BY b.id
           ORDER BY b.priority DESC, b.name
         `);
-        res.json(result);
+        res.json(result.rows || result);
       } else {
         const result = await query.orderBy(sql`${brands.priority} DESC, ${brands.name}`);
         res.json(result);
