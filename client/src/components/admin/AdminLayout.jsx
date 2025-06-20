@@ -14,7 +14,8 @@ import {
   ShoppingCart,
   LogOut,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -104,6 +105,12 @@ const AdminLayout = () => {
       href: '/admin/configuration',
       icon: Settings,
       current: location.pathname === '/admin/configuration'
+    },
+    {
+      name: 'Working Hours',
+      href: '/admin/working-hours',
+      icon: Clock,
+      current: location.pathname === '/admin/working-hours'
     }
   ];
 

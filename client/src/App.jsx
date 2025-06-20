@@ -65,6 +65,7 @@ const AdminAnalyticsSimple = lazy(() => import("./pages/admin/AdminAnalyticsSimp
 const ModelPricingManager = lazy(() => import("./components/admin/realtime/ModelPricingManager"));
 const QuestionGroupManager = lazy(() => import("./components/admin/realtime/QuestionGroupManager"));
 const ConfigurationManager = lazy(() => import("./components/admin/realtime/ConfigurationManager"));
+const AdminWorkingHours = lazy(() => import("./pages/admin/AdminWorkingHours"));
 const AdminModelVariants = lazy(() => import("./pages/admin/AdminModelVariants"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
@@ -474,6 +475,11 @@ const App = () => {
                   <Route path="configuration" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <ConfigurationManager />
+                    </Suspense>
+                  } />
+                  <Route path="working-hours" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminWorkingHours />
                     </Suspense>
                   } />
                   <Route path="settings" element={

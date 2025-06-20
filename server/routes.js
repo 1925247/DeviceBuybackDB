@@ -461,6 +461,11 @@ export async function registerRoutes(app) {
     bulkUpdateConfigurations, initializeDefaultConfigurations
   } = await import('./api/adminConfigurations.js');
 
+  const {
+    getWorkingHours, updateWorkingHours, getAvailableTimeSlots,
+    bookTimeSlot, getBookingStats
+  } = await import('./api/workingHours.js');
+
   // Advanced pricing routes
   app.get('/api/models-pricing', getModelsWithPricing);
   app.post('/api/model-pricing', createModelPricing);
@@ -495,6 +500,13 @@ export async function registerRoutes(app) {
   app.get('/api/config-value/:key', getConfigValue);
   app.post('/api/admin-configurations/bulk-update', bulkUpdateConfigurations);
   app.post('/api/admin-configurations/initialize', initializeDefaultConfigurations);
+
+  // Working hours and time slots routes
+  app.get('/api/working-hours', getWorkingHours);
+  app.patch('/api/working-hours/:id', updateWorkingHours);
+  app.get('/api/available-time-slots', getAvailableTimeSlots);
+  app.post('/api/book-time-slot', bookTimeSlot);
+  app.get('/api/booking-stats', getBookingStats);
 
   return server;
 }
