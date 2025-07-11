@@ -22,33 +22,16 @@ router.get('/', async (req, res) => {
           dm.specifications, COALESCE(dm.priority, 0) as priority,
           dm.brand_id as "brandId", b.name as "brandName",
           dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
-          dm.created_at as "createdAt", dm.updated_at as "updatedAt",
-          COALESCE(
-            json_agg(
-              CASE WHEN dmv.id IS NOT NULL THEN
-                json_build_object(
-                  'id', dmv.id,
-                  'name', dmv.variant_name,
-                  'storage', dmv.storage,
-                  'price', dmv.current_price,
-                  'basePrice', dmv.base_price
-                )
-              END
-              ORDER BY dmv.base_price ASC
-            ) FILTER (WHERE dmv.id IS NOT NULL), 
-            '[]'
-          ) as variants
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
         FROM device_models dm
         LEFT JOIN brands b ON dm.brand_id = b.id
         LEFT JOIN device_types dt ON dm.device_type_id = dt.id
-        LEFT JOIN device_model_variants dmv ON dm.id = dmv.model_id AND dmv.active = true
         WHERE dm.active = true AND (
           LOWER(dm.name) LIKE $1 OR 
           LOWER(b.name) LIKE $1 OR
           LOWER(dt.name) LIKE $1 OR
           LOWER(dm.description) LIKE $1
         )
-        GROUP BY dm.id, b.id, dt.id
         ORDER BY 
           CASE WHEN LOWER(dm.name) LIKE $1 THEN 1 ELSE 2 END,
           COALESCE(dm.priority, 0) DESC, 
@@ -68,28 +51,11 @@ router.get('/', async (req, res) => {
           dm.specifications, COALESCE(dm.priority, 0) as priority,
           dm.brand_id as "brandId", b.name as "brandName",
           dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
-          dm.created_at as "createdAt", dm.updated_at as "updatedAt",
-          COALESCE(
-            json_agg(
-              CASE WHEN dmv.id IS NOT NULL THEN
-                json_build_object(
-                  'id', dmv.id,
-                  'name', dmv.variant_name,
-                  'storage', dmv.storage,
-                  'price', dmv.current_price,
-                  'basePrice', dmv.base_price
-                )
-              END
-              ORDER BY dmv.base_price ASC
-            ) FILTER (WHERE dmv.id IS NOT NULL), 
-            '[]'
-          ) as variants
+          dm.created_at as "createdAt", dm.updated_at as "updatedAt"
         FROM device_models dm
         LEFT JOIN brands b ON dm.brand_id = b.id
         LEFT JOIN device_types dt ON dm.device_type_id = dt.id
-        LEFT JOIN device_model_variants dmv ON dm.id = dmv.model_id AND dmv.active = true
         WHERE dt.slug = $1 AND b.slug = $2 AND dm.active = true
-        GROUP BY dm.id, b.id, dt.id
         ORDER BY COALESCE(dm.priority, 0) DESC, dm.name
       `;
       

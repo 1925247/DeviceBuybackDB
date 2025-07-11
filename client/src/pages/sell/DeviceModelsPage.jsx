@@ -243,28 +243,8 @@ const DeviceModelsPage = () => {
                       )}
                     </div>
                     
-                    {/* Variants Display */}
-                    {model.variants && model.variants.length > 0 ? (
-                      <div className="space-y-2">
-                        <div className="text-sm text-gray-600 mb-2">Available variants:</div>
-                        {model.variants.map((variant) => (
-                          <button
-                            key={variant.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleModelSelect(model, variant);
-                            }}
-                            className="w-full flex items-center justify-between p-2 text-sm border border-gray-200 rounded hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                          >
-                            <span className="font-medium">{variant.storage}</span>
-                            <span className="flex items-center gap-1 text-green-600 font-semibold">
-                              <IndianRupee className="h-3 w-3" />
-                              {variant.price.toLocaleString('en-IN')}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : model.basePrice > 0 && (
+                    {/* Price Display */}
+                    {model.basePrice > 0 && (
                       <div className="flex items-center justify-center gap-1 text-green-600 font-semibold">
                         <IndianRupee className="h-4 w-4" />
                         {model.basePrice.toLocaleString('en-IN')}
