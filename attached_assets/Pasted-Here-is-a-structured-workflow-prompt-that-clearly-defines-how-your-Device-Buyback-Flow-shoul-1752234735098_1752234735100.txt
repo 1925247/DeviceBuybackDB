@@ -1,0 +1,103 @@
+Here is a **structured workflow prompt** that clearly defines how your **Device Buyback Flow** should work step by step, from **Model Selection** to **Condition Assessment**, including where admin-side base price mapping comes into play.
+
+---
+
+### 🔁 **Device Buyback Workflow – Prompt**
+
+---
+
+#### ✅ **Step 1: Model Selection**
+
+* **Page Display:**
+  Title: `Select Model`
+  Example: `Apple iPhone 12`
+  Subtext: `64,955+ already sold`
+
+* **User Action:** Clicks on the model (e.g., Apple iPhone 12)
+
+* **Backend Mapping:** Fetch model ID, model name, and associated variants from the database
+
+---
+
+#### ✅ **Step 2: Variant Selection**
+
+* **Page Display:**
+  Title: `Choose a variant`
+  Options:
+
+  * `64 GB`
+  * `128 GB`
+
+* **User Action:** Selects a variant (e.g., 128 GB)
+
+* **Backend Logic:**
+
+  * Show variant as `Apple iPhone 12 (4GB/128 GB)`
+  * Pull **variant-wise mapped base price** from Admin Panel (e.g., ₹22,000)
+  * Subtext: `1,500+ already sold`
+
+* **CTA Button:** `Get Exact Value`
+
+---
+
+#### ✅ **Step 3: Get Exact Value**
+
+* **Page Display:**
+
+  * Shows:
+
+    * Selected Model + Variant (e.g., `Apple iPhone 12 (4GB/128 GB)`)
+    * “Get Upto” value = ₹22,000 (fetched from admin-side variant base price)
+
+* **Backend Logic:**
+
+  * This price is **maximum possible value**, before condition deduction
+
+* **CTA Button:** `Get Exact Value` → Redirects to Condition Assessment
+
+---
+
+#### ✅ **Step 4: Device Condition Assessment**
+
+* **Page Display:**
+  Title: `Device Condition Assessment`
+
+* **Assessment Questions:** (based on category logic set in admin panel)
+
+  * Screen condition?
+  * Body dents/scratches?
+  * Battery health?
+  * Power button working?
+  * etc.
+
+* **Backend Logic:**
+
+  * Each answer deducts or adds value based on **admin-defined deduction rules**
+  * Final value calculated: `Base Price – Total Deductions = Final Offer`
+
+---
+
+#### ✅ **Admin Panel Configuration (Your Side)**
+
+In your admin panel:
+
+* Add models → Apple iPhone 12
+* Add variants → 64GB, 128GB
+* Assign **base price per variant** (e.g., 64GB = ₹20,000, 128GB = ₹22,000)
+* Configure **deduction rules** for each condition question
+* Store & update "units sold" count for display on UI
+
+---
+
+#### 📲 Final Output (User Sees):
+
+Example:
+
+> **Apple iPhone 12 (4GB/128 GB)**
+> Maximum Offer: ₹22,000
+> Final Offer (based on condition): ₹18,500
+> \[Continue to Checkout]
+
+---
+
+Would you like me to now convert this into a **Figma-style UI flow**, **React component structure**, or **Admin Panel DB Schema**?

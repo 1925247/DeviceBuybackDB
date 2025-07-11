@@ -71,6 +71,8 @@ const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation")
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
+const VariantSelectionPage = lazy(() => import("./pages/sell/VariantSelectionPage"));
+const ExactValuePage = lazy(() => import("./pages/sell/ExactValuePage"));
 
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
@@ -240,6 +242,85 @@ const App = () => {
                     <main className="flex-grow">
                       <ModelsProvider>
                         <DeviceModelsPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/variants"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <VariantSelectionPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/:variant/value"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <ExactValuePage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/variants"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <VariantSelectionPage />
+                        </Suspense>
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/:variant/value"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ExactValuePage />
+                        </Suspense>
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/:variant/condition"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <ConditionAssessmentPage />
                       </ModelsProvider>
                     </main>
                     <Footer />

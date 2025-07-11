@@ -80,7 +80,8 @@ const DeviceModelsPage = () => {
     });
 
   const handleModelSelect = (model) => {
-    const url = `/sell/${deviceType}/${brand}/${model.slug}/condition`;
+    // Check if model has variants, if yes go to variant selection, else go to condition
+    const url = `/sell/${deviceType}/${brand}/${model.slug}/variants`;
     navigate(url);
   };
 
