@@ -149,41 +149,45 @@ router.post('/bulk-update', async (req, res) => {
 
     const multiplier = operation === 'increase' ? (1 + percentage / 100) : (1 - percentage / 100);
     
-    let queryText = `
+    // Build the subquery with filters
+    let subqueryConditions = ['dm.active = true'];
+    const params = [multiplier];
+    let paramIndex = 2;
+
+    if (filters.brandId) {
+      subqueryConditions.push(`b.id = $${paramIndex}`);
+      params.push(filters.brandId);
+      paramIndex++;
+    }
+
+    if (filters.deviceTypeId) {
+      subqueryConditions.push(`dt.id = $${paramIndex}`);
+      params.push(filters.deviceTypeId);
+      paramIndex++;
+    }
+
+    if (filters.modelId) {
+      subqueryConditions.push(`dm.id = $${paramIndex}`);
+      params.push(filters.modelId);
+      paramIndex++;
+    }
+
+    const queryText = `
       UPDATE device_model_variants 
       SET 
         base_price = ROUND(base_price * $1, 2),
         current_price = ROUND(current_price * $1, 2),
         market_value = ROUND(market_value * $1, 2),
         updated_at = NOW()
-      FROM device_models dm, brands b, device_types dt
-      WHERE device_model_variants.model_id = dm.id 
-        AND dm.brand_id = b.id 
-        AND dm.device_type_id = dt.id
-        AND device_model_variants.active = true 
-        AND dm.active = true
+      WHERE active = true 
+        AND model_id IN (
+          SELECT dm.id 
+          FROM device_models dm
+          JOIN brands b ON dm.brand_id = b.id 
+          JOIN device_types dt ON dm.device_type_id = dt.id
+          WHERE ${subqueryConditions.join(' AND ')}
+        )
     `;
-
-    const params = [multiplier];
-    let paramIndex = 2;
-
-    if (filters.brandId) {
-      queryText += ` AND b.id = $${paramIndex}`;
-      params.push(filters.brandId);
-      paramIndex++;
-    }
-
-    if (filters.deviceTypeId) {
-      queryText += ` AND dt.id = $${paramIndex}`;
-      params.push(filters.deviceTypeId);
-      paramIndex++;
-    }
-
-    if (filters.modelId) {
-      queryText += ` AND dm.id = $${paramIndex}`;
-      params.push(filters.modelId);
-      paramIndex++;
-    }
 
     const result = await pool.query(queryText, params);
 
@@ -235,6 +239,37 @@ router.get('/stats', async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching pricing stats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete variant pricing (set inactive)
+router.delete('/:variantId', async (req, res) => {
+  try {
+    const { variantId } = req.params;
+
+    const queryText = `
+      UPDATE device_model_variants 
+      SET 
+        active = false,
+        updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `;
+
+    const result = await pool.query(queryText, [variantId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+
+    res.json({
+      message: 'Variant pricing removed successfully',
+      variantId: parseInt(variantId)
+    });
+
+  } catch (error) {
+    console.error('Error removing variant pricing:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

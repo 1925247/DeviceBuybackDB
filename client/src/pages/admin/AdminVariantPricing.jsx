@@ -159,6 +159,28 @@ const AdminVariantPricing = () => {
     }
   };
 
+  const handleRemoveVariant = async (variantId) => {
+    if (!confirm('Are you sure you want to remove this variant? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/variant-pricing/${variantId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove variant');
+      }
+
+      // Remove from local state
+      setVariants(variants.filter(v => v.id !== variantId));
+    } catch (error) {
+      console.error('Error removing variant:', error);
+      setError(error.message);
+    }
+  };
+
   const filteredVariants = variants.filter(variant => {
     const matchesSearch = searchTerm === '' || 
       variant.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -410,12 +432,22 @@ const AdminVariantPricing = () => {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleEditVariant(variant)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditVariant(variant)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Edit pricing"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveVariant(variant.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Remove variant"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
