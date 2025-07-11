@@ -6,8 +6,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 const DeviceListing = () => {
   const [selectedCategory, setSelectedCategory] = useState('smartphones');
   const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedModel, setSelectedModel] = useState(null);
-  const [variants, setVariants] = useState([]);
+
   
   // Fetch device types
   const { data: deviceTypes = [], isLoading: loadingTypes } = useQuery({
@@ -47,25 +46,7 @@ const DeviceListing = () => {
     enabled: !!deviceTypes.length
   });
 
-  // Fetch variants for selected model
-  useEffect(() => {
-    if (selectedModel) {
-      fetchVariants(selectedModel.id);
-    }
-  }, [selectedModel]);
 
-  const fetchVariants = async (modelId) => {
-    try {
-      const response = await fetch(`/api/device-models/${modelId}/variants`);
-      if (response.ok) {
-        const data = await response.json();
-        setVariants(data);
-      }
-    } catch (error) {
-      console.error('Error fetching variants:', error);
-      setVariants([]);
-    }
-  };
 
   const getCategoryIcon = (slug) => {
     switch (slug) {
@@ -117,8 +98,6 @@ const DeviceListing = () => {
                       key={type.id}
                       onClick={() => {
                         setSelectedCategory(type.slug);
-                        setSelectedModel(null);
-                        setVariants([]);
                       }}
                       className={`w-full flex items-center p-3 rounded-md border transition-colors ${
                         selectedCategory === type.slug
@@ -184,10 +163,7 @@ const DeviceListing = () => {
                       return (
                         <div 
                           key={model.id} 
-                          className={`bg-white rounded-lg shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-                            selectedModel?.id === model.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-                          }`}
-                          onClick={() => setSelectedModel(model)}
+                          className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all border-gray-200"
                         >
                           <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
@@ -243,72 +219,7 @@ const DeviceListing = () => {
                   </div>
                 )}
 
-                {/* Variants Display */}
-                {selectedModel && (
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      {selectedModel.name} - Available Variants
-                    </h3>
-                    
-                    {variants.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {variants.map(variant => (
-                          <div key={variant.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                            <div className="flex justify-between items-start mb-3">
-                              <h4 className="font-medium text-gray-900">{variant.variant_name}</h4>
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                variant.availability 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {variant.availability ? 'Available' : 'Out of Stock'}
-                              </span>
-                            </div>
-                            
-                            <div className="space-y-2 text-sm text-gray-600 mb-4">
-                              {variant.storage && (
-                                <div className="flex justify-between">
-                                  <span>Storage:</span>
-                                  <span className="font-medium">{variant.storage}</span>
-                                </div>
-                              )}
-                              {variant.ram && (
-                                <div className="flex justify-between">
-                                  <span>RAM:</span>
-                                  <span className="font-medium">{variant.ram}</span>
-                                </div>
-                              )}
-                              {variant.color && (
-                                <div className="flex justify-between">
-                                  <span>Color:</span>
-                                  <span className="font-medium">{variant.color}</span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="border-t pt-3">
-                              <div className="flex justify-between items-center">
-                                <span className="text-lg font-bold text-green-600">
-                                  ₹{Math.round(variant.current_price * 83).toLocaleString('en-IN')}
-                                </span>
-                                <button 
-                                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                                  disabled={!variant.availability}
-                                >
-                                  Get Quote
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">No variants available for this model yet.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+
               </div>
             )}
           </div>

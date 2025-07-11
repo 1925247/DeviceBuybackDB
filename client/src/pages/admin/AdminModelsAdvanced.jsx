@@ -11,9 +11,6 @@ const AdminModelsAdvanced = () => {
   const [showAddModel, setShowAddModel] = useState(false);
   const [editingModel, setEditingModel] = useState(null);
   const [expandedModels, setExpandedModels] = useState({});
-  const [editingVariant, setEditingVariant] = useState(null);
-  const [showAddVariant, setShowAddVariant] = useState(null);
-
   // Form states
   const [newModel, setNewModel] = useState({
     name: '',
@@ -26,16 +23,6 @@ const AdminModelsAdvanced = () => {
     image: '',
     active: true,
     featured: false
-  });
-
-  const [newVariant, setNewVariant] = useState({
-    variantName: '',
-    storage: '',
-    ram: '',
-    color: '',
-    basePrice: '',
-    currentPrice: '',
-    active: true
   });
 
   useEffect(() => {

@@ -5,7 +5,6 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 const AdminDashboardOverview = () => {
   const [stats, setStats] = useState({
     totalModels: 0,
-    totalVariants: 0,
     totalBrands: 0,
     activeCategories: 0,
     recentBuybacks: 0
@@ -41,17 +40,10 @@ const AdminDashboardOverview = () => {
       const activeBrands = brands.filter(b => b.active);
       const activeCategories = deviceTypes.filter(dt => dt.active);
 
-      // Get variant counts for each model
-      const variantPromises = activeModels.map(model => 
-        fetch(`/api/device-models/${model.id}/variants`).then(res => res.json())
-      );
-      
-      const allVariants = await Promise.all(variantPromises);
-      const totalVariants = allVariants.reduce((sum, variants) => sum + variants.length, 0);
+
 
       setStats({
         totalModels: activeModels.length,
-        totalVariants: totalVariants,
         totalBrands: activeBrands.length,
         activeCategories: activeCategories.length,
         recentBuybacks: buybacks.length
@@ -113,7 +105,7 @@ const AdminDashboardOverview = () => {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -126,17 +118,7 @@ const AdminDashboardOverview = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <BarChart3 className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Model Variants</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalVariants}</p>
-            </div>
-          </div>
-        </div>
+
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center">

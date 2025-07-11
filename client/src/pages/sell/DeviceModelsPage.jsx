@@ -79,10 +79,9 @@ const DeviceModelsPage = () => {
       }
     });
 
-  const handleModelSelect = (model, variant = null) => {
+  const handleModelSelect = (model) => {
     const url = `/sell/${deviceType}/${brand}/${model.slug}/condition`;
-    const state = variant ? { selectedVariant: variant } : null;
-    navigate(url, { state });
+    navigate(url);
   };
 
   if (loading) {
@@ -305,26 +304,7 @@ const DeviceModelsPage = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      {model.variants && model.variants.length > 0 ? (
-                        <div className="space-y-1">
-                          {model.variants.map((variant) => (
-                            <button
-                              key={variant.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleModelSelect(model, variant);
-                              }}
-                              className="flex items-center gap-2 text-sm px-3 py-1 border border-gray-200 rounded hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                            >
-                              <span>{variant.storage}</span>
-                              <span className="flex items-center gap-1 text-green-600 font-semibold">
-                                <IndianRupee className="h-3 w-3" />
-                                {variant.price.toLocaleString('en-IN')}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      ) : model.basePrice > 0 && (
+                      {model.basePrice > 0 && (
                         <div className="flex items-center gap-1 text-green-600 font-semibold">
                           <IndianRupee className="h-4 w-4" />
                           {model.basePrice.toLocaleString('en-IN')}

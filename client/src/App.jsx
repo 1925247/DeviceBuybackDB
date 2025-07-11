@@ -31,7 +31,7 @@ import ContactPage from "./pages/ContactPage";
 import DeviceListing from "./pages/DeviceListing";
 import CheckoutFormPage from "./pages/CheckoutFormPage";
 import BuybackSuccessPage from "./pages/BuybackSuccessPage";
-import PinCodeDemo from "./pages/PinCodeDemo";
+
 import FAQPage from "./pages/FAQPage";
 import BlogPage from "./pages/BlogPage";
 import UserLogin from "./pages/UserLogin";
@@ -57,8 +57,7 @@ const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQ
 const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
 const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
 const AdminQuestionBuilder = lazy(() => import("./pages/admin/AdminQuestionBuilder"));
-const AdminAssessmentDemo = lazy(() => import("./pages/admin/AdminAssessmentDemo"));
-const AdminQuestionSystemDemo = lazy(() => import("./pages/admin/AdminQuestionSystemDemo"));
+
 const AdminQuestionOverview = lazy(() => import("./pages/admin/AdminQuestionOverview"));
 const BuybackSuccess = lazy(() => import("./pages/BuybackSuccess"));
 const AdminBuybackRequests = lazy(() => import("./pages/admin/AdminBuybackRequests"));
@@ -76,7 +75,7 @@ const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
 // Partner Portal Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import StaffManagement from "./pages/partner/StaffManagement";
-import StaffManagementDemo from "./pages/partner/StaffManagementDemo";
+
 
 // Not Found Page
 import NotFound from "./pages/NotFound";
@@ -304,18 +303,7 @@ const App = () => {
                 }
               />
               
-              <Route
-                path="/pincode-demo"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="flex-grow">
-                      <PinCodeDemo />
-                    </main>
-                    <Footer />
-                  </>
-                }
-              />
+
               
               <Route
                 path="/profile"
@@ -335,10 +323,7 @@ const App = () => {
                 path="/partner/dashboard"
                 element={<PartnerDashboard />}
               />
-              <Route
-                path="/partner/staff"
-                element={<StaffManagementDemo />}
-              />
+
 
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
@@ -416,22 +401,7 @@ const App = () => {
                       </Suspense>
                     }
                   />
-                  <Route
-                    path="assessment-demo"
-                    element={
-                      <Suspense fallback={<LoadingSpinner />}>
-                        <AdminAssessmentDemo />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="question-system-demo"
-                    element={
-                      <Suspense fallback={<LoadingSpinner />}>
-                        <AdminQuestionSystemDemo />
-                      </Suspense>
-                    }
-                  />
+
                   <Route
                     path="condition-questions"
                     element={

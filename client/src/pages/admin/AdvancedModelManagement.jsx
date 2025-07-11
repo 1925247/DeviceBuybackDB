@@ -9,7 +9,7 @@ const AdvancedModelManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModel, setShowAddModel] = useState(false);
   const [editingModel, setEditingModel] = useState(null);
-  const [editingVariant, setEditingVariant] = useState(null);
+
 
 
   // Form states
@@ -102,69 +102,7 @@ const AdvancedModelManagement = () => {
     }
   };
 
-  const handleAddVariant = async (modelId) => {
-    try {
-      const variantData = {
-        ...newVariant,
-        modelId: parseInt(modelId),
-        basePrice: parseFloat(newVariant.basePrice),
-        currentPrice: parseFloat(newVariant.currentPrice) || parseFloat(newVariant.basePrice)
-      };
 
-      const response = await fetch('/api/device-model-variants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(variantData)
-      });
-
-      if (response.ok) {
-        await fetchData();
-        setNewVariant({
-          modelId: '', variantName: '', storage: '', ram: '', color: '',
-          basePrice: '', currentPrice: '', active: true
-        });
-      }
-    } catch (error) {
-      console.error('Error adding variant:', error);
-    }
-  };
-
-  const handleUpdateVariant = async (variantId, updatedData) => {
-    try {
-      const response = await fetch(`/api/device-model-variants/${variantId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...updatedData,
-          basePrice: parseFloat(updatedData.basePrice),
-          currentPrice: parseFloat(updatedData.currentPrice)
-        })
-      });
-
-      if (response.ok) {
-        await fetchData();
-        setEditingVariant(null);
-      }
-    } catch (error) {
-      console.error('Error updating variant:', error);
-    }
-  };
-
-  const handleDeleteVariant = async (variantId) => {
-    if (confirm('Are you sure you want to delete this variant?')) {
-      try {
-        const response = await fetch(`/api/device-model-variants/${variantId}`, {
-          method: 'DELETE'
-        });
-
-        if (response.ok) {
-          await fetchData();
-        }
-      } catch (error) {
-        console.error('Error deleting variant:', error);
-      }
-    }
-  };
 
 
 
@@ -412,145 +350,8 @@ const AdvancedModelManagement = () => {
 
 
 
-            {/* Variants Section */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-medium text-gray-900">Variants</h4>
-                <button
-                  onClick={() => setNewVariant(prev => ({ ...prev, modelId: model.id }))}
-                  className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded hover:bg-blue-100"
-                >
-                  Add Variant
-                </button>
-              </div>
 
-              {/* Add Variant Form */}
-              {newVariant.modelId === model.id && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                    <input
-                      type="text"
-                      placeholder="Variant Name (e.g., 128GB)"
-                      value={newVariant.variantName}
-                      onChange={(e) => setNewVariant(prev => ({ ...prev, variantName: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded text-sm"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Storage"
-                      value={newVariant.storage}
-                      onChange={(e) => setNewVariant(prev => ({ ...prev, storage: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Base Price"
-                      value={newVariant.basePrice}
-                      onChange={(e) => setNewVariant(prev => ({ ...prev, basePrice: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Current Price"
-                      value={newVariant.currentPrice}
-                      onChange={(e) => setNewVariant(prev => ({ ...prev, currentPrice: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded text-sm"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setNewVariant({ modelId: '', variantName: '', storage: '', ram: '', color: '', basePrice: '', currentPrice: '', active: true })}
-                      className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleAddVariant(model.id)}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Add Variant
-                    </button>
-                  </div>
-                </div>
-              )}
 
-              {/* Variants List */}
-              <div className="space-y-2">
-                {model.variants && model.variants.length > 0 ? (
-                  model.variants.map((variant) => (
-                    <div key={variant.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      {editingVariant === variant.id ? (
-                        <div className="flex items-center gap-3 flex-1">
-                          <input
-                            type="text"
-                            defaultValue={variant.name}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                            onBlur={(e) => {
-                              const updatedData = { ...variant, variantName: e.target.value };
-                              handleUpdateVariant(variant.id, updatedData);
-                            }}
-                          />
-                          <input
-                            type="text"
-                            defaultValue={variant.storage}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm w-20"
-                            onBlur={(e) => {
-                              const updatedData = { ...variant, storage: e.target.value };
-                              handleUpdateVariant(variant.id, updatedData);
-                            }}
-                          />
-                          <input
-                            type="number"
-                            defaultValue={variant.basePrice}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                            onBlur={(e) => {
-                              const updatedData = { ...variant, basePrice: e.target.value };
-                              handleUpdateVariant(variant.id, updatedData);
-                            }}
-                          />
-                          <input
-                            type="number"
-                            defaultValue={variant.price}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                            onBlur={(e) => {
-                              const updatedData = { ...variant, currentPrice: e.target.value };
-                              handleUpdateVariant(variant.id, updatedData);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between flex-1">
-                          <div className="flex items-center gap-4">
-                            <span className="font-medium">{variant.name}</span>
-                            <span className="text-sm text-gray-600">{variant.storage}</span>
-                            <span className="text-sm text-green-600 font-semibold flex items-center gap-1">
-                              <IndianRupee className="h-3 w-3" />
-                              {variant.price?.toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setEditingVariant(variant.id)}
-                              className="text-blue-600 hover:text-blue-700 text-sm"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVariant(variant.id)}
-                              className="text-red-600 hover:text-red-700 text-sm"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-sm">No variants added yet</p>
-                )}
-              </div>
-            </div>
 
 
           </div>
