@@ -96,7 +96,7 @@ const VariantSelectionPage = () => {
                 {modelInfo?.name || `${brand} ${model}`.replace(/[_-]/g, ' ')}
               </h1>
               <p className="text-lg text-teal-600 font-medium">
-                150+ already sold on Cashify
+                150+ already sold
               </p>
             </div>
 

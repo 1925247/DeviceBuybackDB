@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, IndianRupee, Smartphone, Star, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeft, IndianRupee, Smartphone } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const ExactValuePage = () => {
@@ -64,145 +64,68 @@ const ExactValuePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <nav className="flex mb-4" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2 text-sm text-gray-500">
-              <li>
-                <Link to="/sell" className="hover:text-gray-700">Sell Device</Link>
-              </li>
-              <li>
-                <ArrowRight className="h-4 w-4" />
-              </li>
-              <li>
-                <Link to={`/sell/${deviceType}`} className="hover:text-gray-700 capitalize">
-                  {deviceType}
-                </Link>
-              </li>
-              <li>
-                <ArrowRight className="h-4 w-4" />
-              </li>
-              <li>
-                <Link to={`/sell/${deviceType}/${brand}`} className="hover:text-gray-700 capitalize">
-                  {brand}
-                </Link>
-              </li>
-              <li>
-                <ArrowRight className="h-4 w-4" />
-              </li>
-              <li>
-                <Link to={`/sell/${deviceType}/${brand}/${model}/variants`} className="hover:text-gray-700">
-                  {modelInfo?.name || model}
-                </Link>
-              </li>
-              <li>
-                <ArrowRight className="h-4 w-4" />
-              </li>
-              <li className="text-gray-900 font-medium">
-                {variantInfo.storage || variantInfo.variantName}
-              </li>
-            </ol>
-          </nav>
-
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Get Exact Value
-            </h1>
-            <p className="text-lg text-gray-600">
-              Your device's maximum possible value
-            </p>
-          </div>
-        </div>
-
-        {/* Device Value Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <div className="text-center">
-            {/* Device Image */}
-            <div className="w-32 h-32 mx-auto mb-6 bg-gray-100 rounded-lg flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start">
+          {/* Left side - Device Image */}
+          <div className="flex-shrink-0 text-center lg:text-left">
+            <div className="w-48 h-64 mx-auto lg:mx-0 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-6">
               {modelInfo?.image ? (
                 <img
                   src={modelInfo.image}
                   alt={modelInfo.name}
-                  className="w-28 h-28 object-contain rounded-lg"
+                  className="w-32 h-48 object-contain rounded-lg"
                 />
               ) : (
-                <Smartphone className="h-16 w-16 text-gray-400" />
+                <Smartphone className="h-32 w-20 text-gray-400" />
               )}
             </div>
-
-            {/* Device Details */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {modelInfo?.name || model}
-              </h2>
-              <p className="text-lg text-gray-600 mb-1">
-                {variantInfo.storage && variantInfo.ram 
-                  ? `${variantInfo.ram}/${variantInfo.storage}`
-                  : variantInfo.storage || variantInfo.variantName}
-              </p>
-              {variantInfo.color && (
-                <p className="text-gray-500">{variantInfo.color}</p>
-              )}
-            </div>
-
-            {/* Price Display */}
-            <div className="mb-6">
-              <div className="text-sm text-gray-500 mb-2">Get Upto</div>
-              <div className="flex items-center justify-center gap-2 text-green-600 font-bold text-4xl mb-2">
-                <IndianRupee className="h-8 w-8" />
-                {variantInfo.basePrice?.toLocaleString('en-IN') || 'N/A'}
-              </div>
-              <p className="text-sm text-gray-500">
-                Maximum possible value before condition assessment
-              </p>
-            </div>
-
-            {/* Popular indicator */}
-            <div className="mb-6">
-              <div className="flex items-center justify-center gap-1 text-gray-600">
-                <Star className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm">
-                  Popular choice
-                </span>
-              </div>
-            </div>
-
-            {/* Action Button */}
-            <button
-              onClick={handleGetExactValue}
-              className="w-full max-w-md mx-auto bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-            >
-              Get Exact Value
-              <ArrowRight className="h-5 w-5" />
-            </button>
           </div>
-        </div>
 
-        {/* Information Card */}
-        <div className="bg-blue-50 rounded-lg p-6 mb-8">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-2">How it works</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• The price shown is the maximum possible value for your device</li>
-                <li>• Final offer will be calculated based on your device's actual condition</li>
-                <li>• Assessment takes only 2-3 minutes with simple questions</li>
-                <li>• Get instant quote with no hidden charges</li>
-              </ul>
+          {/* Right side - Content */}
+          <div className="flex-grow max-w-2xl">
+            {/* Header */}
+            <div className="text-center lg:text-left mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">
+                {modelInfo?.name || `${brand} ${model}`.replace(/[_-]/g, ' ')} ({variantInfo?.storage || variantInfo?.variantName})
+              </h1>
+              <p className="text-lg text-gray-600 mb-6">
+                Get Upto
+              </p>
+              
+              {/* Price Display */}
+              <div className="mb-6">
+                <div className="flex items-center justify-center lg:justify-start gap-1 text-red-500 font-bold text-5xl mb-2">
+                  <IndianRupee className="h-10 w-10" />
+                  <span>{variantInfo?.currentPrice?.toLocaleString('en-IN') || '18,930'}</span>
+                </div>
+                <p className="text-lg text-teal-600 font-medium">
+                  50+ already sold
+                </p>
+              </div>
+
+              {/* Get Exact Value Button */}
+              <div className="text-center lg:text-left">
+                <button
+                  onClick={handleGetExactValue}
+                  className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200 inline-flex items-center gap-2"
+                >
+                  Get Exact Value
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Back Button */}
-        <div className="text-center">
+        {/* Back Navigation */}
+        <div className="mt-12 text-center">
           <Link
             to={`/sell/${deviceType}/${brand}/${model}/variants`}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Variants
           </Link>
         </div>
