@@ -39,6 +39,7 @@ import answerChoicesRoutes from "./api/answerChoicesApi.js";
 import productsRoutes from "./api/products.js";
 import errorReportsRoutes from "./api/errorReports.js";
 import userFeedbackRoutes from "./api/userFeedback.js";
+import { getVariantValuation, calculateVariantPrice } from "./api/variantValuation.js";
 
 
 export async function registerRoutes(app) {
@@ -51,6 +52,10 @@ export async function registerRoutes(app) {
   app.use('/api/device-models', deviceModelsRoutes);
   app.use('/api/device-model-variants', deviceModelVariantsRoutes);
   app.use('/api/admin/variant-pricing', adminVariantPricingRoutes);
+  
+  // Variant valuation endpoints
+  app.get('/api/device-model-variants/:model/:variant', getVariantValuation);
+  app.post('/api/device-model-variants/:model/:variant/calculate-price', calculateVariantPrice);
 
   app.use('/api/brands', brandsRoutes);
   app.use('/api/device-types', deviceTypesRoutes);

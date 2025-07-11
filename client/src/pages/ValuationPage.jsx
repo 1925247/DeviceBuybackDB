@@ -4,16 +4,20 @@ import { DollarSign, Star, Shield, Truck, ArrowRight } from "lucide-react";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const ValuationPage = () => {
-  const { deviceType, brand, model } = useParams();
+  const { deviceType, brand, model, variant } = useParams();
   const navigate = useNavigate();
   const [valuation, setValuation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deviceInfo, setDeviceInfo] = useState(null);
+  const [variantInfo, setVariantInfo] = useState(null);
 
   useEffect(() => {
     calculateValuation();
     fetchDeviceInfo();
-  }, [deviceType, brand, model]);
+    if (variant) {
+      fetchVariantInfo();
+    }
+  }, [deviceType, brand, model, variant]);
 
   const fetchDeviceInfo = async () => {
     try {
@@ -23,6 +27,16 @@ const ValuationPage = () => {
       setDeviceInfo(foundModel);
     } catch (error) {
       console.error("Error fetching device info:", error);
+    }
+  };
+
+  const fetchVariantInfo = async () => {
+    try {
+      const response = await fetch(`/api/device-model-variants/${model}/${variant}`);
+      const data = await response.json();
+      setVariantInfo(data.variant);
+    } catch (error) {
+      console.error("Error fetching variant info:", error);
     }
   };
 
@@ -52,8 +66,8 @@ const ValuationPage = () => {
         storedDeviceInfo,
       });
 
-      // Try to fetch actual model data for pricing
       let basePrice = 300; // Default fallback
+      let variantPrice = null;
 
       try {
         const modelsResponse = await fetch("/api/device-models");
@@ -67,22 +81,47 @@ const ValuationPage = () => {
         if (selectedModel) {
           console.log("Found model for valuation:", selectedModel);
 
-          // Try to get variants for better pricing
-          const variantsResponse = await fetch(
-            `/api/device-models/${selectedModel.id}/variants`,
-          );
-          const variants = await variantsResponse.json();
+          // If variant is specified, get variant-specific pricing
+          if (variant) {
+            try {
+              const variantResponse = await fetch(`/api/device-model-variants/${model}/${variant}`);
+              const variantData = await variantResponse.json();
+              if (variantData.variant) {
+                variantPrice = variantData.variant.currentPrice || variantData.variant.basePrice;
+                basePrice = variantData.variant.basePrice || basePrice;
+                console.log("Found variant pricing:", {
+                  basePrice: variantData.variant.basePrice,
+                  currentPrice: variantData.variant.currentPrice,
+                  marketValue: variantData.variant.marketValue
+                });
+              }
+            } catch (error) {
+              console.error("Error fetching variant data:", error);
+            }
+          }
 
-          if (variants.length > 0) {
-            // Use average variant price as base
-            const avgPrice =
-              variants.reduce((sum, v) => sum + (v.current_price || 0), 0) /
-              variants.length;
-            basePrice = Math.round(avgPrice * 0.6); // 60% of current market price for buyback
-            console.log("Calculated base price from variants:", basePrice);
-          } else if (selectedModel.base_price) {
-            basePrice = Math.round(selectedModel.base_price * 0.6);
-            console.log("Calculated base price from model:", basePrice);
+          // Try to get variants for better pricing (fallback)
+          if (!variantPrice) {
+            const variantsResponse = await fetch(
+              `/api/device-models/${selectedModel.id}/variants`,
+            );
+            const variants = await variantsResponse.json();
+
+            if (variants.length > 0) {
+              // Use average variant price as base
+              const avgPrice =
+                variants.reduce((sum, v) => sum + (v.current_price || 0), 0) /
+                variants.length;
+              basePrice = Math.round(avgPrice * 0.6); // 60% of current market price for buyback
+              console.log("Calculated base price from variants:", basePrice);
+            } else if (selectedModel.base_price) {
+              basePrice = Math.round(selectedModel.base_price * 0.6);
+              console.log("Calculated base price from model:", basePrice);
+            }
+          } else {
+            // Use variant price if available
+            basePrice = Math.round(variantPrice * 0.6);
+            console.log("Using variant price:", basePrice);
           }
         }
       } catch (error) {
@@ -109,15 +148,18 @@ const ValuationPage = () => {
         finalValueINR,
       });
 
+      // Calculate condition deduction amount
+      const conditionDeduction = Math.round(basePriceINR * (Math.abs(totalImpact) / 100));
+      const deductionRate = Math.abs(totalImpact);
+
       setValuation({
         estimatedValue: finalValueINR,
         basePrice: basePriceINR,
         condition: getConditionDescription(totalImpact),
-        // factors: [
-        //   { name: 'Device Model', impact: '+$150', positive: true },
-        //   { name: 'Market Demand', impact: '+$25', positive: true },
-        //   { name: 'Condition Assessment', impact: '-$75', positive: false }
-        // ]
+        conditionDeduction: conditionDeduction,
+        deductionRate: deductionRate,
+        finalValue: finalValueINR,
+        variantName: variant || 'Base Model'
       });
     } catch (error) {
       console.error("Error calculating valuation:", error);
@@ -129,7 +171,10 @@ const ValuationPage = () => {
   const handleAcceptOffer = () => {
     // Store valuation data for checkout page
     sessionStorage.setItem("valuationData", JSON.stringify(valuation));
-    navigate(`/sell/${deviceType}/${brand}/${model}/checkout`);
+    const checkoutPath = variant 
+      ? `/sell/${deviceType}/${brand}/${model}/${variant}/checkout`
+      : `/sell/${deviceType}/${brand}/${model}/checkout`;
+    navigate(checkoutPath);
   };
 
   if (loading) {
@@ -153,7 +198,7 @@ const ValuationPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Device Info */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-6">
@@ -177,6 +222,12 @@ const ValuationPage = () => {
                   <span className="font-medium">Model:</span>{" "}
                   {deviceInfo?.name || model}
                 </p>
+                {variant && (
+                  <p>
+                    <span className="font-medium">Variant:</span>{" "}
+                    {variant}
+                  </p>
+                )}
                 <p>
                   <span className="font-medium">Type:</span> {deviceType}
                 </p>
@@ -195,17 +246,48 @@ const ValuationPage = () => {
           </div>
 
           {/* Valuation Details */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              {/* Price Display */}
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-                  <DollarSign className="h-10 w-10 text-green-600" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  ₹{valuation?.estimatedValue?.toLocaleString("en-IN")}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Price Breakdown
                 </h2>
-                <p className="text-gray-600">Estimated Cash Value (INR)</p>
+                
+                {/* Base Price */}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-700">Base Price ({variant || 'Base Model'})</span>
+                    <span className="font-semibold text-gray-900">
+                      ₹{valuation?.basePrice?.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Condition Deduction */}
+                <div className="mb-4 p-4 bg-red-50 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-red-700">Condition Deduction (-{valuation?.deductionRate}%)</span>
+                    <span className="font-semibold text-red-600">
+                      -₹{valuation?.conditionDeduction?.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className="text-sm text-red-600">
+                    Based on {valuation?.condition.toLowerCase()} condition
+                  </div>
+                </div>
+
+                {/* Final Value */}
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-lg font-semibold text-gray-900">Final Value</span>
+                    <span className="text-3xl font-bold text-green-600">
+                      ₹{valuation?.finalValue?.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Instant cash payment
+                  </p>
+                </div>
               </div>
 
               {/* Valuation Factors */}
@@ -262,11 +344,12 @@ const ValuationPage = () => {
 
                 <div className="flex space-x-4">
                   <button
-                    onClick={() =>
-                      navigate(
-                        `/sell/${deviceType}/${brand}/${model}/condition`,
-                      )
-                    }
+                    onClick={() => {
+                      const conditionPath = variant 
+                        ? `/sell/${deviceType}/${brand}/${model}/${variant}/condition`
+                        : `/sell/${deviceType}/${brand}/${model}/condition`;
+                      navigate(conditionPath);
+                    }}
                     className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                   >
                     Retake Assessment

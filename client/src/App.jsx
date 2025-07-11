@@ -360,6 +360,21 @@ const App = () => {
               />
               
               <Route
+                path="/sell/:deviceType/:brand/:model/:variant/valuation"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <ValuationPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
                 path="/sell/:deviceType/:brand/:model/checkout"
                 element={
                   <>

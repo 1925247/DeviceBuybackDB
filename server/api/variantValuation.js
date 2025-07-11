@@ -1,0 +1,130 @@
+/**
+ * Variant-specific valuation API for device pricing
+ */
+
+import { pool } from "../db.js";
+
+/**
+ * Get variant-specific pricing for valuation
+ */
+export async function getVariantValuation(req, res) {
+  try {
+    const { model, variant } = req.params;
+    
+    console.log('Fetching variant valuation for:', { model, variant });
+    
+    const client = await pool.connect();
+    try {
+      // Get model details
+      const modelQuery = `
+        SELECT dm.*, b.name as brand_name, dt.name as device_type_name
+        FROM device_models dm
+        JOIN brands b ON dm.brand_id = b.id
+        JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dm.slug = $1
+      `;
+      
+      const modelResult = await client.query(modelQuery, [model]);
+      
+      if (modelResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Model not found' });
+      }
+      
+      const modelData = modelResult.rows[0];
+      
+      // Get variant details and pricing
+      const variantQuery = `
+        SELECT dmv.*, avp.base_price, avp.current_price, avp.market_value
+        FROM device_model_variants dmv
+        LEFT JOIN admin_variant_pricing avp ON dmv.id = avp.variant_id
+        WHERE dmv.model_id = $1 AND dmv.variant_name = $2
+      `;
+      
+      const variantResult = await client.query(variantQuery, [modelData.id, variant]);
+      
+      if (variantResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Variant not found' });
+      }
+      
+      const variantData = variantResult.rows[0];
+      
+      // Calculate base price for buyback (60% of current price or base price)
+      const basePrice = variantData.current_price || variantData.base_price || variantData.base_price_usd * 83 || 300;
+      
+      res.json({
+        model: modelData,
+        variant: {
+          ...variantData,
+          basePrice: Math.round(basePrice * 0.6), // 60% for buyback
+          currentPrice: variantData.current_price || Math.round(basePrice),
+          marketValue: variantData.market_value || Math.round(basePrice * 1.1)
+        }
+      });
+      
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('Error fetching variant valuation:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * Calculate variant-specific price with condition adjustments
+ */
+export async function calculateVariantPrice(req, res) {
+  try {
+    const { model, variant } = req.params;
+    const { conditionAnswers, totalImpact } = req.body;
+    
+    console.log('Calculating variant price for:', { model, variant, totalImpact });
+    
+    const client = await pool.connect();
+    try {
+      // Get variant pricing
+      const variantQuery = `
+        SELECT dmv.*, avp.base_price, avp.current_price, avp.market_value
+        FROM device_model_variants dmv
+        LEFT JOIN admin_variant_pricing avp ON dmv.id = avp.variant_id
+        WHERE dmv.model_id = (SELECT id FROM device_models WHERE slug = $1)
+        AND dmv.variant_name = $2
+      `;
+      
+      const variantResult = await client.query(variantQuery, [model, variant]);
+      
+      if (variantResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Variant not found' });
+      }
+      
+      const variantData = variantResult.rows[0];
+      
+      // Calculate base price
+      const basePrice = variantData.current_price || variantData.base_price || 300;
+      const buybackBasePrice = Math.round(basePrice * 0.6); // 60% for buyback
+      
+      // Apply condition impact
+      const adjustmentFactor = 1 + (totalImpact / 100);
+      const finalPrice = Math.max(50, Math.round(buybackBasePrice * adjustmentFactor));
+      
+      // Calculate deduction
+      const conditionDeduction = Math.round(buybackBasePrice * (Math.abs(totalImpact) / 100));
+      
+      res.json({
+        basePrice: buybackBasePrice,
+        conditionDeduction: conditionDeduction,
+        deductionRate: Math.abs(totalImpact),
+        finalPrice: finalPrice,
+        variant: variantData
+      });
+      
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('Error calculating variant price:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
