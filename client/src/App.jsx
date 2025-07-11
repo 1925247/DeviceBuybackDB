@@ -70,6 +70,7 @@ const AdminWorkingHours = lazy(() => import("./pages/admin/AdminWorkingHours"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
+const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
 const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
 const VariantSelectionPage = lazy(() => import("./pages/sell/VariantSelectionPage"));
 const ExactValuePage = lazy(() => import("./pages/sell/ExactValuePage"));
@@ -454,6 +455,12 @@ const App = () => {
                   <Route path="advanced-model-management" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdvancedModelManagement />
+                    </Suspense>
+                  } />
+
+                  <Route path="variant-pricing" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminVariantPricing />
                     </Suspense>
                   } />
 

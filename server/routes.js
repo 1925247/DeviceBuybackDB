@@ -28,6 +28,7 @@ import indianDataRoutes from "./api/indianData.js";
 import { featureToggleRouter } from "./api/featureToggleApi.js";
 import deviceModelsRoutes from "./api/deviceModels.js";
 import deviceModelVariantsRoutes from "./api/deviceModelVariants.js";
+import adminVariantPricingRoutes from "./api/adminVariantPricing.js";
 import brandsRoutes from "./api/brands.js";
 import deviceTypesRoutes from "./api/deviceTypes.js";
 // Import will be done dynamically below
@@ -49,6 +50,7 @@ export async function registerRoutes(app) {
   app.use('/api/indian', indianDataRoutes);
   app.use('/api/device-models', deviceModelsRoutes);
   app.use('/api/device-model-variants', deviceModelVariantsRoutes);
+  app.use('/api/admin/variant-pricing', adminVariantPricingRoutes);
 
   app.use('/api/brands', brandsRoutes);
   app.use('/api/device-types', deviceTypesRoutes);
