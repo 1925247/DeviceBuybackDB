@@ -32,15 +32,28 @@ export async function getVariantValuation(req, res) {
       
       const modelData = modelResult.rows[0];
       
-      // Get variant details and pricing
-      const variantQuery = `
-        SELECT dmv.*, avp.base_price, avp.current_price, avp.market_value
+      // Get variant details and pricing - try exact match first
+      let variantQuery = `
+        SELECT dmv.*
         FROM device_model_variants dmv
-        LEFT JOIN admin_variant_pricing avp ON dmv.id = avp.variant_id
         WHERE dmv.model_id = $1 AND dmv.variant_name = $2
       `;
       
-      const variantResult = await client.query(variantQuery, [modelData.id, variant]);
+      let variantResult = await client.query(variantQuery, [modelData.id, variant]);
+      
+      // If no exact match, try storage-based matching for variants like "128gb-blue" -> "128GB"
+      if (variantResult.rows.length === 0) {
+        const storageMatch = variant.match(/(\d+gb)/i);
+        if (storageMatch) {
+          const storage = storageMatch[1].toUpperCase();
+          variantQuery = `
+            SELECT dmv.*
+            FROM device_model_variants dmv
+            WHERE dmv.model_id = $1 AND (dmv.variant_name = $2 OR dmv.storage = $2)
+          `;
+          variantResult = await client.query(variantQuery, [modelData.id, storage]);
+        }
+      }
       
       if (variantResult.rows.length === 0) {
         return res.status(404).json({ error: 'Variant not found' });

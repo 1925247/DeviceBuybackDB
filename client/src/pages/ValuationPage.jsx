@@ -87,12 +87,15 @@ const ValuationPage = () => {
               const variantResponse = await fetch(`/api/device-model-variants/${model}/${variant}`);
               const variantData = await variantResponse.json();
               if (variantData.variant) {
-                variantPrice = variantData.variant.currentPrice || variantData.variant.basePrice;
-                basePrice = variantData.variant.basePrice || basePrice;
+                // Use variant's current price and base price from the database
+                variantPrice = variantData.variant.current_price || variantData.variant.base_price;
+                basePrice = variantData.variant.base_price || variantData.variant.current_price || basePrice;
+                
                 console.log("Found variant pricing:", {
-                  basePrice: variantData.variant.basePrice,
-                  currentPrice: variantData.variant.currentPrice,
-                  marketValue: variantData.variant.marketValue
+                  basePrice: basePrice,
+                  currentPrice: variantPrice,
+                  variantName: variantData.variant.variant_name,
+                  marketValue: variantData.variant.market_value
                 });
               }
             } catch (error) {
@@ -128,16 +131,19 @@ const ValuationPage = () => {
         console.error("Error fetching model data for pricing:", error);
       }
 
+      // Use actual variant pricing if available
+      const actualBasePrice = variantPrice ? Math.round(variantPrice * 0.6) : basePrice;
+      
       // Apply condition impact (percentage-based)
       const adjustmentFactor = 1 + totalImpact / 100;
       const finalValueUSD = Math.max(
         50,
-        Math.round(basePrice * adjustmentFactor),
+        Math.round(actualBasePrice * adjustmentFactor),
       );
 
       // Convert to Indian Rupees (1 USD = 83 INR approximately)
       const finalValueINR = Math.round(finalValueUSD * 83);
-      const basePriceINR = Math.round(basePrice * 83);
+      const basePriceINR = Math.round(actualBasePrice * 83);
 
       console.log("Valuation calculation:", {
         basePrice,
@@ -152,6 +158,23 @@ const ValuationPage = () => {
       const conditionDeduction = Math.round(basePriceINR * (Math.abs(totalImpact) / 100));
       const deductionRate = Math.abs(totalImpact);
 
+      // Get variant display name
+      let variantDisplayName = 'Base Model';
+      if (variant) {
+        // Convert variant slug to display name (e.g., "128gb-blue" -> "128GB Blue")
+        variantDisplayName = variant
+          .split('-')
+          .map(part => {
+            // Handle storage sizes
+            if (part.match(/^\d+gb$/i)) {
+              return part.toUpperCase();
+            }
+            // Handle colors and other parts
+            return part.charAt(0).toUpperCase() + part.slice(1);
+          })
+          .join(' ');
+      }
+
       setValuation({
         estimatedValue: finalValueINR,
         basePrice: basePriceINR,
@@ -159,7 +182,7 @@ const ValuationPage = () => {
         conditionDeduction: conditionDeduction,
         deductionRate: deductionRate,
         finalValue: finalValueINR,
-        variantName: variant || 'Base Model'
+        variantName: variantDisplayName
       });
     } catch (error) {
       console.error("Error calculating valuation:", error);
@@ -225,7 +248,7 @@ const ValuationPage = () => {
                 {variant && (
                   <p>
                     <span className="font-medium">Variant:</span>{" "}
-                    {variant}
+                    {valuation?.variantName || variant}
                   </p>
                 )}
                 <p>
@@ -256,7 +279,7 @@ const ValuationPage = () => {
                 {/* Base Price */}
                 <div className="mb-4 p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-700">Base Price ({variant || 'Base Model'})</span>
+                    <span className="text-gray-700">Base Price ({valuation?.variantName || 'Base Model'})</span>
                     <span className="font-semibold text-gray-900">
                       ₹{valuation?.basePrice?.toLocaleString("en-IN")}
                     </span>
