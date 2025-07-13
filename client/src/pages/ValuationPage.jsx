@@ -392,10 +392,10 @@ const ValuationPage = () => {
                 <div className="flex space-x-4">
                   <button
                     onClick={() => {
-                      const conditionPath = variant 
-                        ? `/sell/${deviceType}/${brand}/${model}/${variant}/condition`
-                        : `/sell/${deviceType}/${brand}/${model}/condition`;
-                      navigate(conditionPath);
+                      const assessmentPath = variant 
+                        ? `/assessment/${deviceType}/${brand}/${model}/${variant}`
+                        : `/assessment/${deviceType}/${brand}/${model}`;
+                      navigate(assessmentPath);
                     }}
                     className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                   >
