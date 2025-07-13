@@ -4,7 +4,7 @@ import { MapPin, User, Phone, Mail, Package, IndianRupee, CheckCircle } from 'lu
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const CheckoutFormPage = () => {
-  const { deviceType, brand, model } = useParams();
+  const { deviceType, brand, model, variant } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [valuation, setValuation] = useState(null);
@@ -380,6 +380,7 @@ const CheckoutFormPage = () => {
                   <Package className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <p className="font-medium">{brand} {model}</p>
+                    {variant && <p className="text-sm text-gray-600">{variant}</p>}
                     <p className="text-sm text-gray-500">{deviceType}</p>
                   </div>
                 </div>

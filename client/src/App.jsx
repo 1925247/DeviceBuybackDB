@@ -402,6 +402,19 @@ const App = () => {
                   </>
                 }
               />
+              
+              <Route
+                path="/sell/:deviceType/:brand/:model/:variant/checkout"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <CheckoutFormPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
 
               {/* New 4-step assessment flow */}
               <Route
