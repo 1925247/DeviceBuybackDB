@@ -62,7 +62,7 @@ export async function getVariantValuation(req, res) {
       const variantData = variantResult.rows[0];
       
       // Calculate base price for buyback (60% of current price or base price)
-      const basePrice = variantData.current_price || variantData.base_price || variantData.base_price_usd * 83 || 300;
+      const basePrice = variantData.current_price || variantData.base_price || 20000; // Default to ₹20,000 if no price
       
       res.json({
         model: modelData,

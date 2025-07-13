@@ -132,12 +132,12 @@ const ValuationPage = () => {
       }
 
       // Use actual variant pricing if available (already in INR)
-      const actualBasePriceINR = variantPrice ? Math.round(variantPrice * 0.6) : Math.round(basePrice * 83);
+      const actualBasePriceINR = variantPrice ? Math.round(variantPrice * 0.6) : Math.round(basePrice * 0.6);
       
       // Apply condition impact (percentage-based)
       const adjustmentFactor = 1 + totalImpact / 100;
       const finalValueINR = Math.max(
-        1000, // Minimum ₹1,000 instead of converting from USD
+        1000, // Minimum ₹1,000
         Math.round(actualBasePriceINR * adjustmentFactor),
       );
 

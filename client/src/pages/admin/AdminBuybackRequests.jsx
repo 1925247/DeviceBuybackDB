@@ -4,14 +4,19 @@ import {
   Package, Search, Filter, Download, Eye, Edit, 
   CheckCircle, XCircle, Clock, AlertTriangle,
   Phone, Mail, MapPin, Calendar, Smartphone, 
-  TrendingUp, ExternalLink, Target
+  TrendingUp, ExternalLink, Target, Check, RefreshCw
 } from 'lucide-react';
 import LeadSourceBadge from '../../components/LeadSourceBadge';
+import OrderActionModal from '../../components/admin/OrderActionModal';
+import OrderDetailsModal from '../../components/admin/OrderDetailsModal';
 
 const AdminBuybackRequests = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [currentAction, setCurrentAction] = useState('');
   const queryClient = useQueryClient();
 
   const { data: requests = [], isLoading, error } = useQuery({
@@ -33,6 +38,53 @@ const AdminBuybackRequests = () => {
       queryClient.invalidateQueries(['/api/buyback-requests']);
     }
   });
+
+  const handleOrderAction = (order, action) => {
+    setSelectedRequest(order);
+    setCurrentAction(action);
+    setShowActionModal(true);
+  };
+
+  const handleActionConfirm = async (orderId, formData) => {
+    let updateData = {};
+    
+    switch (currentAction) {
+      case 'complete':
+        updateData = {
+          status: 'completed',
+          final_price: formData.finalPrice,
+          notes: formData.notes,
+          completed_at: new Date().toISOString()
+        };
+        break;
+      case 'reject':
+        updateData = {
+          status: 'cancelled',
+          rejection_reason: formData.reason,
+          notes: formData.notes,
+          cancelled_at: new Date().toISOString()
+        };
+        break;
+      case 'reschedule':
+        updateData = {
+          pickup_date: formData.newDate,
+          pickup_time: formData.newTime,
+          notes: formData.notes,
+          status: 'processing'
+        };
+        break;
+      case 'reset':
+        updateData = {
+          status: 'pending',
+          condition_answers: null,
+          notes: formData.notes,
+          reset_at: new Date().toISOString()
+        };
+        break;
+    }
+
+    updateRequestMutation.mutate({ id: orderId, data: updateData });
+  };
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,12 +155,7 @@ const AdminBuybackRequests = () => {
     });
   };
 
-  const handleStatusUpdate = (requestId, newStatus) => {
-    updateRequestMutation.mutate({
-      id: requestId,
-      data: { status: newStatus }
-    });
-  };
+
 
   if (isLoading) {
     return (
@@ -351,31 +398,75 @@ const AdminBuybackRequests = () => {
                       </td>
                       
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center justify-end space-x-1">
                           <button
-                            onClick={() => setSelectedRequest(request)}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setShowDetailsModal(true);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-900 p-1"
+                            title="View Details"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           
                           {request.status === 'pending' && (
-                            <div className="flex space-x-1">
+                            <>
                               <button
-                                onClick={() => handleStatusUpdate(request.id, 'processing')}
-                                className="text-blue-600 hover:text-blue-900 text-xs px-2 py-1 bg-blue-100 rounded"
-                                disabled={updateRequestMutation.isPending}
+                                onClick={() => handleOrderAction(request, 'complete')}
+                                className="text-green-600 hover:text-green-900 p-1"
+                                title="Complete Order"
                               >
-                                Process
+                                <Check className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleStatusUpdate(request.id, 'completed')}
-                                className="text-green-600 hover:text-green-900 text-xs px-2 py-1 bg-green-100 rounded"
-                                disabled={updateRequestMutation.isPending}
+                                onClick={() => handleOrderAction(request, 'reject')}
+                                className="text-red-600 hover:text-red-900 p-1"
+                                title="Reject Order"
                               >
-                                Complete
+                                <XCircle className="h-4 w-4" />
                               </button>
-                            </div>
+                              <button
+                                onClick={() => handleOrderAction(request, 'reschedule')}
+                                className="text-blue-600 hover:text-blue-900 p-1"
+                                title="Reschedule Pickup"
+                              >
+                                <Calendar className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOrderAction(request, 'reset')}
+                                className="text-yellow-600 hover:text-yellow-900 p-1"
+                                title="Reset Assessment"
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                          
+                          {request.status === 'processing' && (
+                            <>
+                              <button
+                                onClick={() => handleOrderAction(request, 'complete')}
+                                className="text-green-600 hover:text-green-900 p-1"
+                                title="Complete Order"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOrderAction(request, 'reject')}
+                                className="text-red-600 hover:text-red-900 p-1"
+                                title="Reject Order"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOrderAction(request, 'reschedule')}
+                                className="text-blue-600 hover:text-blue-900 p-1"
+                                title="Reschedule Pickup"
+                              >
+                                <Calendar className="h-4 w-4" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -388,178 +479,21 @@ const AdminBuybackRequests = () => {
         )}
       </div>
 
-      {/* Request Detail Modal */}
-      {selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Request Details - {selectedRequest.order_id}
-                </h3>
-                <button
-                  onClick={() => setSelectedRequest(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="h-6 w-6" />
-                </button>
-              </div>
+      {/* Order Action Modal */}
+      <OrderActionModal
+        isOpen={showActionModal}
+        onClose={() => setShowActionModal(false)}
+        order={selectedRequest}
+        action={currentAction}
+        onConfirm={handleActionConfirm}
+      />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Customer Information */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Customer Information</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm">{selectedRequest.customer_name}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm">{selectedRequest.customer_email}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm">{selectedRequest.customer_phone}</span>
-                    </div>
-                    <div className="flex items-start">
-                      <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                      <span className="text-sm">{selectedRequest.pickup_address}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Device Information */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Device Information</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Smartphone className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm capitalize">{selectedRequest.device_type}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Package className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm">{selectedRequest.manufacturer} {selectedRequest.model}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm capitalize">{selectedRequest.condition}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order Information */}
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="font-medium text-gray-900 mb-3">Order Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Offered Price</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      ₹{selectedRequest.offered_price?.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedRequest.status)}`}>
-                      {selectedRequest.status}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Created</p>
-                    <p className="text-sm text-gray-900">
-                      {formatDate(selectedRequest.created_at)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lead Source Details */}
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="font-medium text-gray-900 mb-3">Lead Source Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Source</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {selectedRequest.lead_source || selectedRequest.utm_source || 'Direct'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Medium</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {selectedRequest.lead_medium || selectedRequest.utm_medium || 'None'}
-                    </p>
-                  </div>
-                  {selectedRequest.utm_campaign && (
-                    <div>
-                      <p className="text-sm text-gray-600">Campaign</p>
-                      <p className="text-sm font-medium text-gray-900">{selectedRequest.utm_campaign}</p>
-                    </div>
-                  )}
-                  {selectedRequest.utm_term && (
-                    <div>
-                      <p className="text-sm text-gray-600">Search Term</p>
-                      <p className="text-sm font-medium text-gray-900">{selectedRequest.utm_term}</p>
-                    </div>
-                  )}
-                  {selectedRequest.referrer_url && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600">Referrer URL</p>
-                      <p className="text-sm font-medium text-gray-900 break-all">{selectedRequest.referrer_url}</p>
-                    </div>
-                  )}
-                  {selectedRequest.landing_page && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600">Landing Page</p>
-                      <p className="text-sm font-medium text-gray-900 break-all">{selectedRequest.landing_page}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Notes */}
-              {selectedRequest.notes && (
-                <div className="mt-6 pt-6 border-t">
-                  <h4 className="font-medium text-gray-900 mb-2">Notes</h4>
-                  <p className="text-sm text-gray-600">{selectedRequest.notes}</p>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="mt-6 pt-6 border-t flex space-x-3">
-                <button
-                  onClick={() => setSelectedRequest(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Close
-                </button>
-                {selectedRequest.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleStatusUpdate(selectedRequest.id, 'processing');
-                        setSelectedRequest(null);
-                      }}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Start Processing
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleStatusUpdate(selectedRequest.id, 'completed');
-                        setSelectedRequest(null);
-                      }}
-                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    >
-                      Mark Complete
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        order={selectedRequest}
+      />
     </div>
   );
 };

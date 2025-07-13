@@ -31,6 +31,7 @@ import ContactPage from "./pages/ContactPage";
 import DeviceListing from "./pages/DeviceListing";
 import CheckoutFormPage from "./pages/CheckoutFormPage";
 import BuybackSuccessPage from "./pages/BuybackSuccessPage";
+import DeviceAssessmentFlow from "./components/DeviceAssessmentFlow";
 
 import FAQPage from "./pages/FAQPage";
 import BlogPage from "./pages/BlogPage";
@@ -396,6 +397,33 @@ const App = () => {
                     <Navbar />
                     <main className="flex-grow">
                       <CheckoutFormPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+
+              {/* New 4-step assessment flow */}
+              <Route
+                path="/assessment/:deviceType/:brand/:model"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <DeviceAssessmentFlow />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
+                path="/assessment/:deviceType/:brand/:model/:variant"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <DeviceAssessmentFlow />
                     </main>
                     <Footer />
                   </>
