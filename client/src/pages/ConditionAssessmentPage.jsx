@@ -4,7 +4,7 @@ import { Check, AlertCircle } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const ConditionAssessmentPage = () => {
-  const { deviceType, brand, model } = useParams();
+  const { deviceType, brand, model, variant } = useParams();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -110,10 +110,13 @@ const ConditionAssessmentPage = () => {
       // Store answers and impact for valuation page
       sessionStorage.setItem('conditionAnswers', JSON.stringify(answers));
       sessionStorage.setItem('totalImpact', totalImpact.toString());
-      sessionStorage.setItem('deviceInfo', JSON.stringify({ deviceType, brand, model }));
+      sessionStorage.setItem('deviceInfo', JSON.stringify({ deviceType, brand, model, variant }));
 
-      // Navigate to valuation page
-      navigate(`/sell/${deviceType}/${brand}/${model}/valuation`);
+      // Navigate to valuation page with variant if available
+      const valuationPath = variant 
+        ? `/sell/${deviceType}/${brand}/${model}/${variant}/valuation`
+        : `/sell/${deviceType}/${brand}/${model}/valuation`;
+      navigate(valuationPath);
     } catch (error) {
       console.error('Error submitting answers:', error);
     } finally {
@@ -146,7 +149,12 @@ const ConditionAssessmentPage = () => {
               We don't have condition assessment questions for this specific device model yet.
             </p>
             <button
-              onClick={() => navigate(`/sell/${deviceType}/${brand}/${model}/valuation`)}
+              onClick={() => {
+                const valuationPath = variant 
+                  ? `/sell/${deviceType}/${brand}/${model}/${variant}/valuation`
+                  : `/sell/${deviceType}/${brand}/${model}/valuation`;
+                navigate(valuationPath);
+              }}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Continue to Valuation
