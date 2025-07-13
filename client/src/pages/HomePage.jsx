@@ -89,10 +89,10 @@ const HomePage = () => {
   };
 
   const handleModelSelect = (model) => {
-    // Navigate to condition assessment for the selected model
+    // Navigate to variant selection for the selected model
     const deviceTypeSlug = model.deviceTypeName?.toLowerCase().replace(/s$/, '') || 'smartphone';
     const brandSlug = model.brandName?.toLowerCase() || 'unknown';
-    navigate(`/sell/${deviceTypeSlug}/${brandSlug}/${model.slug}/condition`);
+    navigate(`/sell/${deviceTypeSlug}/${brandSlug}/${model.slug}`);
     setShowSearchResults(false);
     setSearchTerm('');
   };

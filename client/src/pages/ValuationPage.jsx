@@ -161,18 +161,39 @@ const ValuationPage = () => {
       // Get variant display name
       let variantDisplayName = 'Base Model';
       if (variant) {
-        // Convert variant slug to display name (e.g., "128gb-blue" -> "128GB Blue")
-        variantDisplayName = variant
-          .split('-')
-          .map(part => {
-            // Handle storage sizes
-            if (part.match(/^\d+gb$/i)) {
-              return part.toUpperCase();
-            }
-            // Handle colors and other parts
-            return part.charAt(0).toUpperCase() + part.slice(1);
-          })
-          .join(' ');
+        // First try to get the actual variant name from database
+        try {
+          const variantResponse = await fetch(`/api/device-model-variants/${model}/${variant}`);
+          const variantData = await variantResponse.json();
+          if (variantData.variant && variantData.variant.variant_name) {
+            variantDisplayName = variantData.variant.variant_name;
+          } else {
+            // Fallback: Convert variant slug to display name (e.g., "128gb-blue" -> "128GB Blue")
+            variantDisplayName = variant
+              .split('-')
+              .map(part => {
+                // Handle storage sizes
+                if (part.match(/^\d+gb$/i)) {
+                  return part.toUpperCase();
+                }
+                // Handle colors and other parts
+                return part.charAt(0).toUpperCase() + part.slice(1);
+              })
+              .join(' ');
+          }
+        } catch (error) {
+          console.error("Error fetching variant name:", error);
+          // Use slug conversion as fallback
+          variantDisplayName = variant
+            .split('-')
+            .map(part => {
+              if (part.match(/^\d+gb$/i)) {
+                return part.toUpperCase();
+              }
+              return part.charAt(0).toUpperCase() + part.slice(1);
+            })
+            .join(' ');
+        }
       }
 
       setValuation({
@@ -239,20 +260,17 @@ const ValuationPage = () => {
 
               <div className="space-y-2">
                 <p>
-                  <span className="font-medium">Brand:</span> {brand}
+                  <span className="font-medium">Brand:</span> {brand?.charAt(0).toUpperCase() + brand?.slice(1)}
                 </p>
                 <p>
                   <span className="font-medium">Model:</span>{" "}
                   {deviceInfo?.name || model}
+                  {variant && (
+                    <span className="text-gray-600"> + {valuation?.variantName || variant}</span>
+                  )}
                 </p>
-                {variant && (
-                  <p>
-                    <span className="font-medium">Variant:</span>{" "}
-                    {valuation?.variantName || variant}
-                  </p>
-                )}
                 <p>
-                  <span className="font-medium">Type:</span> {deviceType}
+                  <span className="font-medium">Type:</span> {deviceType?.charAt(0).toUpperCase() + deviceType?.slice(1)}
                 </p>
                 {deviceInfo?.release_year && (
                   <p>
@@ -262,7 +280,14 @@ const ValuationPage = () => {
                 )}
                 <p>
                   <span className="font-medium">Condition:</span>{" "}
-                  {valuation?.condition}
+                  <span className={`font-semibold ${
+                    valuation?.condition === 'Excellent' ? 'text-green-600' : 
+                    valuation?.condition === 'Good' ? 'text-blue-600' : 
+                    valuation?.condition === 'Fair' ? 'text-yellow-600' : 
+                    'text-red-600'
+                  }`}>
+                    {valuation?.condition}
+                  </span>
                 </p>
               </div>
             </div>
