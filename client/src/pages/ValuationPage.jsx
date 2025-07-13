@@ -131,27 +131,26 @@ const ValuationPage = () => {
         console.error("Error fetching model data for pricing:", error);
       }
 
-      // Use actual variant pricing if available
-      const actualBasePrice = variantPrice ? Math.round(variantPrice * 0.6) : basePrice;
+      // Use actual variant pricing if available (already in INR)
+      const actualBasePriceINR = variantPrice ? Math.round(variantPrice * 0.6) : Math.round(basePrice * 83);
       
       // Apply condition impact (percentage-based)
       const adjustmentFactor = 1 + totalImpact / 100;
-      const finalValueUSD = Math.max(
-        50,
-        Math.round(actualBasePrice * adjustmentFactor),
+      const finalValueINR = Math.max(
+        1000, // Minimum ₹1,000 instead of converting from USD
+        Math.round(actualBasePriceINR * adjustmentFactor),
       );
 
-      // Convert to Indian Rupees (1 USD = 83 INR approximately)
-      const finalValueINR = Math.round(finalValueUSD * 83);
-      const basePriceINR = Math.round(actualBasePrice * 83);
+      const basePriceINR = actualBasePriceINR;
 
       console.log("Valuation calculation:", {
         basePrice,
         basePriceINR,
         totalImpact,
         adjustmentFactor,
-        finalValueUSD,
         finalValueINR,
+        variantPrice,
+        variantUsed: !!variantPrice
       });
 
       // Calculate condition deduction amount
