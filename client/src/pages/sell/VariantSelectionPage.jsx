@@ -39,7 +39,7 @@ const VariantSelectionPage = () => {
   };
 
   const handleVariantSelect = (variant) => {
-    navigate(`/sell/${deviceType}/${brand}/${model}/${variant.slug}/value`);
+    navigate(`/sell/${deviceType}/${brand}/${model}/${variant.slug}/condition`);
   };
 
   if (loading) {

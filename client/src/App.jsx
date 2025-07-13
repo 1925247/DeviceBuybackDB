@@ -251,6 +251,21 @@ const App = () => {
               />
               
               <Route
+                path="/sell/:deviceType/:brand/:model"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ModelsProvider>
+                        <VariantSelectionPage />
+                      </ModelsProvider>
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
                 path="/sell/:deviceType/:brand/:model/variants"
                 element={
                   <>
