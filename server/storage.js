@@ -34,7 +34,7 @@ import {
   // Buyback functionality
   buybackRequests
 } from "../shared/schema.js";
-import { db } from "./db.js";
+import { db, pool } from "./db.js";
 import { eq, and, desc, asc, sql, like, ilike, count, or, isNull } from "drizzle-orm";
 
 // Database operations class
@@ -409,28 +409,25 @@ export class DatabaseStorage {
   // Buyback Requests operations
   async getBuybackRequests() {
     try {
-      // Use database pool directly to avoid ORM issues
-      const client = await pool.connect();
-      try {
-        const result = await client.query(`
-          SELECT 
-            id, order_id, customer_name, customer_email, customer_phone,
-            device_type, manufacturer, model, condition, offered_price, final_price,
-            status, pickup_address, pickup_date, pickup_time, notes, 
-            created_at, updated_at, lead_source, lead_medium, lead_campaign,
-            utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-            referrer_url, landing_page, device_model_id, condition_answers,
-            pin_code, device_age_months, market_demand, regional_adjustment,
-            pickup_estimated_days, gst_amount
-          FROM buyback_requests 
-          ORDER BY created_at DESC
-        `);
-        return result.rows || [];
-      } finally {
-        client.release();
-      }
+      // Use raw SQL query for reliable data retrieval
+      const query = `
+        SELECT 
+          id, user_id, device_type, manufacturer, model, condition, 
+          offered_price, status, customer_name, customer_email, customer_phone,
+          pickup_address, pickup_date, pickup_time, device_model_id, notes,
+          order_id, condition_answers, pin_code, final_price, lead_source,
+          lead_medium, lead_campaign, utm_source, utm_medium, utm_campaign,
+          utm_term, utm_content, referrer_url, landing_page, created_at, updated_at
+        FROM buyback_requests 
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      console.log(`Successfully retrieved ${result.rows.length} buyback requests`);
+      return result.rows;
     } catch (error) {
       console.error('Error fetching buyback requests:', error);
+      console.error('Error details:', error.message);
       return [];
     }
   }
