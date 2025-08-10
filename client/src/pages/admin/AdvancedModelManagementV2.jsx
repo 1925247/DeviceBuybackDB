@@ -536,107 +536,181 @@ const AdvancedModelManagementV2 = () => {
                   
                   {/* Primary Image */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Primary Image</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      {previewImages.image ? (
-                        <div className="relative">
-                          <img
-                            src={previewImages.image}
-                            alt="Primary preview"
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
-                          <button
-                            onClick={() => {
-                              handleFormChange('image', '');
-                              setPreviewImages(prev => ({ ...prev, image: null }));
-                            }}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Primary Image *</label>
+                    
+                    {/* Current Image Preview */}
+                    {(previewImages.image || formData.image) && (
+                      <div className="mb-4 relative">
+                        <img
+                          src={previewImages.image || formData.image}
+                          alt="Current primary image"
+                          className="w-full h-40 object-cover rounded-lg border"
+                        />
+                        <button
+                          onClick={() => {
+                            handleFormChange('image', '');
+                            setPreviewImages(prev => ({ ...prev, image: null }));
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                          Current Image
                         </div>
-                      ) : (
+                      </div>
+                    )}
+
+                    {/* Upload Options */}
+                    <div className="space-y-3">
+                      {/* Upload Button */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
                         <div className="text-center">
                           <ObjectUploader
                             maxNumberOfFiles={1}
                             maxFileSize={5242880} // 5MB
                             onGetUploadParameters={() => handleImageUpload('image')}
                             onComplete={(result) => handleImageUploadComplete('image', result)}
-                            buttonClassName="w-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                            buttonClassName="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-300 py-3"
                           >
                             <div className="flex items-center justify-center gap-2">
-                              <Camera className="h-5 w-5" />
-                              Upload Primary Image
+                              <Upload className="h-5 w-5" />
+                              {formData.image ? 'Replace Image' : 'Upload New Image'}
                             </div>
                           </ObjectUploader>
+                          <p className="text-xs text-gray-500 mt-2">Click to browse or drag & drop (Max 5MB)</p>
                         </div>
-                      )}
+                      </div>
+
+                      {/* URL Input */}
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-300" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="px-2 bg-white text-gray-500">OR</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Enter Image URL</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={formData.image}
+                            onChange={(e) => {
+                              handleFormChange('image', e.target.value);
+                              if (e.target.value) {
+                                setPreviewImages(prev => ({ ...prev, image: e.target.value }));
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="https://example.com/device-image.jpg"
+                          />
+                          {formData.image && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImages(prev => ({ ...prev, image: formData.image }))}
+                              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border border-gray-300"
+                              title="Preview URL"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Secondary Image */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Secondary Image (Optional)</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      {previewImages.secondaryImage ? (
-                        <div className="relative">
-                          <img
-                            src={previewImages.secondaryImage}
-                            alt="Secondary preview"
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
-                          <button
-                            onClick={() => {
-                              handleFormChange('secondaryImage', '');
-                              setPreviewImages(prev => ({ ...prev, secondaryImage: null }));
-                            }}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                    
+                    {/* Current Secondary Image Preview */}
+                    {(previewImages.secondaryImage || formData.secondaryImage) && (
+                      <div className="mb-4 relative">
+                        <img
+                          src={previewImages.secondaryImage || formData.secondaryImage}
+                          alt="Current secondary image"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <button
+                          onClick={() => {
+                            handleFormChange('secondaryImage', '');
+                            setPreviewImages(prev => ({ ...prev, secondaryImage: null }));
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                          Secondary Image
                         </div>
-                      ) : (
+                      </div>
+                    )}
+
+                    {/* Upload Options */}
+                    <div className="space-y-3">
+                      {/* Upload Button */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 hover:border-green-400 transition-colors">
                         <div className="text-center">
                           <ObjectUploader
                             maxNumberOfFiles={1}
                             maxFileSize={5242880} // 5MB
                             onGetUploadParameters={() => handleImageUpload('secondaryImage')}
                             onComplete={(result) => handleImageUploadComplete('secondaryImage', result)}
-                            buttonClassName="w-full bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                            buttonClassName="w-full bg-green-50 text-green-700 hover:bg-green-100 border border-green-300 py-2"
                           >
                             <div className="flex items-center justify-center gap-2">
-                              <Image className="h-5 w-5" />
-                              Upload Secondary Image
+                              <Image className="h-4 w-4" />
+                              {formData.secondaryImage ? 'Replace Secondary' : 'Upload Secondary'}
                             </div>
                           </ObjectUploader>
+                          <p className="text-xs text-gray-500 mt-1">Optional additional device photo</p>
                         </div>
-                      )}
+                      </div>
+
+                      {/* URL Input */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Or enter URL</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={formData.secondaryImage}
+                            onChange={(e) => {
+                              handleFormChange('secondaryImage', e.target.value);
+                              if (e.target.value) {
+                                setPreviewImages(prev => ({ ...prev, secondaryImage: e.target.value }));
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="https://example.com/secondary-image.jpg"
+                          />
+                          {formData.secondaryImage && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImages(prev => ({ ...prev, secondaryImage: formData.secondaryImage }))}
+                              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border border-gray-300"
+                              title="Preview URL"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* URL Inputs for manual entry */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Or enter Image URL</label>
-                      <input
-                        type="url"
-                        value={formData.image}
-                        onChange={(e) => handleFormChange('image', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="https://example.com/image.jpg"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Image URL</label>
-                      <input
-                        type="url"
-                        value={formData.secondaryImage}
-                        onChange={(e) => handleFormChange('secondaryImage', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="https://example.com/secondary-image.jpg"
-                      />
-                    </div>
+                  {/* Image Guidelines */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">Image Guidelines</h4>
+                    <ul className="text-xs text-blue-800 space-y-1">
+                      <li>• Recommended size: 800x600px or higher</li>
+                      <li>• Supported formats: JPG, PNG, WebP</li>
+                      <li>• Maximum file size: 5MB per image</li>
+                      <li>• Use clear, high-quality device photos</li>
+                      <li>• Primary image will be used in listings</li>
+                    </ul>
                   </div>
                 </div>
               </div>
