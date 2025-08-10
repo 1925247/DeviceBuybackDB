@@ -268,6 +268,19 @@ const App = () => {
               />
               
               <Route
+                path="/assessment/:deviceType/:brand/:model/:variant"
+                element={
+                  <>
+                    <Navbar />
+                    <main className="flex-grow">
+                      <ConditionAssessmentPage />
+                    </main>
+                    <Footer />
+                  </>
+                }
+              />
+              
+              <Route
                 path="/assessment/:deviceType/:brand/:model/:variant/valuation"
                 element={
                   <>

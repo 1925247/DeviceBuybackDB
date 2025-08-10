@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Check, AlertCircle } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const ConditionAssessmentPage = () => {
   const { deviceType, brand, model, variant } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -112,11 +113,10 @@ const ConditionAssessmentPage = () => {
       sessionStorage.setItem('totalImpact', totalImpact.toString());
       sessionStorage.setItem('deviceInfo', JSON.stringify({ deviceType, brand, model, variant }));
 
-      // Navigate to valuation page with variant if available
-      const valuationPath = variant 
-        ? `/sell/${deviceType}/${brand}/${model}/${variant}/valuation`
-        : `/sell/${deviceType}/${brand}/${model}/valuation`;
-      navigate(valuationPath);
+      // Navigate to valuation with condition answers and pass base price from location state
+      navigate(`/assessment/${deviceType}/${brand}/${model}/${variant}/valuation`, {
+        state: location.state // Pass through the base price and other data
+      });
     } catch (error) {
       console.error('Error submitting answers:', error);
     } finally {
@@ -150,10 +150,9 @@ const ConditionAssessmentPage = () => {
             </p>
             <button
               onClick={() => {
-                const valuationPath = variant 
-                  ? `/sell/${deviceType}/${brand}/${model}/${variant}/valuation`
-                  : `/sell/${deviceType}/${brand}/${model}/valuation`;
-                navigate(valuationPath);
+                navigate(`/assessment/${deviceType}/${brand}/${model}/${variant}/valuation`, {
+                  state: location.state
+                });
               }}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >

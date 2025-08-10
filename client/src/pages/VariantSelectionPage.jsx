@@ -30,7 +30,7 @@ const VariantSelectionPage = () => {
     
     console.log('Navigating to assessment with basePrice:', basePrice);
     
-    navigate(`/assessment/${deviceType}/${brand}/${model}/${variantSlug}/valuation`, {
+    navigate(`/assessment/${deviceType}/${brand}/${model}/${variantSlug}`, {
       state: {
         model: selectedModel,
         variant: variant,
