@@ -453,6 +453,31 @@ const LeadCompletion = () => {
                   <Package className="h-4 w-4 text-gray-400 mr-3" />
                   <span className="text-sm text-gray-900">{leadDetails?.manufacturer} {leadDetails?.model}</span>
                 </div>
+                <div className="border-t pt-3 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <FileText className="h-4 w-4 text-gray-400 mr-3" />
+                      <span className="text-sm text-gray-600">Lead ID:</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">#{leadDetails?.lead_id}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center">
+                      <Package className="h-4 w-4 text-blue-500 mr-3" />
+                      <span className="text-sm text-gray-600">Order ID:</span>
+                    </div>
+                    <span className="text-sm font-semibold text-blue-600">{leadDetails?.order_id}</span>
+                  </div>
+                  {leadDetails?.order_date && (
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center">
+                        <FileText className="h-4 w-4 text-gray-400 mr-3" />
+                        <span className="text-sm text-gray-600">Order Date:</span>
+                      </div>
+                      <span className="text-sm text-gray-900">{leadDetails?.order_date}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -465,7 +490,7 @@ const LeadCompletion = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">Upload Device Photos</h2>
                   <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    Order #{leadId}
+                    {leadDetails?.order_id || `Order #${leadId}`}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-6">Please upload 6 photos of the device from different angles. Each photo should be clear and less than 2MB.</p>
@@ -545,7 +570,7 @@ const LeadCompletion = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">KYC Verification</h2>
                   <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    Order #{leadId}
+                    {leadDetails?.order_id || `Order #${leadId}`}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-6">Please collect and verify customer's identity documents.</p>
@@ -744,7 +769,7 @@ const LeadCompletion = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">Payment Confirmation</h2>
                   <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    Order #{leadId}
+                    {leadDetails?.order_id || `Order #${leadId}`}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-6">Confirm payment details and method for the customer.</p>
@@ -851,7 +876,7 @@ const LeadCompletion = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">Complete Device Processing</h2>
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    Order #{leadId} - Ready to Complete
+                    {leadDetails?.order_id || `Order #${leadId}`} - Ready to Complete
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-6">All steps have been completed. Click below to finalize and close this lead.</p>

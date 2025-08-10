@@ -1082,6 +1082,7 @@ export async function registerRoutes(app) {
       const leadDetailsMap = {
         '1001': {
           lead_id: 1001,
+          order_id: 'GS202521001', // Customer Order ID
           customer_name: 'Rajesh Kumar',
           customer_phone: '9876543210',
           customer_email: 'rajesh@email.com',
@@ -1096,6 +1097,7 @@ export async function registerRoutes(app) {
           status: 'assigned',
           assigned_agent_id: agentId,
           created_at: new Date().toISOString(),
+          order_date: '2025-08-10',
           customer_answers: [
             { question: 'Screen condition?', answer: 'Minor scratches', deduction: 5 },
             { question: 'Battery performance?', answer: 'Good (80-90%)', deduction: 0 },
@@ -1105,6 +1107,7 @@ export async function registerRoutes(app) {
         },
         '1002': {
           lead_id: 1002,
+          order_id: 'GS202521002', // Customer Order ID
           customer_name: 'Priya Sharma',
           customer_phone: '9876543211',
           customer_email: 'priya@email.com',
@@ -1119,6 +1122,7 @@ export async function registerRoutes(app) {
           status: 'assigned',
           assigned_agent_id: agentId,
           created_at: new Date().toISOString(),
+          order_date: '2025-08-10',
           customer_answers: [
             { question: 'Screen condition?', answer: 'Perfect', deduction: 0 },
             { question: 'Battery performance?', answer: 'Excellent (90%+)', deduction: 0 },
@@ -1128,6 +1132,7 @@ export async function registerRoutes(app) {
         },
         '1003': {
           lead_id: 1003,
+          order_id: 'GS202521003', // Customer Order ID
           customer_name: 'Anita Verma',
           customer_phone: '9876543213',
           customer_email: 'anita@email.com',
@@ -1142,6 +1147,7 @@ export async function registerRoutes(app) {
           status: 'in_progress',
           assigned_agent_id: agentId,
           created_at: new Date().toISOString(),
+          order_date: '2025-08-10',
           customer_answers: [
             { question: 'Screen condition?', answer: 'Good condition', deduction: 2 },
             { question: 'Battery performance?', answer: 'Good (70-80%)', deduction: 1 },
