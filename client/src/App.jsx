@@ -73,6 +73,10 @@ const QuestionGroupManager = lazy(() => import("./components/admin/realtime/Ques
 const ConfigurationManager = lazy(() => import("./components/admin/realtime/ConfigurationManager"));
 const AdminWorkingHours = lazy(() => import("./pages/admin/AdminWorkingHours"));
 const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation"));
+
+// Agent Pages - Lazy loaded
+const PickupAgentDashboard = lazy(() => import("./pages/agent/PickupAgentDashboard"));
+const OrderReEvaluation = lazy(() => import("./pages/agent/OrderReEvaluation"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
@@ -692,6 +696,18 @@ const App = () => {
 
               {/* Logout route */}
               <Route path="/admin/logout" element={<AdminLogout />} />
+
+              {/* Agent Routes */}
+              <Route path="/agent/dashboard" element={
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PickupAgentDashboard />
+                </Suspense>
+              } />
+              <Route path="/agent/order-details/:orderId" element={
+                <Suspense fallback={<LoadingSpinner />}>
+                  <OrderReEvaluation />
+                </Suspense>
+              } />
 
               {/* Catch all route */}
               <Route path="*" element={<NotFound />} />

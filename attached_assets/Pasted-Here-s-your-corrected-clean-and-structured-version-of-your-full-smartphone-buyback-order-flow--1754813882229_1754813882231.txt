@@ -1,0 +1,105 @@
+Here’s your **corrected, clean, and structured version** of your full smartphone buyback order flow prompt in proper format, ready for developers to use.
+
+---
+
+## **📌 Complete Smartphone Buyback Order Flow – Correct Version**
+
+### **1. Customer Order Placement (Website / App)**
+
+* **Step 1:** Customer selects:
+
+  * Device Type → Brand → Model → Variant
+* **Step 2:** System fetches **Base Price** (variant-specific) from backend.
+* **Step 3:** System loads **only mapped Groups, Questions, and Answers** for the selected model/variant.
+* **Step 4:** Customer answers each question (e.g., Body Condition, Screen, Functionality, Warranty, Accessories).
+* **Step 5:** Deduction is applied **in real time** as answers are selected.
+
+  * **Formula:**
+    `Final Online Price = Base Price – Total Deductions`
+* **Step 6:** Customer enters:
+
+  * Name
+  * Phone Number
+  * Email
+  * Pickup Address (**Google Maps integrated for accuracy**)
+  * Preferred Date & Time Slot
+* **Step 7:** Customer confirms order.
+* **Step 8:** System generates **Order ID** and stores in backend.
+
+---
+
+### **2. Business Operations – Under “Buyback Requests” (Backend Admin Processing)**
+
+* Admin dashboard displays **New Orders** with:
+
+  * Customer details
+  * Device details
+  * Base Price
+  * Customer-selected answers & deductions
+  * Final price offered online
+* Admin assigns order to **Pickup Agent**.
+
+---
+
+### **3. Pickup Agent Visit (On-site Re-Evaluation)**
+
+* Agent dashboard shows:
+
+  * Customer details & location
+  * Device details
+  * **Customer’s original Q\&A** with selected answers highlighted
+  * Online final price
+* Agent physically checks device.
+* If actual condition differs, agent reselects answers.
+* System instantly recalculates **Agent Price** using backend deduction rules.
+
+---
+
+### **4. Price Comparison & Customer Confirmation**
+
+* Display **side-by-side comparison**:
+
+  * **Customer Price** (online)
+  * **Agent Price** (on-site)
+  * Difference with **reason** (e.g., “Major screen crack instead of minor scratch”)
+* Customer chooses:
+
+  * **Accept** → Proceed with payment & pickup.
+  * **Reject** → Cancel order.
+
+---
+
+### **5. Order Completion**
+
+**If Accepted:**
+
+* Order marked as **Completed** in backend.
+* Payment status updated.
+* Device marked as **Received**.
+* Store permanently:
+
+  * Customer’s original answers
+  * Agent’s revised answers
+  * Final agreed price
+  * Notes/reasons for changes
+
+**If Rejected:**
+
+* Order marked **Cancelled by Customer**.
+* Store in backend for reporting & future analysis.
+
+---
+
+### **6. System Rules**
+
+* All prices calculated **only** from the **Base Price** set for that variant in backend.
+* No unmapped questions should be visible to customers.
+* Admin can toggle **Advanced** or **Standard** question sets per model.
+* URLs for models & brands must be **SEO-friendly**.
+* System must store a **fully traceable order history** for dispute handling.
+
+---
+
+If you want, I can now **extend this into a developer-ready API flow & database schema** so your dev team can directly implement it without any ambiguity — making sure calculations, mappings, and order tracking all work exactly as you’ve described.
+
+Do you want me to prepare that **API + DB design** next so it’s fully implementation-ready?

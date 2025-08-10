@@ -219,10 +219,10 @@ const AdminBuybacksNew = () => {
                     <User className="h-8 w-8 text-gray-300 mr-3" />
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {request.customer_name || 'N/A'}
+                        {request.customer_name || request.customerName || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {request.customer_email || 'N/A'}
+                        {request.customer_email || request.customerEmail || 'N/A'}
                       </div>
                       {request.order_id && (
                         <div className="text-xs text-blue-600 font-mono">
