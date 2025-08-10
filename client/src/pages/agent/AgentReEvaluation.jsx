@@ -74,15 +74,17 @@ const AgentReEvaluation = () => {
   };
 
   const calculateFinalPrice = () => {
-    if (!leadDetails) return;
+    if (!leadDetails || !leadDetails.initial_quote) return;
 
-    const basePrice = parseFloat(leadDetails.base_price);
+    const basePrice = parseFloat(leadDetails.initial_quote) || 0;
     const totalDeduction = Object.values(agentAnswers).reduce((sum, answer) => {
-      return sum + (answer.agent_deduction || 0);
+      return sum + (parseFloat(answer.agent_deduction) || 0);
     }, 0);
 
-    const calculatedPrice = basePrice * (1 - totalDeduction / 100);
-    setFinalPrice(Math.max(0, calculatedPrice));
+    // Convert percentage deduction to actual amount
+    const deductionAmount = (totalDeduction / 100) * basePrice;
+    const calculatedPrice = Math.max(0, basePrice - deductionAmount);
+    setFinalPrice(calculatedPrice);
   };
 
   const handleAnswerChange = (questionIndex, newAnswer) => {
@@ -161,7 +163,7 @@ const AgentReEvaluation = () => {
     );
   }
 
-  const customerPrice = parseFloat(leadDetails.customer_price);
+  const customerPrice = parseFloat(leadDetails.initial_quote) || 0;
   const priceDifference = finalPrice - customerPrice;
 
   return (
@@ -216,7 +218,7 @@ const AgentReEvaluation = () => {
                 </div>
                 <div className="flex items-center">
                   <DollarSign className="h-4 w-4 text-gray-400 mr-3" />
-                  <span className="text-sm text-gray-900">Base Price: ₹{parseFloat(leadDetails.base_price).toLocaleString('en-IN')}</span>
+                  <span className="text-sm text-gray-900">Base Price: ₹{(parseFloat(leadDetails.initial_quote) || 0).toLocaleString('en-IN')}</span>
                 </div>
               </div>
             </div>
