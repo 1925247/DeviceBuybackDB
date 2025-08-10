@@ -36,6 +36,9 @@ const IntegratedModelManager = () => {
     condition: 'excellent'
   });
 
+  const [editingVariant, setEditingVariant] = useState(null);
+  const [editingPrice, setEditingPrice] = useState('');
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -156,6 +159,55 @@ const IntegratedModelManager = () => {
     } catch (error) {
       console.error('Error deleting variant:', error);
       alert('Error deleting variant. Please try again.');
+    }
+  };
+
+  const startPriceEdit = (variant) => {
+    setEditingVariant(variant.id);
+    setEditingPrice(variant.base_price || variant.basePrice || '');
+  };
+
+  const cancelPriceEdit = () => {
+    setEditingVariant(null);
+    setEditingPrice('');
+  };
+
+  const savePriceEdit = async (variantId) => {
+    if (!editingPrice || isNaN(editingPrice) || parseFloat(editingPrice) <= 0) {
+      alert('Please enter a valid price greater than 0');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/variants/${variantId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          base_price: parseFloat(editingPrice),
+          current_price: parseFloat(editingPrice)
+        })
+      });
+
+      if (response.ok) {
+        // Update the local state immediately for better UX
+        setModels(prev => prev.map(model => ({
+          ...model,
+          variants: model.variants?.map(v => 
+            v.id === variantId 
+              ? { ...v, base_price: parseFloat(editingPrice), basePrice: parseFloat(editingPrice) }
+              : v
+          ) || []
+        })));
+        
+        setEditingVariant(null);
+        setEditingPrice('');
+        alert('Frontend price updated successfully! Changes are now live on your website.');
+      } else {
+        throw new Error('Failed to update price');
+      }
+    } catch (error) {
+      console.error('Error updating price:', error);
+      alert('Error updating price. Please try again.');
     }
   };
 
@@ -335,6 +387,9 @@ const IntegratedModelManager = () => {
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign className="h-5 w-5 text-green-600" />
                       <h5 className="font-medium text-gray-900">Add New Variant & Set Frontend Price</h5>
+                      <div className="ml-auto bg-blue-100 px-2 py-1 rounded text-xs text-blue-700 font-medium">
+                        💡 Prices are editable in table below
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                       <div>
@@ -400,12 +455,17 @@ const IntegratedModelManager = () => {
                   {/* Variants Table */}
                   <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Variant Name</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Base Price</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Variant Details</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                            <div className="flex items-center gap-1">
+                              Frontend Price
+                              <div className="bg-green-100 px-1 rounded text-xs text-green-700">Click to Edit</div>
+                            </div>
+                          </th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Storage</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Questions Mapped</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Assessment Setup</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                         </tr>
                       </thead>
@@ -424,12 +484,57 @@ const IntegratedModelManager = () => {
                               </div>
                             </td>
                             <td className="px-4 py-3">
-                              <div className="flex flex-col">
-                                <span className="text-lg font-bold text-green-600">
-                                  ₹{(variant.basePrice || variant.base_price || 0).toLocaleString()}
-                                </span>
-                                <span className="text-xs text-gray-500">Frontend Display Price</span>
-                              </div>
+                              {editingVariant === variant.id ? (
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">₹</span>
+                                    <input
+                                      type="number"
+                                      value={editingPrice}
+                                      onChange={(e) => setEditingPrice(e.target.value)}
+                                      className="w-24 px-2 py-1 border border-green-400 rounded text-sm font-bold text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                      placeholder="45000"
+                                      autoFocus
+                                      onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                          savePriceEdit(variant.id);
+                                        } else if (e.key === 'Escape') {
+                                          cancelPriceEdit();
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => savePriceEdit(variant.id)}
+                                      className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors flex items-center gap-1"
+                                    >
+                                      <CheckCircle className="h-3 w-3" />
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={cancelPriceEdit}
+                                      className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div 
+                                  className="flex flex-col cursor-pointer hover:bg-green-50 p-1 rounded transition-colors"
+                                  onClick={() => startPriceEdit(variant)}
+                                  title="Click to edit frontend price"
+                                >
+                                  <span className="text-lg font-bold text-green-600">
+                                    ₹{(variant.basePrice || variant.base_price || 0).toLocaleString()}
+                                  </span>
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    Frontend Display Price
+                                    <Edit className="h-3 w-3 opacity-50" />
+                                  </span>
+                                </div>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500">{variant.storage || '-'}</td>
                             <td className="px-4 py-3 text-sm">
@@ -456,20 +561,13 @@ const IntegratedModelManager = () => {
                                   Questions
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    const newPrice = prompt('Enter new frontend price:', variant.base_price || variant.basePrice);
-                                    if (newPrice && !isNaN(newPrice) && parseFloat(newPrice) > 0) {
-                                      handleUpdateVariant(variant.id, { 
-                                        base_price: parseFloat(newPrice),
-                                        current_price: parseFloat(newPrice)
-                                      });
-                                    }
-                                  }}
+                                  onClick={() => startPriceEdit(variant)}
                                   className="bg-amber-600 text-white px-2 py-1 rounded text-xs hover:bg-amber-700 transition-colors flex items-center gap-1"
                                   title="Edit Frontend Price"
+                                  disabled={editingVariant === variant.id}
                                 >
                                   <Edit className="h-3 w-3" />
-                                  Price
+                                  {editingVariant === variant.id ? 'Editing...' : 'Price'}
                                 </button>
                                 <button
                                   onClick={() => {
