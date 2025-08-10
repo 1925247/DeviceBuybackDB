@@ -968,7 +968,7 @@ export async function registerRoutes(app) {
       const token = authHeader.split(' ')[1];
       
       // Verify token contains the agent ID (simple validation)
-      if (!token.includes(agentId)) {
+      if (!token || !token.includes(agentId)) {
         return res.status(403).json({ error: 'Access denied - token mismatch' });
       }
 

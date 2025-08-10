@@ -111,7 +111,7 @@ const SecureAgentDashboard = () => {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-0 sm:h-16 space-y-2 sm:space-y-0">
             <div className="flex items-center">
               <Shield className="h-8 w-8 text-blue-600 mr-3" />
               <div>
@@ -120,10 +120,10 @@ const SecureAgentDashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <div className="flex items-center text-sm text-gray-700">
                 <User className="h-4 w-4 mr-2" />
-                <span>Welcome, {agentInfo?.full_name}</span>
+                <span className="truncate">Welcome, {agentInfo?.full_name}</span>
               </div>
               <button
                 onClick={handleLogout}
@@ -151,47 +151,47 @@ const SecureAgentDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white rounded-lg shadow p-3 sm:p-6">
             <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Leads</p>
-                <p className="text-2xl font-semibold text-gray-900">{leads.length}</p>
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Leads</p>
+                <p className="text-lg sm:text-2xl font-semibold text-gray-900">{leads.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-3 sm:p-6">
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Pending</p>
+                <p className="text-lg sm:text-2xl font-semibold text-gray-900">
                   {leads.filter(l => l.status === 'assigned').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-3 sm:p-6">
             <div className="flex items-center">
-              <Eye className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">In Progress</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <Eye className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">In Progress</p>
+                <p className="text-lg sm:text-2xl font-semibold text-gray-900">
                   {leads.filter(l => l.status === 'in_progress').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-3 sm:p-6">
             <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-lg sm:text-2xl font-semibold text-gray-900">
                   {leads.filter(l => l.status === 'completed').length}
                 </p>
               </div>
@@ -201,12 +201,72 @@ const SecureAgentDashboard = () => {
 
         {/* Leads Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">My Assigned Leads</h2>
             <p className="text-sm text-gray-500">Only leads assigned to you are visible</p>
           </div>
           
-          <div className="overflow-x-auto">
+          {/* Mobile Cards View */}
+          <div className="block sm:hidden">
+            <div className="space-y-4 p-4">
+              {leads.map(lead => (
+                <div key={lead.lead_id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-900">Lead #{lead.lead_id}</p>
+                      <p className="text-sm text-gray-500">{new Date(lead.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
+                      {getStatusIcon(lead.status)}
+                      <span className="ml-1 capitalize">{lead.status?.replace('_', ' ')}</span>
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{lead.customer_name}</p>
+                      <p className="text-xs text-gray-500 flex items-center">
+                        <Phone className="h-3 w-3 mr-1" />
+                        {lead.customer_phone}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{lead.manufacturer} {lead.model}</p>
+                      <p className="text-sm text-blue-600">₹{parseFloat(lead.customer_price || 0).toLocaleString('en-IN')}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-gray-500 flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {lead.pickup_address || 'Address not provided'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {(lead.status === 'assigned' || lead.status === 'in_progress') && (
+                    <button
+                      onClick={() => handleReEvaluate(lead.lead_id)}
+                      className="w-full mt-3 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700"
+                    >
+                      Re-Evaluate
+                    </button>
+                  )}
+                </div>
+              ))}
+              
+              {leads.length === 0 && (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No leads assigned</h3>
+                  <p className="text-gray-500">You don't have any leads assigned to you yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -305,12 +365,17 @@ const SecureAgentDashboard = () => {
             </table>
 
             {leads.length === 0 && (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No leads assigned</h3>
-                <p className="text-gray-500">You don't have any leads assigned to you yet.</p>
-              </div>
+              <tbody>
+                <tr>
+                  <td colSpan="6" className="text-center py-12">
+                    <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No leads assigned</h3>
+                    <p className="text-gray-500">You don't have any leads assigned to you yet.</p>
+                  </td>
+                </tr>
+              </tbody>
             )}
+          </div>
           </div>
         </div>
       </main>

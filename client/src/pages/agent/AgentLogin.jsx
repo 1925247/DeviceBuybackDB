@@ -57,8 +57,8 @@ const AgentLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-4 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
@@ -69,7 +69,7 @@ const AgentLogin = () => {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Alert */}
             {error && (
