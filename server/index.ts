@@ -1,12 +1,13 @@
-import express, { Express } from "express";
+import express from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import { db } from "./db.js";
 import { sql } from 'drizzle-orm';
 
-const app: Express = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+const app = express();
+// Increase payload limits for photo uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Test database connection with retry logic
 const testDatabaseConnection = async (retries = 3) => {

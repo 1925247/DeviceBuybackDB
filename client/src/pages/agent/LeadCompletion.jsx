@@ -39,7 +39,7 @@ const LeadCompletion = () => {
   });
 
   const handleKycPhotoUpload = (photoType, file) => {
-    if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
+    if (file && file.size <= 2 * 1024 * 1024) { // Reduced to 2MB limit
       const reader = new FileReader();
       reader.onload = (e) => {
         setKycData(prev => ({ 
@@ -53,7 +53,7 @@ const LeadCompletion = () => {
       };
       reader.readAsDataURL(file);
     } else {
-      alert('Photo size should be less than 5MB');
+      alert('Photo size should be less than 2MB. Please compress the image or use a smaller file.');
     }
   };
 
@@ -66,7 +66,7 @@ const LeadCompletion = () => {
   });
 
   const handlePaymentProofUpload = (file) => {
-    if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
+    if (file && file.size <= 2 * 1024 * 1024) { // Reduced to 2MB limit
       const reader = new FileReader();
       reader.onload = (e) => {
         setPaymentData(prev => ({ 
@@ -80,7 +80,7 @@ const LeadCompletion = () => {
       };
       reader.readAsDataURL(file);
     } else {
-      alert('File size should be less than 5MB');
+      alert('File size should be less than 2MB. Please compress the image or use a smaller file.');
     }
   };
 
@@ -143,7 +143,7 @@ const LeadCompletion = () => {
   };
 
   const handlePhotoUpload = (photoType, file) => {
-    if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
+    if (file && file.size <= 2 * 1024 * 1024) { // Reduced to 2MB limit
       const reader = new FileReader();
       reader.onload = (e) => {
         setPhotos(prev => ({ 
@@ -157,7 +157,7 @@ const LeadCompletion = () => {
       };
       reader.readAsDataURL(file);
     } else {
-      alert('Photo size should be less than 5MB');
+      alert('Photo size should be less than 2MB. Please compress the image or use a smaller file.');
     }
   };
 
@@ -228,7 +228,15 @@ const LeadCompletion = () => {
           'Authorization': `Bearer ${agentToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ kycData })
+        body: JSON.stringify({ 
+          kycData: {
+            ...kycData,
+            idPhotoFront: kycData.idPhotoFront?.preview || null,
+            idPhotoBack: kycData.idPhotoBack?.preview || null,
+            customerSelfie: kycData.customerSelfie?.preview || null,
+            phonePhoto: kycData.phonePhoto?.preview || null
+          }
+        })
       });
 
       if (response.ok) {
@@ -454,8 +462,13 @@ const LeadCompletion = () => {
             {/* Photo Upload Step */}
             {currentStep === 'photos' && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Upload Device Photos</h2>
-                <p className="text-sm text-gray-600 mb-6">Please upload 6 photos of the device from different angles. Each photo should be clear and less than 5MB.</p>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Upload Device Photos</h2>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                    Order #{leadId}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">Please upload 6 photos of the device from different angles. Each photo should be clear and less than 2MB.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                   {photoTypes.map((photoType) => {
@@ -529,7 +542,12 @@ const LeadCompletion = () => {
             {/* KYC Step */}
             {currentStep === 'kyc' && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">KYC Verification</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">KYC Verification</h2>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                    Order #{leadId}
+                  </div>
+                </div>
                 <p className="text-sm text-gray-600 mb-6">Please collect and verify customer's identity documents.</p>
 
                 <div className="space-y-6">
@@ -723,7 +741,12 @@ const LeadCompletion = () => {
             {/* Payment Step */}
             {currentStep === 'payment' && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Payment Confirmation</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Payment Confirmation</h2>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                    Order #{leadId}
+                  </div>
+                </div>
                 <p className="text-sm text-gray-600 mb-6">Confirm payment details and method for the customer.</p>
 
                 <div className="space-y-6">
@@ -825,7 +848,12 @@ const LeadCompletion = () => {
             {/* Completion Step */}
             {currentStep === 'completion' && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Complete Device Processing</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Complete Device Processing</h2>
+                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                    Order #{leadId} - Ready to Complete
+                  </div>
+                </div>
                 <p className="text-sm text-gray-600 mb-6">All steps have been completed. Click below to finalize and close this lead.</p>
 
                 <div className="space-y-4 mb-6">
