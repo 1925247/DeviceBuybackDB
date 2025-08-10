@@ -98,8 +98,29 @@ router.get('/', async (req, res) => {
           ORDER BY dm.priority DESC, dm.name
         `;
         
-        const result = await pool.query(queryText);
-        res.json(Array.isArray(result.rows) ? result.rows : []);
+        const modelsResult = await pool.query(queryText);
+        const models = Array.isArray(modelsResult.rows) ? modelsResult.rows : [];
+        
+        // Get variants for each model
+        for (const model of models) {
+          const variantsQuery = `
+            SELECT 
+              id, variant_name as name, storage, color, ram, processor,
+              display_size as displaySize, base_price as basePrice, 
+              current_price as currentPrice, market_value as marketValue,
+              depreciation_rate as depreciationRate, availability, sku,
+              specifications, images, active,
+              created_at as createdAt, updated_at as updatedAt
+            FROM device_model_variants 
+            WHERE model_id = $1 AND active = true
+            ORDER BY variant_name
+          `;
+          
+          const variantsResult = await pool.query(variantsQuery, [model.id]);
+          model.variants = Array.isArray(variantsResult.rows) ? variantsResult.rows : [];
+        }
+        
+        res.json(models);
         
       } else {
         // Get basic model info for public API
