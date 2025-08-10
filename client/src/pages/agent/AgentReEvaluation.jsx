@@ -179,9 +179,14 @@ const AgentReEvaluation = () => {
               <ArrowLeft className="h-5 w-5 mr-2" />
               Back to Dashboard
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">
-              Re-Evaluate Lead #{leadDetails.lead_id}
-            </h1>
+            <div className="text-center">
+              <h1 className="text-xl font-semibold text-gray-900">
+                Re-Evaluate Lead #{leadDetails.lead_id}
+              </h1>
+              <p className="text-sm text-blue-600 font-medium mt-1">
+                Order ID: GS2025{leadDetails.lead_id}
+              </p>
+            </div>
             <div></div>
           </div>
         </div>
@@ -192,7 +197,12 @@ const AgentReEvaluation = () => {
           {/* Customer Information */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
+                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
+                  GS2025{leadDetails.lead_id}
+                </div>
+              </div>
               <div className="space-y-3">
                 <div className="flex items-center">
                   <User className="h-4 w-4 text-gray-400 mr-3" />
