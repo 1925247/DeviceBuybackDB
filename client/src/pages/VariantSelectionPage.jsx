@@ -26,11 +26,15 @@ const VariantSelectionPage = () => {
     
     // Navigate to assessment with variant pricing
     const variantSlug = variant.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    const basePrice = variant.baseprice || variant.base_price || variant.currentprice || variant.current_price;
+    
+    console.log('Navigating to assessment with basePrice:', basePrice);
+    
     navigate(`/assessment/${deviceType}/${brand}/${model}/${variantSlug}/valuation`, {
       state: {
         model: selectedModel,
         variant: variant,
-        basePrice: variant.baseprice || variant.base_price || variant.currentprice || variant.current_price
+        basePrice: basePrice
       }
     });
   };

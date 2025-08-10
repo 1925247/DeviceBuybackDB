@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DollarSign, Star, Shield, Truck, ArrowRight } from "lucide-react";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const ValuationPage = () => {
   const { deviceType, brand, model, variant } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [valuation, setValuation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deviceInfo, setDeviceInfo] = useState(null);
