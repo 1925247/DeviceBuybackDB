@@ -52,6 +52,35 @@ import {
 
 
 export async function registerRoutes(app) {
+  // Object storage endpoints
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    try {
+      const { ObjectStorageService } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/objects/upload", async (req, res) => {
+    try {
+      const { ObjectStorageService } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Set up API prefix
   const apiRouter = (path) => `/api${path}`;
   

@@ -89,12 +89,6 @@ const AdminModelCreation = () => {
           active: true,
           featured: false
         });
-          basePrice: '',
-          currentPrice: '',
-          marketValue: '',
-          sku: '',
-          availability: true
-        }]);
 
         alert('Model and variants created successfully!');
       }

@@ -84,7 +84,7 @@ const AgentLogin = lazy(() => import("./pages/agent/AgentLogin"));
 const SecureAgentDashboard = lazy(() => import("./pages/agent/SecureAgentDashboard"));
 const AgentReEvaluation = lazy(() => import("./pages/agent/AgentReEvaluation"));
 const LeadCompletion = lazy(() => import("./pages/agent/LeadCompletion"));
-const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
+const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagementV2"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
 const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
