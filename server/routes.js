@@ -973,41 +973,46 @@ export async function registerRoutes(app) {
       }
 
       // Get all buyback requests and filter by assigned agent
+      console.log('Fetching buyback requests for agent:', agentId);
       const allRequests = await storage.getAllBuybackRequests();
+      console.log('All requests count:', allRequests.length);
       
       // Mock assigned leads (in real app, filter by assigned_agent_id)
-      const agentLeads = agentId === 'AGENT001' 
-        ? allRequests.slice(0, 3).map(req => ({
-            lead_id: req.id,
-            customer_name: req.customer_name,
-            customer_phone: req.customer_phone,
-            manufacturer: req.manufacturer,
-            model: req.model,
-            base_price: req.offered_price,
-            customer_price: req.offered_price,
-            pickup_date: req.created_at,
-            pickup_address: req.pickup_address,
-            status: 'assigned',
-            assigned_agent_id: agentId,
-            created_at: req.created_at
-          }))
-        : agentId === 'AGENT002'
-        ? allRequests.slice(3, 5).map(req => ({
-            lead_id: req.id,
-            customer_name: req.customer_name,
-            customer_phone: req.customer_phone,
-            manufacturer: req.manufacturer,
-            model: req.model,
-            base_price: req.offered_price,
-            customer_price: req.offered_price,
-            pickup_date: req.created_at,
-            pickup_address: req.pickup_address,
-            status: 'assigned',
-            assigned_agent_id: agentId,
-            created_at: req.created_at
-          }))
-        : [];
+      let agentLeads = [];
+      
+      if (agentId === 'AGENT001' && allRequests.length > 0) {
+        agentLeads = allRequests.slice(0, Math.min(3, allRequests.length)).map(req => ({
+          lead_id: req.id,
+          customer_name: req.customer_name || 'Unknown Customer',
+          customer_phone: req.customer_phone || 'No Phone',
+          manufacturer: req.manufacturer || 'Unknown Brand',
+          model: req.model || 'Unknown Model',
+          base_price: req.offered_price || 0,
+          customer_price: req.offered_price || 0,
+          pickup_date: req.created_at,
+          pickup_address: req.pickup_address || 'Address not provided',
+          status: 'assigned',
+          assigned_agent_id: agentId,
+          created_at: req.created_at
+        }));
+      } else if (agentId === 'AGENT002' && allRequests.length > 3) {
+        agentLeads = allRequests.slice(3, Math.min(5, allRequests.length)).map(req => ({
+          lead_id: req.id,
+          customer_name: req.customer_name || 'Unknown Customer',
+          customer_phone: req.customer_phone || 'No Phone',
+          manufacturer: req.manufacturer || 'Unknown Brand',
+          model: req.model || 'Unknown Model',
+          base_price: req.offered_price || 0,
+          customer_price: req.offered_price || 0,
+          pickup_date: req.created_at,
+          pickup_address: req.pickup_address || 'Address not provided',
+          status: 'assigned',
+          assigned_agent_id: agentId,
+          created_at: req.created_at
+        }));
+      }
 
+      console.log('Agent leads prepared:', agentLeads.length);
       res.json(agentLeads);
     } catch (error) {
       console.error('Error fetching agent leads:', error);

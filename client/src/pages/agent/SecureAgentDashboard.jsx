@@ -36,7 +36,11 @@ const SecureAgentDashboard = () => {
       const agentId = sessionStorage.getItem('agentId');
       const agentToken = sessionStorage.getItem('agentToken');
 
+      console.log('Fetching leads for agent:', agentId);
+      console.log('Using token:', agentToken);
+
       if (!agentId || !agentToken) {
+        console.log('Missing agentId or agentToken, redirecting to login');
         navigate('/agent-login');
         return;
       }
@@ -48,16 +52,21 @@ const SecureAgentDashboard = () => {
         }
       });
 
+      console.log('Response status:', response.status);
+
       if (response.status === 401 || response.status === 403) {
+        console.log('Authentication failed, logging out');
         handleLogout();
         return;
       }
 
       if (response.ok) {
         const data = await response.json();
-        setLeads(data);
+        console.log('Leads data received:', data);
+        setLeads(data || []);
       } else {
         const errorData = await response.json();
+        console.error('API error:', errorData);
         setError(errorData.error || 'Failed to fetch leads');
       }
     } catch (error) {
@@ -365,17 +374,12 @@ const SecureAgentDashboard = () => {
             </table>
 
             {leads.length === 0 && (
-              <tbody>
-                <tr>
-                  <td colSpan="6" className="text-center py-12">
-                    <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No leads assigned</h3>
-                    <p className="text-gray-500">You don't have any leads assigned to you yet.</p>
-                  </td>
-                </tr>
-              </tbody>
+              <div className="text-center py-12">
+                <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No leads assigned</h3>
+                <p className="text-gray-500">You don't have any leads assigned to you yet.</p>
+              </div>
             )}
-          </div>
           </div>
         </div>
       </main>
