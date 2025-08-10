@@ -66,11 +66,13 @@ router.get('/', async (req, res) => {
       for (const model of models) {
         const variantsQuery = `
           SELECT 
-            id, variant_name as name, base_price as basePrice, 
-            current_price as currentPrice, storage, color, active
+            id, variant_name as name, 
+            base_price as basePrice, 
+            current_price as currentPrice, 
+            storage, color, active
           FROM device_model_variants 
           WHERE model_id = $1 AND active = true
-          ORDER BY base_price ASC
+          ORDER BY COALESCE(base_price, current_price, 0) ASC
         `;
         
         const variantsResult = await pool.query(variantsQuery, [model.id]);
