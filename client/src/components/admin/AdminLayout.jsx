@@ -60,7 +60,7 @@ const AdminLayout = () => {
         { name: 'Models', href: '/admin/models', current: location.pathname === '/admin/models' },
         { name: 'Advanced Models', href: '/admin/models-advanced', current: location.pathname === '/admin/models-advanced' },
         { name: '🔥 Integrated Models', href: '/admin/integrated-models', current: location.pathname === '/admin/integrated-models', badge: 'NEW' },
-        { name: '⚡ Advanced Integration', href: '/admin/advanced-integration', current: location.pathname === '/admin/advanced-integration', badge: 'PREMIUM' },
+
         { name: 'Variant Pricing', href: '/admin/variant-pricing', current: location.pathname === '/admin/variant-pricing' }
       ]
     },
