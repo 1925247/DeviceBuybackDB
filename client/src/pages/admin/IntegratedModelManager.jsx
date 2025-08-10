@@ -164,7 +164,7 @@ const IntegratedModelManager = () => {
 
   const startPriceEdit = (variant) => {
     setEditingVariant(variant.id);
-    setEditingPrice(variant.base_price || variant.basePrice || '');
+    setEditingPrice(variant.base_price || variant.basePrice || variant.currentPrice || variant.current_price || '');
   };
 
   const cancelPriceEdit = () => {
@@ -527,7 +527,7 @@ const IntegratedModelManager = () => {
                                   title="Click to edit frontend price"
                                 >
                                   <span className="text-lg font-bold text-green-600">
-                                    ₹{(variant.basePrice || variant.base_price || 0).toLocaleString()}
+                                    ₹{(variant.basePrice || variant.base_price || variant.currentPrice || variant.current_price || 0).toLocaleString()}
                                   </span>
                                   <span className="text-xs text-gray-500 flex items-center gap-1">
                                     Frontend Display Price

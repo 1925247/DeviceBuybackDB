@@ -64,6 +64,13 @@ export async function getVariantValuation(req, res) {
       // Use exact pricing from admin panel - no hardcoded calculations
       const adminSetPrice = variantData.base_price || variantData.current_price || 0;
       
+      console.log('Variant pricing details:', {
+        variant_name: variantData.variant_name,
+        base_price: variantData.base_price,
+        current_price: variantData.current_price,
+        adminSetPrice: adminSetPrice
+      });
+      
       res.json({
         model: modelData,
         variant: {

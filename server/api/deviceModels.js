@@ -142,8 +142,11 @@ router.get('/', async (req, res) => {
           const variantsQuery = `
             SELECT 
               id, variant_name as name, storage, color, ram, processor,
-              display_size as displaySize, base_price as basePrice, 
-              current_price as currentPrice, market_value as marketValue,
+              display_size as displaySize, 
+              COALESCE(base_price, current_price, 0) as basePrice, 
+              COALESCE(current_price, base_price, 0) as currentPrice, 
+              base_price, current_price,
+              market_value as marketValue,
               depreciation_rate as depreciationRate, availability, sku,
               specifications, images, active,
               created_at as createdAt, updated_at as updatedAt

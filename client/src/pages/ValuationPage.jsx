@@ -84,11 +84,11 @@ const ValuationPage = () => {
           // If variant is specified, get variant-specific pricing
           if (variant) {
             try {
-              const variantResponse = await fetch(`/api/device-model-variants/${model}/${variant}`);
+              const variantResponse = await fetch(`/api/variant-valuation/${model}/${variant}`);
               const variantData = await variantResponse.json();
               if (variantData.variant) {
-                // Use variant's current price and base price from the database
-                variantPrice = variantData.variant.current_price || variantData.variant.base_price;
+                // Use exact admin-set pricing - no calculations or adjustments
+                variantPrice = variantData.variant.base_price || variantData.variant.current_price;
                 basePrice = variantData.variant.base_price || variantData.variant.current_price || basePrice;
                 
                 console.log("Found variant pricing:", {
@@ -131,8 +131,8 @@ const ValuationPage = () => {
         console.error("Error fetching model data for pricing:", error);
       }
 
-      // Use actual variant pricing if available (already in INR)
-      const actualBasePriceINR = variantPrice ? Math.round(variantPrice * 0.6) : Math.round(basePrice * 0.6);
+      // Use exact admin-set pricing - no hardcoded calculations!
+      const actualBasePriceINR = variantPrice || basePrice;
       
       // Apply condition impact (percentage-based)
       const adjustmentFactor = 1 + totalImpact / 100;
