@@ -9,10 +9,109 @@ export async function getConditionQuestions(req, res) {
     
     console.log('Condition questions request:', { deviceType, brand, model, modelId });
     
-    let questionsData = [];
+    let targetModelId = modelId;
     
-    // Return standard device assessment questions
-    questionsData = [
+    // If modelId not provided, find it using deviceType, brand, model
+    if (!targetModelId && deviceType && brand && model) {
+      const modelQuery = `
+        SELECT dm.id 
+        FROM device_models dm
+        JOIN brands b ON dm.brand_id = b.id
+        JOIN device_types dt ON dm.device_type_id = dt.id
+        WHERE dt.name ILIKE $1 AND b.name ILIKE $2 AND dm.slug = $3
+        AND dm.active = true
+      `;
+      const modelResult = await pool.query(modelQuery, [deviceType, brand, model]);
+      
+      if (modelResult.rows.length > 0) {
+        targetModelId = modelResult.rows[0].id;
+        console.log('Found model ID:', targetModelId, 'for', deviceType, brand, model);
+      }
+    }
+    
+    // Try to get mapped questions first
+    if (targetModelId) {
+      try {
+        const query = `
+          WITH model_mapped_questions AS (
+            -- Get questions from groups mapped to this model
+            SELECT DISTINCT
+              q.id,
+              q.question_text,
+              q.question_type,
+              q.sort_order,
+              q.tooltip,
+              q.help_text,
+              q.required,
+              qg.category
+            FROM questions q
+            JOIN question_groups qg ON q.group_id = qg.id
+            JOIN group_model_mappings gmm ON qg.id = gmm.group_id
+            WHERE gmm.model_id = $1 
+            AND gmm.active = true
+            AND q.active = true
+            AND qg.active = true
+            
+            UNION
+            
+            -- Get questions individually mapped to this model
+            SELECT DISTINCT
+              q.id,
+              q.question_text,
+              q.question_type,
+              q.sort_order,
+              q.tooltip,
+              q.help_text,
+              q.required,
+              qg.category
+            FROM questions q
+            JOIN question_groups qg ON q.group_id = qg.id
+            JOIN question_model_mappings qmm ON q.id = qmm.question_id
+            WHERE qmm.model_id = $1 
+            AND qmm.active = true
+            AND q.active = true
+            AND qg.active = true
+          )
+          SELECT 
+            mmq.*,
+            (
+              SELECT json_agg(
+                json_build_object(
+                  'id', ac.id,
+                  'text', ac.text,
+                  'value', ac.value,
+                  'impact', COALESCE(ac.percentage_impact, 0)
+                ) ORDER BY ac.sort_order
+              )
+              FROM answer_choices ac 
+              WHERE ac.question_id = mmq.id
+            ) as options
+          FROM model_mapped_questions mmq
+          ORDER BY mmq.sort_order
+        `;
+        
+        const result = await pool.query(query, [targetModelId]);
+        
+        if (result.rows.length > 0) {
+          // Transform to frontend format
+          const questions = result.rows.map(row => ({
+            id: row.id,
+            question: row.question_text,
+            type: row.question_type || 'multiple_choice',
+            required: row.required || true,
+            options: row.options || []
+          }));
+          
+          console.log(`Returning ${questions.length} mapped questions for model ID ${targetModelId}`);
+          return res.json(questions);
+        }
+      } catch (mappingError) {
+        console.log('Error fetching mapped questions, falling back to standard questions:', mappingError);
+      }
+    }
+    
+    // Fallback to standard device assessment questions
+    const questionsData = [
       {
         id: 1,
         question: "What is the overall physical condition of your device?",

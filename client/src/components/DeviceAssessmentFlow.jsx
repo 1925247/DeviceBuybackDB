@@ -51,8 +51,20 @@ const DeviceAssessmentFlow = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(`/api/enhanced-condition-questions/${deviceType}/${brand}/${model}`);
+      console.log('Fetching mapped questions for:', { deviceType, brand, model });
+      
+      // Use the new model-specific questions API that only returns mapped questions
+      const response = await fetch(`/api/model-specific-questions?deviceType=${deviceType}&brand=${brand}&model=${model}`);
       const data = await response.json();
+      
+      console.log('Received mapped questions:', data);
+      
+      if (!data || data.length === 0) {
+        console.log('No questions mapped to this model');
+        setQuestions(steps.map(step => ({ ...step, questions: [] })));
+        setLoading(false);
+        return;
+      }
       
       // Group questions by category for step-by-step assessment
       const groupedQuestions = steps.map(step => ({
@@ -63,7 +75,7 @@ const DeviceAssessmentFlow = () => {
       setQuestions(groupedQuestions);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      console.error('Error fetching mapped questions:', error);
       setLoading(false);
     }
   };

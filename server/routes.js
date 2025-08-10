@@ -40,6 +40,7 @@ import productsRoutes from "./api/products.js";
 import errorReportsRoutes from "./api/errorReports.js";
 import userFeedbackRoutes from "./api/userFeedback.js";
 import { getVariantValuation, calculateVariantPrice } from "./api/variantValuation.js";
+import { getModelSpecificQuestions, createSampleModelMappings } from "./api/modelSpecificQuestions.js";
 
 
 export async function registerRoutes(app) {
@@ -84,6 +85,10 @@ export async function registerRoutes(app) {
   } catch (error) {
     console.error('Failed to load flexible question groups API:', error);
   }
+  
+  // Model-Specific Questions API
+  app.get('/api/model-specific-questions', getModelSpecificQuestions);
+  app.post('/api/create-sample-mappings', createSampleModelMappings);
 
   // Create HTTP server before registering routes
   const server = createServer(app);
