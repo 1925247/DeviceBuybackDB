@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
       res.json(Array.isArray(result.rows) ? result.rows : []);
       
     } else if (deviceType && brand) {
-      // Filter by both device type and brand
+      // Filter by both device type and brand WITH VARIANTS
       const queryText = `
         SELECT 
           dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
@@ -59,11 +59,28 @@ router.get('/', async (req, res) => {
         ORDER BY COALESCE(dm.priority, 0) DESC, dm.name
       `;
       
-      const result = await pool.query(queryText, [deviceType, brand]);
-      res.json(Array.isArray(result.rows) ? result.rows : []);
+      const modelsResult = await pool.query(queryText, [deviceType, brand]);
+      const models = Array.isArray(modelsResult.rows) ? modelsResult.rows : [];
+      
+      // Get variants for each model for pricing display
+      for (const model of models) {
+        const variantsQuery = `
+          SELECT 
+            id, variant_name as name, base_price as basePrice, 
+            current_price as currentPrice, storage, color, active
+          FROM device_model_variants 
+          WHERE model_id = $1 AND active = true
+          ORDER BY base_price ASC
+        `;
+        
+        const variantsResult = await pool.query(variantsQuery, [model.id]);
+        model.variants = Array.isArray(variantsResult.rows) ? variantsResult.rows : [];
+      }
+      
+      res.json(models);
       
     } else if (deviceType) {
-      // Filter by device type only
+      // Filter by device type only WITH VARIANTS
       const queryText = `
         SELECT 
           dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
@@ -78,8 +95,25 @@ router.get('/', async (req, res) => {
         ORDER BY dm.name
       `;
       
-      const result = await pool.query(queryText, [deviceType]);
-      res.json(Array.isArray(result.rows) ? result.rows : []);
+      const modelsResult = await pool.query(queryText, [deviceType]);
+      const models = Array.isArray(modelsResult.rows) ? modelsResult.rows : [];
+      
+      // Get variants for each model for pricing display
+      for (const model of models) {
+        const variantsQuery = `
+          SELECT 
+            id, variant_name as name, base_price as basePrice, 
+            current_price as currentPrice, storage, color, active
+          FROM device_model_variants 
+          WHERE model_id = $1 AND active = true
+          ORDER BY base_price ASC
+        `;
+        
+        const variantsResult = await pool.query(variantsQuery, [model.id]);
+        model.variants = Array.isArray(variantsResult.rows) ? variantsResult.rows : [];
+      }
+      
+      res.json(models);
       
     } else {
       // Get all models with full details for admin interface
