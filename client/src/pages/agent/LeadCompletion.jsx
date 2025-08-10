@@ -184,10 +184,21 @@ const LeadCompletion = () => {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Photos uploaded successfully:', result);
+        
+        // Update completion status manually
+        setCompletionStatus(prev => ({
+          ...prev,
+          photos_uploaded: true,
+          current_step: 'kyc'
+        }));
+        
         setCurrentStep('kyc');
-        fetchCompletionStatus();
+        alert(`${photoArray.length} photos uploaded successfully! Now proceeding to KYC verification.`);
       } else {
-        setError('Failed to upload photos');
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to upload photos');
       }
     } catch (error) {
       setError('Network error. Please try again.');
@@ -221,10 +232,21 @@ const LeadCompletion = () => {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('KYC submitted successfully:', result);
+        
+        // Update completion status manually
+        setCompletionStatus(prev => ({
+          ...prev,
+          kyc_completed: true,
+          current_step: 'payment'
+        }));
+        
         setCurrentStep('payment');
-        fetchCompletionStatus();
+        alert('KYC verification submitted successfully! Now proceeding to payment confirmation.');
       } else {
-        setError('Failed to submit KYC');
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to submit KYC');
       }
     } catch (error) {
       setError('Network error. Please try again.');
@@ -252,10 +274,21 @@ const LeadCompletion = () => {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Payment confirmed successfully:', result);
+        
+        // Update completion status manually
+        setCompletionStatus(prev => ({
+          ...prev,
+          payment_confirmed: true,
+          current_step: 'completion'
+        }));
+        
         setCurrentStep('completion');
-        fetchCompletionStatus();
+        alert('Payment confirmed successfully! Now ready for final device completion.');
       } else {
-        setError('Failed to confirm payment');
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to confirm payment');
       }
     } catch (error) {
       setError('Network error. Please try again.');

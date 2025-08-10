@@ -1175,18 +1175,24 @@ export async function registerRoutes(app) {
         return res.status(401).json({ error: 'No valid token provided' });
       }
 
-      // Mock completion status based on leadId
-      const completionStatus = {
+      // Check if photos are uploaded in this session
+      const sessionKey = `lead_${leadId}_completion`;
+      const sessionData = global.completionData = global.completionData || {};
+      
+      const completionStatus = sessionData[sessionKey] || {
         lead_id: parseInt(leadId),
         revaluation_completed: true,
         photos_uploaded: false,
         kyc_completed: false,
         payment_confirmed: false,
         device_completed: false,
-        current_step: 'photos', // photos, kyc, payment, completion
+        current_step: 'photos',
         photos_count: 0,
         required_photos_count: 6
       };
+      
+      // Store back to session
+      sessionData[sessionKey] = completionStatus;
 
       res.json(completionStatus);
     } catch (error) {
@@ -1213,10 +1219,21 @@ export async function registerRoutes(app) {
         uploaded_at: new Date().toISOString()
       }));
 
+      // Update session completion status
+      const sessionKey = `lead_${leadId}_completion`;
+      const sessionData = global.completionData = global.completionData || {};
+      
+      if (sessionData[sessionKey]) {
+        sessionData[sessionKey].photos_uploaded = true;
+        sessionData[sessionKey].photos_count = photos.length;
+        sessionData[sessionKey].current_step = 'kyc';
+      }
+
       res.json({ 
         success: true, 
         photos: uploadedPhotos,
-        message: `${photos.length} photos uploaded successfully`
+        message: `${photos.length} photos uploaded successfully`,
+        next_step: 'kyc'
       });
     } catch (error) {
       console.error('Error uploading photos:', error);
@@ -1245,10 +1262,20 @@ export async function registerRoutes(app) {
         created_at: new Date().toISOString()
       };
 
+      // Update session completion status
+      const sessionKey = `lead_${leadId}_completion`;
+      const sessionData = global.completionData = global.completionData || {};
+      
+      if (sessionData[sessionKey]) {
+        sessionData[sessionKey].kyc_completed = true;
+        sessionData[sessionKey].current_step = 'payment';
+      }
+
       res.json({ 
         success: true, 
         kyc: kycRecord,
-        message: 'KYC submitted successfully'
+        message: 'KYC submitted successfully',
+        next_step: 'payment'
       });
     } catch (error) {
       console.error('Error submitting KYC:', error);
@@ -1274,10 +1301,20 @@ export async function registerRoutes(app) {
         confirmed_at: new Date().toISOString()
       };
 
+      // Update session completion status
+      const sessionKey = `lead_${leadId}_completion`;
+      const sessionData = global.completionData = global.completionData || {};
+      
+      if (sessionData[sessionKey]) {
+        sessionData[sessionKey].payment_confirmed = true;
+        sessionData[sessionKey].current_step = 'completion';
+      }
+
       res.json({ 
         success: true, 
         payment: paymentRecord,
-        message: 'Payment confirmed successfully'
+        message: 'Payment confirmed successfully',
+        next_step: 'completion'
       });
     } catch (error) {
       console.error('Error confirming payment:', error);
