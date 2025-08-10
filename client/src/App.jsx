@@ -29,6 +29,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import DeviceListing from "./pages/DeviceListing";
+import VariantSelectionPage from "./pages/VariantSelectionPage";
 import CheckoutFormPage from "./pages/CheckoutFormPage";
 import BuybackSuccessPage from "./pages/BuybackSuccessPage";
 import DeviceAssessmentFlow from "./components/DeviceAssessmentFlow";
@@ -76,7 +77,6 @@ const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelMa
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
 const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
-const VariantSelectionPage = lazy(() => import("./pages/sell/VariantSelectionPage"));
 const ExactValuePage = lazy(() => import("./pages/sell/ExactValuePage"));
 
 // Partner Portal Pages
@@ -255,14 +255,12 @@ const App = () => {
               />
               
               <Route
-                path="/sell/:deviceType/:brand/:model"
+                path="/variants/:deviceType/:brand/:model"
                 element={
                   <>
                     <Navbar />
                     <main className="flex-grow">
-                      <ModelsProvider>
-                        <VariantSelectionPage />
-                      </ModelsProvider>
+                      <VariantSelectionPage />
                     </main>
                     <Footer />
                   </>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Smartphone, Laptop, Tablet, Watch, Filter, Star, ChevronRight } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const DeviceListing = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('smartphones');
   const [selectedBrand, setSelectedBrand] = useState('');
 
@@ -163,7 +165,8 @@ const DeviceListing = () => {
                       return (
                         <div 
                           key={model.id} 
-                          className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all border-gray-200"
+                          onClick={() => navigate(`/variants/${selectedCategory}/${selectedBrand ? brands.find(b => b.id == selectedBrand)?.slug : brand?.slug}/${model.slug}`)}
+                          className="bg-white rounded-lg shadow-sm border hover:shadow-md hover:border-blue-300 transition-all border-gray-200 cursor-pointer"
                         >
                           <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
@@ -194,20 +197,15 @@ const DeviceListing = () => {
                             )}
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-bold text-green-600">
-                                {model.variants && model.variants.length > 0 ? (
-                                  (() => {
-                                    const validPrices = model.variants
-                                      .map(v => v.basePrice || v.base_price || v.baseprice || v.currentPrice || v.current_price || v.currentprice)
-                                      .filter(price => price && price > 0);
-                                    return validPrices.length > 0 
-                                      ? `Starting from ₹${Math.min(...validPrices).toLocaleString('en-IN')}`
-                                      : `Starting from ₹${model.base_price ? model.base_price.toLocaleString('en-IN') : 'TBD'}`;
-                                  })()
-                                ) : (
-                                  `Starting from ₹${model.base_price ? model.base_price.toLocaleString('en-IN') : 'TBD'}`
-                                )}
-                              </span>
+                              <div>
+                                <p className="text-sm text-gray-500">Choose Variant for Pricing</p>
+                                <p className="text-lg font-semibold text-blue-600">
+                                  {model.variants && model.variants.length > 0 
+                                    ? `${model.variants.length} variants available`
+                                    : 'Configure pricing'
+                                  }
+                                </p>
+                              </div>
                               <ChevronRight className="h-5 w-5 text-gray-400" />
                             </div>
                           </div>

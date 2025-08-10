@@ -131,17 +131,17 @@ const ValuationPage = () => {
         console.error("Error fetching model data for pricing:", error);
       }
 
-      // Use exact admin-set pricing - no hardcoded calculations!
-      const actualBasePriceINR = variantPrice || basePrice;
+      // Use exact backend pricing from location.state (passed from VariantSelectionPage)
+      const backendBasePrice = location.state?.basePrice || variantPrice || basePrice;
       
-      // Apply condition impact (percentage-based)
-      const adjustmentFactor = 1 + totalImpact / 100;
+      // Apply condition deductions (totalImpact is negative for deductions)
+      const totalDeduction = Math.abs(totalImpact / 100) * backendBasePrice;
       const finalValueINR = Math.max(
-        1000, // Minimum ₹1,000
-        Math.round(actualBasePriceINR * adjustmentFactor),
+        500, // Minimum ₹500
+        Math.round(backendBasePrice - totalDeduction),
       );
 
-      const basePriceINR = actualBasePriceINR;
+      const basePriceINR = backendBasePrice;
 
       console.log("Valuation calculation:", {
         basePrice,
