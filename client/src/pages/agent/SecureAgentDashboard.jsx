@@ -36,11 +36,9 @@ const SecureAgentDashboard = () => {
       const agentId = sessionStorage.getItem('agentId');
       const agentToken = sessionStorage.getItem('agentToken');
 
-      console.log('Fetching leads for agent:', agentId);
-      console.log('Using token:', agentToken);
+      // Fetching leads for agent
 
       if (!agentId || !agentToken) {
-        console.log('Missing agentId or agentToken, redirecting to login');
         navigate('/agent-login');
         return;
       }
@@ -52,21 +50,17 @@ const SecureAgentDashboard = () => {
         }
       });
 
-      console.log('Response status:', response.status);
-
       if (response.status === 401 || response.status === 403) {
-        console.log('Authentication failed, logging out');
         handleLogout();
         return;
       }
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Leads data received:', data);
         setLeads(data || []);
+        setError(''); // Clear any previous errors
       } else {
         const errorData = await response.json();
-        console.error('API error:', errorData);
         setError(errorData.error || 'Failed to fetch leads');
       }
     } catch (error) {

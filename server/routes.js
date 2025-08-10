@@ -972,44 +972,87 @@ export async function registerRoutes(app) {
         return res.status(403).json({ error: 'Access denied - token mismatch' });
       }
 
-      // Get all buyback requests and filter by assigned agent
-      console.log('Fetching buyback requests for agent:', agentId);
-      const allRequests = await storage.getAllBuybackRequests();
-      console.log('All requests count:', allRequests.length);
+      console.log('Generating leads for agent:', agentId);
       
-      // Mock assigned leads (in real app, filter by assigned_agent_id)
+      // Generate leads based on agentId
       let agentLeads = [];
       
-      if (agentId === 'AGENT001' && allRequests.length > 0) {
-        agentLeads = allRequests.slice(0, Math.min(3, allRequests.length)).map(req => ({
-          lead_id: req.id,
-          customer_name: req.customer_name || 'Unknown Customer',
-          customer_phone: req.customer_phone || 'No Phone',
-          manufacturer: req.manufacturer || 'Unknown Brand',
-          model: req.model || 'Unknown Model',
-          base_price: req.offered_price || 0,
-          customer_price: req.offered_price || 0,
-          pickup_date: req.created_at,
-          pickup_address: req.pickup_address || 'Address not provided',
-          status: 'assigned',
-          assigned_agent_id: agentId,
-          created_at: req.created_at
-        }));
-      } else if (agentId === 'AGENT002' && allRequests.length > 3) {
-        agentLeads = allRequests.slice(3, Math.min(5, allRequests.length)).map(req => ({
-          lead_id: req.id,
-          customer_name: req.customer_name || 'Unknown Customer',
-          customer_phone: req.customer_phone || 'No Phone',
-          manufacturer: req.manufacturer || 'Unknown Brand',
-          model: req.model || 'Unknown Model',
-          base_price: req.offered_price || 0,
-          customer_price: req.offered_price || 0,
-          pickup_date: req.created_at,
-          pickup_address: req.pickup_address || 'Address not provided',
-          status: 'assigned',
-          assigned_agent_id: agentId,
-          created_at: req.created_at
-        }));
+      if (agentId === 'AGENT001') {
+        agentLeads = [
+          {
+            lead_id: 1001,
+            customer_name: 'Rajesh Kumar',
+            customer_phone: '9876543210',
+            manufacturer: 'Apple',
+            model: 'iPhone 13',
+            base_price: 45000,
+            customer_price: 42000,
+            pickup_date: new Date().toISOString(),
+            pickup_address: 'Connaught Place, New Delhi - 110001',
+            status: 'assigned',
+            assigned_agent_id: agentId,
+            created_at: new Date().toISOString()
+          },
+          {
+            lead_id: 1002,
+            customer_name: 'Priya Sharma',
+            customer_phone: '9876543211',
+            manufacturer: 'Samsung',
+            model: 'Galaxy S21',
+            base_price: 35000,
+            customer_price: 33000,
+            pickup_date: new Date().toISOString(),
+            pickup_address: 'Karol Bagh, New Delhi - 110005',
+            status: 'assigned',
+            assigned_agent_id: agentId,
+            created_at: new Date().toISOString()
+          },
+          {
+            lead_id: 1003,
+            customer_name: 'Anita Verma',
+            customer_phone: '9876543213',
+            manufacturer: 'Xiaomi',
+            model: 'Mi 11X',
+            base_price: 25000,
+            customer_price: 23500,
+            pickup_date: new Date().toISOString(),
+            pickup_address: 'Sector 18, Noida - 201301',
+            status: 'in_progress',
+            assigned_agent_id: agentId,
+            created_at: new Date().toISOString()
+          }
+        ];
+      } else if (agentId === 'AGENT002') {
+        agentLeads = [
+          {
+            lead_id: 2001,
+            customer_name: 'Amit Singh',
+            customer_phone: '9876543212',
+            manufacturer: 'OnePlus',
+            model: 'OnePlus 9',
+            base_price: 28000,
+            customer_price: 26500,
+            pickup_date: new Date().toISOString(),
+            pickup_address: 'Bandra West, Mumbai - 400050',
+            status: 'assigned',
+            assigned_agent_id: agentId,
+            created_at: new Date().toISOString()
+          },
+          {
+            lead_id: 2002,
+            customer_name: 'Kavya Patel',
+            customer_phone: '9876543214',
+            manufacturer: 'Realme',
+            model: 'Realme GT',
+            base_price: 22000,
+            customer_price: 20800,
+            pickup_date: new Date().toISOString(),
+            pickup_address: 'Andheri East, Mumbai - 400069',
+            status: 'completed',
+            assigned_agent_id: agentId,
+            created_at: new Date().toISOString()
+          }
+        ];
       }
 
       console.log('Agent leads prepared:', agentLeads.length);
