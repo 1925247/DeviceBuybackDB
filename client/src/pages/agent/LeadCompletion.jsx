@@ -36,6 +36,25 @@ const LeadCompletion = () => {
     customerSelfie: null
   });
 
+  const handleKycPhotoUpload = (photoType, file) => {
+    if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setKycData(prev => ({ 
+          ...prev, 
+          [photoType]: { 
+            file: file, 
+            preview: e.target.result,
+            name: file.name 
+          } 
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      alert('Photo size should be less than 5MB');
+    }
+  };
+
   // Payment State
   const [paymentData, setPaymentData] = useState({
     method: 'cash',
@@ -43,6 +62,25 @@ const LeadCompletion = () => {
     accountDetails: '',
     transferProof: null
   });
+
+  const handlePaymentProofUpload = (file) => {
+    if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPaymentData(prev => ({ 
+          ...prev, 
+          transferProof: { 
+            file: file, 
+            preview: e.target.result,
+            name: file.name 
+          } 
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      alert('File size should be less than 5MB');
+    }
+  };
 
   useEffect(() => {
     checkAuthentication();
@@ -104,7 +142,18 @@ const LeadCompletion = () => {
 
   const handlePhotoUpload = (photoType, file) => {
     if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
-      setPhotos(prev => ({ ...prev, [photoType]: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotos(prev => ({ 
+          ...prev, 
+          [photoType]: { 
+            file: file, 
+            preview: e.target.result,
+            name: file.name 
+          } 
+        }));
+      };
+      reader.readAsDataURL(file);
     } else {
       alert('Photo size should be less than 5MB');
     }
@@ -112,8 +161,8 @@ const LeadCompletion = () => {
 
   const submitPhotos = async () => {
     const photoArray = Object.entries(photos)
-      .filter(([_, file]) => file !== null)
-      .map(([type, file]) => ({ type, data: 'mock_photo_data' }));
+      .filter(([_, photoData]) => photoData !== null)
+      .map(([type, photoData]) => ({ type, data: 'mock_photo_data', name: photoData.name }));
 
     if (photoArray.length !== 6) {
       alert('Please upload all 6 required photos');
@@ -147,7 +196,7 @@ const LeadCompletion = () => {
 
   const submitKYC = async () => {
     if (!kycData.customerName || !kycData.idNumber || !kycData.customerSelfie) {
-      alert('Please fill all required KYC fields');
+      alert('Please fill all required KYC fields and upload customer selfie');
       return;
     }
 
@@ -370,43 +419,67 @@ const LeadCompletion = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                   {photoTypes.map((photoType) => {
                     const PhotoIcon = photoType.icon;
-                    const hasPhoto = photos[photoType.key] !== null;
+                    const photoData = photos[photoType.key];
+                    const hasPhoto = photoData !== null;
                     
                     return (
-                      <div key={photoType.key} className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                        <PhotoIcon className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                        <p className="text-sm font-medium text-gray-900 mb-2">{photoType.label}</p>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png"
-                          onChange={(e) => handlePhotoUpload(photoType.key, e.target.files[0])}
-                          className="hidden"
-                          id={`photo-${photoType.key}`}
-                        />
-                        <label
-                          htmlFor={`photo-${photoType.key}`}
-                          className={`inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md cursor-pointer ${
-                            hasPhoto 
-                              ? 'text-green-700 bg-green-100 hover:bg-green-200' 
-                              : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
-                          }`}
-                        >
-                          <Upload className="h-4 w-4 mr-1" />
-                          {hasPhoto ? 'Photo Added' : 'Choose Photo'}
-                        </label>
+                      <div key={photoType.key} className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+                        hasPhoto ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-gray-400'
+                      }`}>
+                        {hasPhoto && photoData.preview ? (
+                          <div className="space-y-3">
+                            <img 
+                              src={photoData.preview} 
+                              alt={photoType.label}
+                              className="w-full h-32 object-cover rounded-md"
+                            />
+                            <p className="text-xs text-gray-600 truncate">{photoData.name}</p>
+                            <div className="flex items-center justify-center space-x-2">
+                              <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
+                              <button
+                                onClick={() => setPhotos(prev => ({ ...prev, [photoType.key]: null }))}
+                                className="text-xs text-red-600 hover:text-red-800"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <PhotoIcon className="h-8 w-8 text-gray-400 mx-auto" />
+                            <p className="text-sm font-medium text-gray-900">{photoType.label}</p>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png"
+                              onChange={(e) => handlePhotoUpload(photoType.key, e.target.files[0])}
+                              className="hidden"
+                              id={`photo-${photoType.key}`}
+                            />
+                            <label
+                              htmlFor={`photo-${photoType.key}`}
+                              className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md cursor-pointer text-gray-700 bg-gray-100 hover:bg-gray-200"
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Choose Photo
+                            </label>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    {Object.values(photos).filter(p => p !== null).length}/6 photos uploaded
+                  </div>
                   <button
                     onClick={submitPhotos}
                     disabled={uploading || Object.values(photos).some(photo => photo === null)}
                     className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center"
                   >
                     {uploading ? <LoadingSpinner size="small" /> : <Camera className="h-4 w-4 mr-2" />}
-                    Submit Photos
+                    Submit Photos ({Object.values(photos).filter(p => p !== null).length}/6)
                   </button>
                 </div>
               </div>
@@ -454,35 +527,95 @@ const LeadCompletion = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* ID Photo Front */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">ID Photo (Front)</label>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        onChange={(e) => setKycData(prev => ({ ...prev, idPhotoFront: e.target.files[0] }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
+                      {kycData.idPhotoFront && kycData.idPhotoFront.preview ? (
+                        <div className="space-y-2">
+                          <img 
+                            src={kycData.idPhotoFront.preview} 
+                            alt="ID Front"
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <button
+                              onClick={() => setKycData(prev => ({ ...prev, idPhotoFront: null }))}
+                              className="text-xs text-red-600 hover:text-red-800"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png"
+                          onChange={(e) => handleKycPhotoUpload('idPhotoFront', e.target.files[0])}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      )}
                     </div>
 
+                    {/* ID Photo Back */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">ID Photo (Back)</label>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        onChange={(e) => setKycData(prev => ({ ...prev, idPhotoBack: e.target.files[0] }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
+                      {kycData.idPhotoBack && kycData.idPhotoBack.preview ? (
+                        <div className="space-y-2">
+                          <img 
+                            src={kycData.idPhotoBack.preview} 
+                            alt="ID Back"
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <button
+                              onClick={() => setKycData(prev => ({ ...prev, idPhotoBack: null }))}
+                              className="text-xs text-red-600 hover:text-red-800"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png"
+                          onChange={(e) => handleKycPhotoUpload('idPhotoBack', e.target.files[0])}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      )}
                     </div>
 
+                    {/* Customer Selfie */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Customer Selfie *</label>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        onChange={(e) => setKycData(prev => ({ ...prev, customerSelfie: e.target.files[0] }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        required
-                      />
+                      {kycData.customerSelfie && kycData.customerSelfie.preview ? (
+                        <div className="space-y-2">
+                          <img 
+                            src={kycData.customerSelfie.preview} 
+                            alt="Customer Selfie"
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <button
+                              onClick={() => setKycData(prev => ({ ...prev, customerSelfie: null }))}
+                              className="text-xs text-red-600 hover:text-red-800"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png"
+                          onChange={(e) => handleKycPhotoUpload('customerSelfie', e.target.files[0])}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          required
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -543,12 +676,40 @@ const LeadCompletion = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Proof (Optional)</label>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      onChange={(e) => setPaymentData(prev => ({ ...prev, transferProof: e.target.files[0] }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
+                    {paymentData.transferProof && paymentData.transferProof.preview ? (
+                      <div className="space-y-2">
+                        {paymentData.transferProof.file.type.startsWith('image/') ? (
+                          <img 
+                            src={paymentData.transferProof.preview} 
+                            alt="Transfer Proof"
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                        ) : (
+                          <div className="w-full h-32 flex items-center justify-center border border-gray-300 rounded-md bg-gray-50">
+                            <div className="text-center">
+                              <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">{paymentData.transferProof.name}</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-green-600">✓ Uploaded</span>
+                          <button
+                            onClick={() => setPaymentData(prev => ({ ...prev, transferProof: null }))}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,application/pdf"
+                        onChange={(e) => handlePaymentProofUpload(e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    )}
                   </div>
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
