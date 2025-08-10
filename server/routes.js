@@ -1352,6 +1352,15 @@ export async function registerRoutes(app) {
       
       console.log('Completing device processing for lead', leadId);
       
+      // Update actual lead status in database/storage
+      if (global.leads && global.leads[leadId]) {
+        global.leads[leadId].status = 'completed';
+        global.leads[leadId].completion_time = completion_time;
+        global.leads[leadId].completion_notes = completion_notes;
+        global.leads[leadId].final_price = final_price;
+        console.log(`Lead ${leadId} status updated to completed in global storage`);
+      }
+      
       // Update lead status to completed in session storage
       const sessionKey = `lead_${leadId}_completion`;
       const sessionData = global.completionData = global.completionData || {};

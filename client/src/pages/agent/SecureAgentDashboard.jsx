@@ -251,7 +251,7 @@ const SecureAgentDashboard = () => {
                     
                     <div>
                       <p className="text-sm font-medium text-gray-900">{lead.manufacturer} {lead.model}</p>
-                      <p className="text-sm text-blue-600">₹{parseFloat(lead.customer_price || 0).toLocaleString('en-IN')}</p>
+                      <p className="text-sm font-semibold text-blue-600">Final Price: ₹{parseFloat(lead.customer_price || 0).toLocaleString('en-IN')}</p>
                     </div>
                     
                     <div>
@@ -262,20 +262,29 @@ const SecureAgentDashboard = () => {
                     </div>
                   </div>
                   
-                  {(lead.status === 'assigned' || lead.status === 'in_progress') && (
+                  {lead.status !== 'completed' && (
                     <div className="mt-3 flex space-x-2">
-                      <button
-                        onClick={() => handleReEvaluate(lead.lead_id)}
-                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700"
-                      >
-                        Re-Evaluate
-                      </button>
+                      {lead.status === 'assigned' && (
+                        <button
+                          onClick={() => handleReEvaluate(lead.lead_id)}
+                          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700"
+                        >
+                          Re-Evaluate
+                        </button>
+                      )}
                       <button
                         onClick={() => navigate(`/agent/complete/${lead.lead_id}`)}
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-green-700"
                       >
                         Complete
                       </button>
+                    </div>
+                  )}
+                  {lead.status === 'completed' && (
+                    <div className="mt-3">
+                      <div className="bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                        <span className="text-sm font-medium text-green-800">Lead Completed</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -345,11 +354,8 @@ const SecureAgentDashboard = () => {
                         <div className="text-sm font-medium text-gray-900">
                           {lead.manufacturer} {lead.model}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          Base: ₹{parseFloat(lead.base_price || 0).toLocaleString('en-IN')}
-                        </div>
-                        <div className="text-sm text-blue-600">
-                          Customer: ₹{parseFloat(lead.customer_price || 0).toLocaleString('en-IN')}
+                        <div className="text-sm font-semibold text-blue-600">
+                          Final Price: ₹{parseFloat(lead.customer_price || 0).toLocaleString('en-IN')}
                         </div>
                       </div>
                     </td>
@@ -372,14 +378,16 @@ const SecureAgentDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {lead.status === 'assigned' || lead.status === 'in_progress' ? (
+                      {lead.status !== 'completed' ? (
                         <div className="flex space-x-2 justify-end">
-                          <button
-                            onClick={() => handleReEvaluate(lead.lead_id)}
-                            className="text-blue-600 hover:text-blue-900 font-medium"
-                          >
-                            Re-Evaluate
-                          </button>
+                          {lead.status === 'assigned' && (
+                            <button
+                              onClick={() => handleReEvaluate(lead.lead_id)}
+                              className="text-blue-600 hover:text-blue-900 font-medium"
+                            >
+                              Re-Evaluate
+                            </button>
+                          )}
                           <button
                             onClick={() => navigate(`/agent/complete/${lead.lead_id}`)}
                             className="text-green-600 hover:text-green-900 font-medium"
@@ -388,8 +396,8 @@ const SecureAgentDashboard = () => {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-gray-400">
-                          {lead.status === 'completed' ? 'Completed' : 'No action'}
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ Completed
                         </span>
                       )}
                     </td>
