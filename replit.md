@@ -6,24 +6,40 @@ This is a comprehensive Indian localized device buyback and refurbished electron
 
 ## System Architecture
 
-### Frontend Architecture
-- **Framework**: React.js with TypeScript
-- **Styling**: Tailwind CSS with Shadcn/UI components
-- **Routing**: React Router for SPA navigation
-- **State Management**: React Context API and TanStack Query for server state
-- **Build Tool**: Vite for fast development and optimized builds
+### Technology Stack ✅ **UPDATED JANUARY 2025**
 
-### Backend Architecture
-- **Runtime**: Node.js 20+ with Express.js framework
-- **Database ORM**: Drizzle ORM for type-safe database operations
-- **API Design**: RESTful API with organized route handlers
-- **Authentication**: Session-based authentication with express-session
-- **File Upload**: Multer for handling device images and documents
+#### Frontend Architecture
+- **Framework**: React.js 18.3+ with modern hooks and Suspense
+- **Styling**: Tailwind CSS 3.4+ with Shadcn/UI components and Radix UI primitives
+- **Routing**: Wouter for lightweight client-side routing
+- **State Management**: TanStack Query v5 for server state, React Context for client state
+- **Build Tool**: Vite 5.4+ for lightning-fast development and optimized builds
+- **UI Components**: Complete Shadcn/UI component library with custom design system
+- **Form Handling**: React Hook Form with Zod validation and error handling
+- **Animation**: Framer Motion for smooth interactions and transitions
 
-### Database Architecture
-- **Primary Database**: PostgreSQL 14+ with JSONB support for flexible data storage
-- **Schema Management**: Drizzle migrations for version control
-- **Caching**: Redis for session storage and performance optimization
+#### Backend Architecture
+- **Runtime**: Node.js 20+ with Express.js 4.21+ framework
+- **Database ORM**: Drizzle ORM 0.30+ for type-safe database operations
+- **API Design**: RESTful API with organized route handlers and middleware
+- **Authentication**: Session-based authentication with express-session + PostgreSQL store
+- **File Upload**: Multer with Google Cloud Storage integration
+- **Communication**: Twilio SMS + SendGrid Email + WhatsApp Business API ready
+- **Payment Processing**: Stripe integration with webhook support for Indian market
+
+#### Database Architecture
+- **Primary Database**: PostgreSQL 14+ with JSONB support and advanced indexing
+- **Schema Management**: Drizzle Kit for migrations and schema version control
+- **Session Storage**: PostgreSQL-based session store for scalability
+- **Caching Strategy**: Ready for Redis integration for performance optimization
+- **Backup System**: Automated backup procedures with point-in-time recovery
+
+#### Development & Build Tools
+- **Package Manager**: npm with dependency management and security auditing
+- **Code Quality**: ESLint, Prettier, and TypeScript for code standards
+- **Development Server**: Vite dev server with hot module replacement
+- **Build Optimization**: Code splitting, lazy loading, and bundle optimization
+- **Container Support**: Docker with multi-stage builds for production deployment
 
 ## Key Components
 
