@@ -83,6 +83,7 @@ const AdminAssignOrders = lazy(() => import("./pages/admin/AdminAssignOrders"));
 const AgentLogin = lazy(() => import("./pages/agent/AgentLogin"));
 const SecureAgentDashboard = lazy(() => import("./pages/agent/SecureAgentDashboard"));
 const AgentReEvaluation = lazy(() => import("./pages/agent/AgentReEvaluation"));
+const LeadCompletion = lazy(() => import("./pages/agent/LeadCompletion"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
@@ -739,6 +740,11 @@ const App = () => {
               <Route path="/agent/re-evaluate/:leadId" element={
                 <Suspense fallback={<LoadingSpinner />}>
                   <AgentReEvaluation />
+                </Suspense>
+              } />
+              <Route path="/agent/complete/:leadId" element={
+                <Suspense fallback={<LoadingSpinner />}>
+                  <LeadCompletion />
                 </Suspense>
               } />
 

@@ -1165,5 +1165,149 @@ export async function registerRoutes(app) {
     }
   });
 
+  // Get lead completion status
+  app.get('/api/agent/lead/:leadId/completion-status', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'No valid token provided' });
+      }
+
+      // Mock completion status based on leadId
+      const completionStatus = {
+        lead_id: parseInt(leadId),
+        revaluation_completed: true,
+        photos_uploaded: false,
+        kyc_completed: false,
+        payment_confirmed: false,
+        device_completed: false,
+        current_step: 'photos', // photos, kyc, payment, completion
+        photos_count: 0,
+        required_photos_count: 6
+      };
+
+      res.json(completionStatus);
+    } catch (error) {
+      console.error('Error fetching completion status:', error);
+      res.status(500).json({ error: 'Failed to fetch completion status' });
+    }
+  });
+
+  // Upload device photos
+  app.post('/api/agent/lead/:leadId/upload-photos', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      const { photos } = req.body; // Array of photo objects with type and data
+      
+      console.log(`Uploading ${photos.length} photos for lead ${leadId}`);
+      
+      // Mock photo upload success
+      const uploadedPhotos = photos.map((photo, index) => ({
+        id: Date.now() + index,
+        lead_id: parseInt(leadId),
+        photo_type: photo.type,
+        photo_url: `/uploads/lead_${leadId}_${photo.type}_${Date.now()}.jpg`,
+        file_name: `device_${photo.type}.jpg`,
+        uploaded_at: new Date().toISOString()
+      }));
+
+      res.json({ 
+        success: true, 
+        photos: uploadedPhotos,
+        message: `${photos.length} photos uploaded successfully`
+      });
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      res.status(500).json({ error: 'Failed to upload photos' });
+    }
+  });
+
+  // Submit KYC data
+  app.post('/api/agent/lead/:leadId/submit-kyc', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      const { kycData } = req.body;
+      
+      console.log(`Submitting KYC for lead ${leadId}`);
+      
+      // Mock KYC submission success
+      const kycRecord = {
+        id: Date.now(),
+        lead_id: parseInt(leadId),
+        customer_name: kycData.customerName,
+        id_type: kycData.idType,
+        id_number: kycData.idNumber,
+        verification_status: 'pending',
+        created_at: new Date().toISOString()
+      };
+
+      res.json({ 
+        success: true, 
+        kyc: kycRecord,
+        message: 'KYC submitted successfully'
+      });
+    } catch (error) {
+      console.error('Error submitting KYC:', error);
+      res.status(500).json({ error: 'Failed to submit KYC' });
+    }
+  });
+
+  // Confirm payment
+  app.post('/api/agent/lead/:leadId/confirm-payment', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      const { paymentData } = req.body;
+      
+      console.log(`Confirming payment for lead ${leadId}`);
+      
+      // Mock payment confirmation success
+      const paymentRecord = {
+        id: Date.now(),
+        lead_id: parseInt(leadId),
+        payment_method: paymentData.method,
+        amount: paymentData.amount,
+        payment_status: 'confirmed',
+        confirmed_at: new Date().toISOString()
+      };
+
+      res.json({ 
+        success: true, 
+        payment: paymentRecord,
+        message: 'Payment confirmed successfully'
+      });
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      res.status(500).json({ error: 'Failed to confirm payment' });
+    }
+  });
+
+  // Complete device processing
+  app.post('/api/agent/lead/:leadId/complete-device', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      
+      console.log(`Completing device processing for lead ${leadId}`);
+      
+      // Mock device completion success
+      const completionRecord = {
+        lead_id: parseInt(leadId),
+        device_completed: true,
+        completed_at: new Date().toISOString(),
+        status: 'completed'
+      };
+
+      res.json({ 
+        success: true, 
+        completion: completionRecord,
+        message: `Lead #${leadId} has been successfully completed.`
+      });
+    } catch (error) {
+      console.error('Error completing device:', error);
+      res.status(500).json({ error: 'Failed to complete device' });
+    }
+  });
+
   return server;
 }

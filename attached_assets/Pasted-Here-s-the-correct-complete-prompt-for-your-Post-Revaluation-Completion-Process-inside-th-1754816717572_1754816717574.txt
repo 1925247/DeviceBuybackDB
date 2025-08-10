@@ -1,0 +1,122 @@
+Here’s the **correct, complete prompt** for your **Post-Revaluation → Completion Process** inside the Agent Portal:
+
+---
+
+## **📌 Lead Completion Flow (Post-Revaluation)**
+
+### **1. Trigger: After Revaluation**
+
+* Agent completes **Revaluation** step:
+
+  * Updated Q\&A and recalculated **Final Price** saved.
+  * Customer confirms acceptance.
+
+---
+
+### **2. Step 1 – Device Photo Upload**
+
+* System prompts **Photo Upload Screen**:
+
+  * Mandatory: **6 photos** of the device.
+  * Suggested angles:
+
+    1. Front view (screen)
+    2. Back view
+    3. Left side
+    4. Right side
+    5. Top
+    6. Bottom / Charging port
+  * Validation:
+
+    * All 6 photos required before proceeding.
+    * Each photo ≤ 5 MB.
+    * Accepted formats: JPG, PNG.
+  * Files stored in `lead_photos` table linked to `lead_id`.
+
+---
+
+### **3. Step 2 – KYC Verification**
+
+* KYC form appears after photo upload:
+
+  * Fields:
+
+    * Customer Name (auto-filled)
+    * Government ID Type (Dropdown: Aadhaar, PAN, Passport, Driving License)
+    * ID Number
+    * ID Photo Upload (Front & Back if applicable)
+    * Customer Selfie (for verification)
+  * All KYC data stored in `lead_kyc` table linked to `lead_id`.
+  * KYC completion required before payment step.
+
+---
+
+### **4. Step 3 – Payment Mode Selection**
+
+* Agent selects **Payment Method**:
+
+  * Cash
+  * Bank Transfer
+  * UPI
+  * Cheque
+* If Bank/UPI:
+
+  * Enter account details or UPI ID.
+  * Upload proof of transfer (optional).
+* Payment status fields:
+
+  * `pending`
+  * `confirmed`
+
+---
+
+### **5. Step 4 – Payment Confirmation**
+
+* Agent confirms:
+
+  * "Payment completed & verified" checkbox.
+  * Once confirmed, status changes to `payment_done`.
+* Payment details stored in `lead_payments` table.
+
+---
+
+### **6. Step 5 – Complete Device**
+
+* Final step:
+
+  * Agent clicks **"Complete Device"**.
+  * Backend updates:
+
+    * `lead_status` = `completed`
+    * Completion timestamp logged.
+    * All linked data (photos, KYC, payment) locked from edits.
+* Confirmation message:
+
+  ```
+  Lead #XXXX has been successfully completed.
+  ```
+
+---
+
+### **7. Backend & Security Rules**
+
+* All steps must be completed in sequence:
+
+  1. Revaluation
+  2. Photos (6 required)
+  3. KYC
+  4. Payment Confirmation
+  5. Complete Device
+* If any step is incomplete:
+
+  * Next step button is disabled.
+* Once completed:
+
+  * Lead becomes read-only for agents.
+  * Admin can view all uploaded documents/photos in backend.
+
+---
+
+If you want, I can now give you the **exact database schema + API routes** so your team can implement this step-by-step process in your portal without missing any validation.
+
+Do you want me to prepare that next? That way the flow will be bulletproof from Revaluation to Final Completion.

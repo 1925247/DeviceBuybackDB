@@ -248,12 +248,20 @@ const SecureAgentDashboard = () => {
                   </div>
                   
                   {(lead.status === 'assigned' || lead.status === 'in_progress') && (
-                    <button
-                      onClick={() => handleReEvaluate(lead.lead_id)}
-                      className="w-full mt-3 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700"
-                    >
-                      Re-Evaluate
-                    </button>
+                    <div className="mt-3 flex space-x-2">
+                      <button
+                        onClick={() => handleReEvaluate(lead.lead_id)}
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700"
+                      >
+                        Re-Evaluate
+                      </button>
+                      <button
+                        onClick={() => navigate(`/agent/complete/${lead.lead_id}`)}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-green-700"
+                      >
+                        Complete
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -350,12 +358,20 @@ const SecureAgentDashboard = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       {lead.status === 'assigned' || lead.status === 'in_progress' ? (
-                        <button
-                          onClick={() => handleReEvaluate(lead.lead_id)}
-                          className="text-blue-600 hover:text-blue-900 font-medium"
-                        >
-                          Re-Evaluate
-                        </button>
+                        <div className="flex space-x-2 justify-end">
+                          <button
+                            onClick={() => handleReEvaluate(lead.lead_id)}
+                            className="text-blue-600 hover:text-blue-900 font-medium"
+                          >
+                            Re-Evaluate
+                          </button>
+                          <button
+                            onClick={() => navigate(`/agent/complete/${lead.lead_id}`)}
+                            className="text-green-600 hover:text-green-900 font-medium"
+                          >
+                            Complete
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-gray-400">
                           {lead.status === 'completed' ? 'Completed' : 'No action'}
