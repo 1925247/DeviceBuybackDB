@@ -7,7 +7,7 @@ import { sql, eq, and, asc, desc } from "drizzle-orm";
 import { questionGroups, questions, answerChoices } from "../shared/schema.js";
 import { 
   insertUserSchema, insertRouteRuleSchema,
-  deviceModels
+  deviceModels, deviceModelVariants
 } from "../shared/schema.js";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -121,12 +121,46 @@ export async function registerRoutes(app) {
       res.json(report);
     });
 
-    // Integrated Model Management APIs (new workflow)
-    app.post(apiRouter("/admin/models"), createModel);
-    app.post(apiRouter("/admin/models/:modelId/variants"), addVariant);
-    app.get(apiRouter("/admin/variants/:variantId/mappings"), getVariantMappings);
-    app.post(apiRouter("/admin/variants/:variantId/map-questions"), mapQuestionsToVariant);
-    app.get(apiRouter("/models/:modelId/variants"), getModelVariants);
+    // Integrated Model Management APIs (new workflow) - Register before Vite middleware
+    app.post('/api/admin/models', createModel);
+    app.post('/api/admin/models/:modelId/variants', addVariant);
+    app.put('/api/admin/variants/:variantId', async (req, res) => {
+      try {
+        const { variantId } = req.params;
+        const { variant_name, base_price, current_price, storage, color, active } = req.body;
+        
+        const [updatedVariant] = await db.update(deviceModelVariants)
+          .set({
+            variant_name: variant_name || req.body.name,
+            base_price: parseFloat(base_price || req.body.basePrice),
+            current_price: parseFloat(current_price || req.body.currentPrice || base_price || req.body.basePrice),
+            storage: storage || req.body.storage,
+            color: color || req.body.color,
+            active: active !== undefined ? active : req.body.active,
+            updated_at: new Date()
+          })
+          .where(eq(deviceModelVariants.id, parseInt(variantId)))
+          .returning();
+          
+        res.json(updatedVariant);
+      } catch (error) {
+        console.error('Error updating variant:', error);
+        res.status(500).json({ error: 'Failed to update variant' });
+      }
+    });
+    app.delete('/api/admin/variants/:variantId', async (req, res) => {
+      try {
+        const { variantId } = req.params;
+        await db.delete(deviceModelVariants).where(eq(deviceModelVariants.id, parseInt(variantId)));
+        res.json({ success: true });
+      } catch (error) {
+        console.error('Error deleting variant:', error);
+        res.status(500).json({ error: 'Failed to delete variant' });
+      }
+    });
+    app.get('/api/admin/variants/:variantId/mappings', getVariantMappings);
+    app.post('/api/admin/variants/:variantId/map-questions', mapQuestionsToVariant);
+    app.get('/api/models/:modelId/variants', getModelVariants);
   } catch (error) {
     console.error('Failed to load new valuation API:', error);
   }

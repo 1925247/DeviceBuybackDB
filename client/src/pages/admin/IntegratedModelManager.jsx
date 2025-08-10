@@ -90,7 +90,13 @@ const IntegratedModelManager = () => {
       const response = await fetch(`/api/admin/models/${modelId}/variants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(variantForm)
+        body: JSON.stringify({
+          name: variantForm.name,
+          basePrice: parseFloat(variantForm.basePrice),
+          storage: variantForm.storage,
+          color: variantForm.color,
+          condition: variantForm.condition
+        })
       });
 
       if (response.ok) {
@@ -103,9 +109,53 @@ const IntegratedModelManager = () => {
         setVariantForm({
           name: '', basePrice: '', storage: '', color: '', condition: 'excellent'
         });
+        alert('Variant added successfully! Price will be displayed on frontend.');
+      } else {
+        throw new Error('Failed to create variant');
       }
     } catch (error) {
       console.error('Error adding variant:', error);
+      alert('Error adding variant. Please try again.');
+    }
+  };
+
+  const handleUpdateVariant = async (variantId, updatedData) => {
+    try {
+      const response = await fetch(`/api/admin/variants/${variantId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (response.ok) {
+        // Refresh the models list to show updated prices
+        fetchInitialData();
+        alert('Variant pricing updated! Changes will be reflected on frontend.');
+      } else {
+        throw new Error('Failed to update variant');
+      }
+    } catch (error) {
+      console.error('Error updating variant:', error);
+      alert('Error updating variant pricing. Please try again.');
+    }
+  };
+
+  const handleDeleteVariant = async (variantId) => {
+    try {
+      const response = await fetch(`/api/admin/variants/${variantId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Refresh the models list
+        fetchInitialData();
+        alert('Variant deleted successfully!');
+      } else {
+        throw new Error('Failed to delete variant');
+      }
+    } catch (error) {
+      console.error('Error deleting variant:', error);
+      alert('Error deleting variant. Please try again.');
     }
   };
 
@@ -281,36 +331,69 @@ const IntegratedModelManager = () => {
                   <h4 className="font-medium text-gray-900 mb-4">Step 2: Variants & Pricing</h4>
                   
                   {/* Add Variant Form */}
-                  <div className="bg-white rounded-md p-4 mb-4 border border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
-                      <input
-                        type="text"
-                        placeholder="Variant name (e.g., 128GB)"
-                        value={variantForm.name}
-                        onChange={(e) => setVariantForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Base Price (₹)"
-                        value={variantForm.basePrice}
-                        onChange={(e) => setVariantForm(prev => ({ ...prev, basePrice: e.target.value }))}
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Storage/RAM"
-                        value={variantForm.storage}
-                        onChange={(e) => setVariantForm(prev => ({ ...prev, storage: e.target.value }))}
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <button
-                        onClick={() => handleAddVariant(model.id)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Variant
-                      </button>
+                  <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-4 mb-4 border-2 border-dashed border-blue-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <h5 className="font-medium text-gray-900">Add New Variant & Set Frontend Price</h5>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Variant Name *</label>
+                        <input
+                          type="text"
+                          placeholder="256GB Pro Max"
+                          value={variantForm.name}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Frontend Price (₹) *</label>
+                        <input
+                          type="number"
+                          placeholder="45000"
+                          value={variantForm.basePrice}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, basePrice: e.target.value }))}
+                          className="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                          required
+                        />
+                        <p className="text-xs text-green-600 mt-1">Price shown to customers</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Storage</label>
+                        <input
+                          type="text"
+                          placeholder="256GB"
+                          value={variantForm.storage}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, storage: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Color</label>
+                        <input
+                          type="text"
+                          placeholder="Deep Purple"
+                          value={variantForm.color}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, color: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Action</label>
+                        <button
+                          onClick={() => handleAddVariant(model.id)}
+                          disabled={!variantForm.name || !variantForm.basePrice}
+                          className="w-full bg-gradient-to-r from-green-600 to-blue-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-4 py-2 rounded-md hover:from-green-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2 font-medium"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Variant
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                      <strong>💡 Impact:</strong> This variant will appear on your website with the frontend price. Assessment deductions will be calculated from this base price.
                     </div>
                   </div>
 
@@ -328,9 +411,26 @@ const IntegratedModelManager = () => {
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {(model.variants || []).map(variant => (
-                          <tr key={variant.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900">{variant.name}</td>
-                            <td className="px-4 py-3 text-sm text-gray-900">₹{variant.basePrice?.toLocaleString()}</td>
+                          <tr key={variant.id} className="hover:bg-blue-50 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{variant.name || variant.variant_name}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {variant.storage} {variant.color && ` • ${variant.color}`}
+                                  </div>
+                                </div>
+                                {variant.active !== false && <CheckCircle className="h-4 w-4 text-green-500" title="Active on Frontend" />}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col">
+                                <span className="text-lg font-bold text-green-600">
+                                  ₹{(variant.basePrice || variant.base_price || 0).toLocaleString()}
+                                </span>
+                                <span className="text-xs text-gray-500">Frontend Display Price</span>
+                              </div>
+                            </td>
                             <td className="px-4 py-3 text-sm text-gray-500">{variant.storage || '-'}</td>
                             <td className="px-4 py-3 text-sm">
                               {variant.mappedGroups ? (
@@ -341,25 +441,60 @@ const IntegratedModelManager = () => {
                               ) : (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
                                   <AlertCircle className="h-3 w-3 mr-1" />
-                                  Not mapped
+                                  No questions mapped
                                 </span>
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <button
-                                onClick={() => openMappingModal(variant, model.id)}
-                                className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center gap-1"
-                              >
-                                <MapPin className="h-3 w-3" />
-                                Map Questions
-                              </button>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => openMappingModal(variant, model.id)}
+                                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                  title="Configure Assessment Questions"
+                                >
+                                  <Settings className="h-3 w-3" />
+                                  Questions
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const newPrice = prompt('Enter new frontend price:', variant.base_price || variant.basePrice);
+                                    if (newPrice && !isNaN(newPrice) && parseFloat(newPrice) > 0) {
+                                      handleUpdateVariant(variant.id, { 
+                                        base_price: parseFloat(newPrice),
+                                        current_price: parseFloat(newPrice)
+                                      });
+                                    }
+                                  }}
+                                  className="bg-amber-600 text-white px-2 py-1 rounded text-xs hover:bg-amber-700 transition-colors flex items-center gap-1"
+                                  title="Edit Frontend Price"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                  Price
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Delete variant "${variant.name || variant.variant_name}"?\n\nThis will remove it from your website and all customer pricing.`)) {
+                                      handleDeleteVariant(variant.id);
+                                    }
+                                  }}
+                                  className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors flex items-center gap-1"
+                                  title="Delete Variant"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
                         {(!model.variants || model.variants.length === 0) && (
                           <tr>
-                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
-                              No variants added yet. Add your first variant above.
+                            <td colSpan="5" className="px-4 py-12 text-center">
+                              <div className="flex flex-col items-center text-gray-500">
+                                <Target className="h-12 w-12 mb-3 opacity-30" />
+                                <h4 className="font-medium text-gray-700 mb-1">No Variants Configured</h4>
+                                <p className="text-sm">Add your first variant above to start frontend pricing management.</p>
+                                <p className="text-xs text-blue-600 mt-2">Variants will automatically appear on your customer website once added.</p>
+                              </div>
                             </td>
                           </tr>
                         )}

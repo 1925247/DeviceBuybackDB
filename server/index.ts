@@ -1,10 +1,10 @@
-import express from "express";
+import express, { Express } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import { db } from "./db.js";
 import { sql } from 'drizzle-orm';
 
-const app = express();
+const app: Express = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -30,21 +30,19 @@ const testDatabaseConnection = async (retries = 3) => {
 
 // Start server
 (async () => {
+  // Test database connection first
+  await testDatabaseConnection();
+  
+  // Register API routes BEFORE starting server and Vite middleware
+  await registerRoutes(app);
+  
   const server = app.listen(5000, "0.0.0.0", () => {
     log(`serving on port 5000`);
   });
-
-  // Register API routes BEFORE Vite middleware
-  registerRoutes(app);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
-
-  // Test database connection after server starts (non-blocking)
-  setTimeout(() => {
-    testDatabaseConnection().catch(console.error);
-  }, 1000);
 })();
