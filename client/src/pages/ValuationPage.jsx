@@ -135,6 +135,14 @@ const ValuationPage = () => {
       // Use exact backend pricing from location.state (passed from VariantSelectionPage)
       const backendBasePrice = location.state?.basePrice || variantPrice || basePrice;
       
+      console.log('ValuationPage pricing debug:', {
+        locationStateBasePrice: location.state?.basePrice,
+        variantPrice,
+        basePrice,
+        finalBackendBasePrice: backendBasePrice,
+        totalImpact
+      });
+      
       // Apply condition deductions (totalImpact is negative for deductions)
       const totalDeduction = Math.abs(totalImpact / 100) * backendBasePrice;
       const finalValueINR = Math.max(
@@ -148,14 +156,15 @@ const ValuationPage = () => {
         basePrice,
         basePriceINR,
         totalImpact,
-        adjustmentFactor,
+        totalDeduction: Math.abs(totalImpact / 100) * backendBasePrice,
         finalValueINR,
         variantPrice,
-        variantUsed: !!variantPrice
+        backendBasePrice,
+        locationState: location.state
       });
 
-      // Calculate condition deduction amount
-      const conditionDeduction = Math.round(basePriceINR * (Math.abs(totalImpact) / 100));
+      // Calculate condition deduction amount using correct calculation
+      const conditionDeduction = Math.round(totalDeduction);
       const deductionRate = Math.abs(totalImpact);
 
       // Get variant display name
@@ -306,8 +315,11 @@ const ValuationPage = () => {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-700">Base Price ({valuation?.variantName || 'Base Model'})</span>
                     <span className="font-semibold text-gray-900">
-                      ₹{valuation?.basePrice?.toLocaleString("en-IN")}
+                      ₹{valuation?.basePrice ? valuation.basePrice.toLocaleString("en-IN") : '0'}
                     </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Admin set price for this variant
                   </div>
                 </div>
 
