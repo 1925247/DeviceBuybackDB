@@ -1,0 +1,76 @@
+In the system, we need to enhance the Group Questions feature with full flexibility, mapping accuracy, and support for standard & advanced question sets.
+
+Functionality Requirements:
+
+Groups Creation:
+
+Ability to create multiple groups (e.g., Body, Screen, Functional Issues, One Month Warranty, Accessories).
+
+Questions within Groups:
+
+Each group can have multiple questions.
+
+Each question can have multiple possible answers.
+
+Each answer will have a deduction rate/grade set by the admin.
+
+Standard & Advanced Question Sets:
+
+Standard Questions: The default/basic set shown to customers unless advanced mode is selected.
+
+Advanced Questions: Additional or more detailed questions that appear when enabled for a model.
+
+Admin should be able to choose whether a model uses standard, advanced, or both types of questions.
+
+Model Mapping:
+
+Ability to map an entire group to one or more models.
+
+Ability to map specific questions/answers from a group to one or more models.
+
+Same question/answer should be reusable across multiple models without duplicates.
+
+For example: If iPhone 13 is selected, all groups and their mapped questions/answers for that model (including advanced, if enabled) should be displayed.
+
+Backend → Frontend Display Rule:
+
+If a question/answer is mapped to a model in the backend, only those mapped questions/answers should appear when the customer selects that model.
+
+Currently, in iPhone 13, only standard questions are showing — advanced or custom-mapped questions must also display if they are mapped in admin.
+
+Admin Control:
+
+Full control over:
+
+Which groups are assigned to which models.
+
+Whether the model uses standard, advanced, or both question sets.
+
+Deduction rates for each question/answer per model.
+
+Calculation Accuracy:
+
+The final buyback price must correctly apply deductions from all relevant groups/questions for that model.
+
+Goal:
+A flexible, SEO-friendly, and error-free smartphone buyback system where standard and advanced questions can be toggled per model, group-based deductions are accurate, and the frontend displays exactly what’s mapped for the selected model (no missing or extra questions).
+
+If you want, I can now design the exact logic flow so that when a model like iPhone 13 is selected, the system automatically checks:
+
+Which groups are mapped
+
+Whether standard/advanced is enabled
+
+Shows all mapped questions/answers instantly.
+
+This would also fix the missing advanced questions issue you’re facing.
+
+
+
+
+
+
+
+
+
+Ask ChatGPT

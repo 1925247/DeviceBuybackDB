@@ -32,32 +32,38 @@ export async function getConditionQuestions(req, res) {
     // Try to get mapped questions first
     if (targetModelId) {
       try {
+        // Check if model has advanced questions enabled
+        const modeQuery = `
+          SELECT question_mode, enable_advanced 
+          FROM model_question_modes 
+          WHERE model_id = $1
+        `;
+        const modeResult = await pool.query(modeQuery, [targetModelId]);
+        const modelMode = modeResult.rows[0] || { question_mode: 'standard', enable_advanced: false };
+        
+        // Build question filter based on model mode
+        let questionLevelFilter = '';
+        if (modelMode.question_mode === 'standard') {
+          questionLevelFilter = "AND qg.question_level = 'standard'";
+        } else if (modelMode.question_mode === 'advanced') {
+          questionLevelFilter = "AND qg.question_level = 'advanced'";
+        } else if (modelMode.question_mode === 'both') {
+          questionLevelFilter = "AND qg.question_level IN ('standard', 'advanced', 'both')";
+        }
+        
         const query = `
-          WITH model_mapped_questions AS (
-            -- Get questions from groups mapped to this model
-            SELECT DISTINCT
-              q.id,
-              q.question_text,
-              q.question_type,
-              q.sort_order,
-              q.tooltip,
-              q.help_text,
-              q.required,
-              qg.category
-            FROM questions q
-            JOIN question_groups qg ON q.group_id = qg.id
-            JOIN group_model_mappings gmm ON qg.id = gmm.group_id
-            WHERE gmm.model_id = $1 
-            AND gmm.active = true
-            AND q.active = true
-            AND qg.active = true
-            
-            UNION
-            
-            -- Skip individual question mappings for now since table structure needs fixing
-          )
-          SELECT 
-            mmq.*,
+          SELECT DISTINCT
+            q.id,
+            q.question_text,
+            q.question_type,
+            q.sort_order,
+            q.tooltip,
+            q.help_text,
+            q.required,
+            qg.category,
+            qg.name as group_name,
+            qg.question_level,
+            qg.sort_order as group_sort_order,
             (
               SELECT json_agg(
                 json_build_object(
@@ -68,10 +74,17 @@ export async function getConditionQuestions(req, res) {
                 ) ORDER BY ac.sort_order
               )
               FROM answer_choices ac 
-              WHERE ac.question_id = mmq.id
+              WHERE ac.question_id = q.id
             ) as options
-          FROM model_mapped_questions mmq
-          ORDER BY mmq.sort_order
+          FROM questions q
+          JOIN question_groups qg ON q.group_id = qg.id
+          JOIN group_model_mappings gmm ON qg.id = gmm.group_id
+          WHERE gmm.model_id = $1 
+          AND gmm.active = true
+          AND q.active = true
+          AND qg.active = true
+          ${questionLevelFilter}
+          ORDER BY qg.sort_order, q.sort_order
         `;
         
         const result = await pool.query(query, [targetModelId]);
