@@ -96,11 +96,11 @@ export async function calculateVariantPrice(req, res) {
     
     const client = await pool.connect();
     try {
-      // Get variant pricing
+      // Get variant pricing (using the correct variant_pricing table)
       const variantQuery = `
-        SELECT dmv.*, avp.base_price, avp.current_price, avp.market_value
+        SELECT dmv.*, vp.base_price as pricing_base_price, vp.deduction_rate
         FROM device_model_variants dmv
-        LEFT JOIN admin_variant_pricing avp ON dmv.id = avp.variant_id
+        LEFT JOIN variant_pricing vp ON dmv.id = vp.variant_id AND vp.is_active = true
         WHERE dmv.model_id = (SELECT id FROM device_models WHERE slug = $1)
         AND dmv.variant_name = $2
       `;
@@ -113,8 +113,8 @@ export async function calculateVariantPrice(req, res) {
       
       const variantData = variantResult.rows[0];
       
-      // Calculate base price
-      const basePrice = variantData.current_price || variantData.base_price || 300;
+      // Calculate base price - prioritize pricing table, then variant table
+      const basePrice = variantData.pricing_base_price || variantData.current_price || variantData.base_price || 300;
       const buybackBasePrice = Math.round(basePrice * 0.6); // 60% for buyback
       
       // Apply condition impact

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, DollarSign, Clock, Search, Check, ChevronRight } from 'lucide-react';
 import DeviceIcon from '../components/ui/DeviceIcon';
+import SEOHead from '../components/SEOHead';
 
 const HomePage = () => {
   const [deviceTypes, setDeviceTypes] = useState([]);
@@ -117,6 +118,31 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEOHead 
+        title="Cash Old Device - Sell Your Used Electronics for Best Prices in India"
+        description="Get instant quotes for your used smartphones, laptops, tablets. We offer best buyback prices in India with free doorstep pickup. Trusted by 50,000+ customers."
+        keywords="sell phone online, device buyback, used smartphone selling, laptop buyback India, tablet sell online, electronic waste recycling, cash for old mobile"
+        ogTitle="Cash Old Device - India's #1 Device Buyback Platform"
+        ogDescription="Sell your used electronics instantly. Get best prices for smartphones, laptops, tablets with free pickup across India."
+        ogImage="/assets/og-homepage.jpg"
+        canonical="https://casholddevice.com/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Cash Old Device - Device Buyback Platform",
+          "description": "Sell your used electronics for best prices in India",
+          "provider": {
+            "@type": "Organization",
+            "name": "Cash Old Device"
+          },
+          "mainEntity": {
+            "@type": "Service",
+            "name": "Device Buyback Service",
+            "description": "Professional device buyback service with instant quotes",
+            "areaServed": "IN"
+          }
+        }}
+      />
       {/* Hero Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-4xl mx-auto">
