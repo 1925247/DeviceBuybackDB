@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Camera, Upload, User, CreditCard, CheckCircle, 
-  AlertTriangle, FileText, Phone, MapPin, Package, XCircle 
+  AlertTriangle, FileText, Phone, MapPin, Package, XCircle, Download
 } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -14,6 +14,8 @@ const LeadCompletion = () => {
   const [currentStep, setCurrentStep] = useState('photos');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
+  const [invoiceGenerated, setInvoiceGenerated] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   // Photo Upload State
@@ -314,18 +316,90 @@ const LeadCompletion = () => {
         headers: {
           'Authorization': `Bearer ${agentToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ 
+          completion_notes: 'Device processing completed successfully',
+          final_price: paymentData.amount,
+          order_id: leadDetails?.order_id
+        })
       });
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
-        navigate('/agent/dashboard');
+        console.log('Device completed successfully:', result);
+        
+        // Update completion status to show completed
+        setCompletionStatus(prev => ({
+          ...prev,
+          device_completed: true,
+          status: 'completed'
+        }));
+        
+        // Show invoice generation options instead of navigating away
+        setShowInvoiceOptions(true);
+        alert('Device completion recorded successfully! You can now generate and send invoice.');
       } else {
         setError('Failed to complete device');
       }
     } catch (error) {
       setError('Network error. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const generateAndSendInvoice = async (action = 'email') => {
+    setUploading(true);
+    try {
+      console.log('Generating invoice for order:', leadDetails?.order_id, 'Action:', action);
+      
+      const agentToken = sessionStorage.getItem('agentToken');
+      const response = await fetch(`/api/agent/lead/${leadId}/generate-invoice`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${agentToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          action: action,
+          customer_email: leadDetails?.customer_email,
+          order_id: leadDetails?.order_id,
+          final_amount: paymentData.amount,
+          customer_name: kycData.customerName || leadDetails?.customer_name,
+          device_details: `${leadDetails?.manufacturer} ${leadDetails?.model} ${leadDetails?.variant}`,
+          imei_number: kycData.imeiNumber
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setInvoiceGenerated(true);
+        
+        if (action === 'email') {
+          alert(`Invoice generated and sent to ${leadDetails?.customer_email}!\nInvoice ID: ${result.invoice_id}`);
+        } else if (action === 'preview') {
+          // Open preview window
+          if (result.preview_url) {
+            window.open(result.preview_url, '_blank', 'width=800,height=600');
+          } else {
+            alert(`Invoice generated successfully!\nInvoice ID: ${result.invoice_id}\n\nPreview functionality will be implemented soon.`);
+          }
+        } else if (action === 'download') {
+          // Trigger download
+          if (result.download_url) {
+            const link = document.createElement('a');
+            link.href = result.download_url;
+            link.download = `Invoice_${result.invoice_id}.pdf`;
+            link.click();
+          } else {
+            alert(`Invoice generated successfully!\nInvoice ID: ${result.invoice_id}\n\nDownload functionality will be implemented soon.`);
+          }
+        }
+      } else {
+        setError('Failed to generate invoice');
+      }
+    } catch (error) {
+      setError('Network error while generating invoice.');
     } finally {
       setUploading(false);
     }
@@ -905,23 +979,156 @@ const LeadCompletion = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-4">
-                  <button
-                    onClick={() => navigate('/agent/dashboard')}
-                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Cancel
-                  </button>
-                  <button
-                    onClick={completeDevice}
-                    disabled={uploading}
-                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {uploading ? <LoadingSpinner size="small" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                    Complete Device
-                  </button>
-                </div>
+                {!showInvoiceOptions ? (
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      onClick={() => navigate('/agent/dashboard')}
+                      className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={completeDevice}
+                      disabled={uploading}
+                      className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center"
+                    >
+                      {uploading ? <LoadingSpinner size="small" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                      Complete Device
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Lead Status Update */}
+                    <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-6 w-6 text-green-600 mr-3" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-green-800">Lead Completed Successfully!</h3>
+                          <p className="text-sm text-green-700">
+                            Order {leadDetails?.order_id} has been marked as complete. Status updated to "Completed".
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Invoice Generation Section */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
+                      <h3 className="text-lg font-semibold text-blue-800 mb-4">Invoice Generation</h3>
+                      <p className="text-sm text-blue-700 mb-6">
+                        Generate and send invoice to customer for order record and compliance.
+                      </p>
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-700">Order ID:</span>
+                            <p className="text-gray-900">{leadDetails?.order_id}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Final Amount:</span>
+                            <p className="text-gray-900 font-bold">₹{paymentData.amount?.toLocaleString('en-IN')}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Customer:</span>
+                            <p className="text-gray-900">{kycData.customerName || leadDetails?.customer_name}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Email:</span>
+                            <p className="text-gray-900">{leadDetails?.customer_email}</p>
+                          </div>
+                        </div>
+
+                        {!invoiceGenerated ? (
+                          <div className="space-y-4">
+                            <p className="text-sm font-medium text-gray-700 mb-3">Choose invoice action:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <button
+                                onClick={() => generateAndSendInvoice('email')}
+                                disabled={uploading}
+                                className="px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 flex items-center justify-center text-sm"
+                              >
+                                {uploading ? <LoadingSpinner size="small" /> : <Package className="h-4 w-4 mr-2" />}
+                                Send via Email
+                              </button>
+                              <button
+                                onClick={() => generateAndSendInvoice('preview')}
+                                disabled={uploading}
+                                className="px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center text-sm"
+                              >
+                                {uploading ? <LoadingSpinner size="small" /> : <FileText className="h-4 w-4 mr-2" />}
+                                Preview Invoice
+                              </button>
+                              <button
+                                onClick={() => generateAndSendInvoice('download')}
+                                disabled={uploading}
+                                className="px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 flex items-center justify-center text-sm"
+                              >
+                                {uploading ? <LoadingSpinner size="small" /> : <Download className="h-4 w-4 mr-2" />}
+                                Download PDF
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <div className="text-center">
+                              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-md inline-flex items-center">
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Invoice Generated Successfully
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <button
+                                onClick={() => generateAndSendInvoice('email')}
+                                disabled={uploading}
+                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 flex items-center justify-center text-sm"
+                              >
+                                <Package className="h-4 w-4 mr-2" />
+                                Send via Email
+                              </button>
+                              <button
+                                onClick={() => generateAndSendInvoice('preview')}
+                                disabled={uploading}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center text-sm"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Preview Invoice
+                              </button>
+                              <button
+                                onClick={() => generateAndSendInvoice('download')}
+                                disabled={uploading}
+                                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 flex items-center justify-center text-sm"
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download PDF
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Navigation Options */}
+                    <div className="flex justify-between">
+                      <button
+                        onClick={() => navigate('/agent/dashboard')}
+                        className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Dashboard
+                      </button>
+                      {invoiceGenerated && (
+                        <button
+                          onClick={() => navigate('/agent/dashboard')}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Finish & Return
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

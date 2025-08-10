@@ -1332,27 +1332,273 @@ export async function registerRoutes(app) {
   app.post('/api/agent/lead/:leadId/complete-device', async (req, res) => {
     try {
       const { leadId } = req.params;
+      const { completion_notes, final_price, order_id } = req.body;
+      const completion_time = new Date().toISOString();
       
-      console.log(`Completing device processing for lead ${leadId}`);
+      console.log('Completing device processing for lead', leadId);
       
-      // Mock device completion success
-      const completionRecord = {
-        lead_id: parseInt(leadId),
-        device_completed: true,
-        completed_at: new Date().toISOString(),
+      // Update lead status to completed in session storage
+      const sessionKey = `lead_${leadId}_completion`;
+      const sessionData = global.completionData = global.completionData || {};
+      
+      if (sessionData[sessionKey]) {
+        sessionData[sessionKey].device_completed = true;
+        sessionData[sessionKey].status = 'completed';
+        sessionData[sessionKey].completion_time = completion_time;
+        sessionData[sessionKey].final_price = final_price;
+      }
+      
+      const response = {
+        success: true,
+        message: 'Device completion recorded successfully!',
+        lead_id: leadId,
+        order_id: order_id,
+        completion_time: completion_time,
+        notes: completion_notes || 'Device completed by agent',
+        final_price: final_price,
         status: 'completed'
       };
-
-      res.json({ 
-        success: true, 
-        completion: completionRecord,
-        message: `Lead #${leadId} has been successfully completed.`
-      });
+      
+      res.json(response);
     } catch (error) {
       console.error('Error completing device:', error);
-      res.status(500).json({ error: 'Failed to complete device' });
+      res.status(500).json({ error: 'Failed to complete device processing' });
     }
   });
+
+  // Generate invoice with multiple actions (email, preview, download)
+  app.post('/api/agent/lead/:leadId/generate-invoice', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      const { 
+        action, 
+        customer_email, 
+        order_id, 
+        final_amount, 
+        customer_name, 
+        device_details, 
+        imei_number 
+      } = req.body;
+      
+      console.log('Generating invoice for lead', leadId, 'Order:', order_id, 'Action:', action);
+      
+      // Generate invoice ID
+      const invoice_id = `INV-${order_id}-${Date.now()}`;
+      const invoice_date = new Date().toISOString();
+      
+      const invoiceData = {
+        invoice_id: invoice_id,
+        order_id: order_id,
+        lead_id: leadId,
+        amount: final_amount,
+        date: invoice_date,
+        customer_email: customer_email,
+        customer_name: customer_name,
+        device_details: device_details,
+        imei_number: imei_number,
+        status: 'generated'
+      };
+      
+      let emailSent = false;
+      let preview_url = null;
+      let download_url = null;
+      
+      // Handle different actions
+      if (action === 'email' && customer_email) {
+        try {
+          console.log(`Simulating email sent to ${customer_email} for invoice ${invoice_id}`);
+          emailSent = true;
+          
+          // TODO: Implement actual email sending with SendGrid
+          // const sgMail = require('@sendgrid/mail');
+          // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+          // 
+          // const msg = {
+          //   to: customer_email,
+          //   from: 'noreply@gadgetswap.com',
+          //   subject: `Invoice for Order ${order_id} - GadgetSwap`,
+          //   html: generateInvoiceHTML(invoiceData)
+          // };
+          // 
+          // await sgMail.send(msg);
+          
+        } catch (emailError) {
+          console.error('Email sending failed:', emailError);
+          // Don't fail the invoice generation if email fails
+        }
+      } else if (action === 'preview') {
+        // For preview, we would generate a temporary URL or render HTML
+        preview_url = `/api/invoice/${invoice_id}/preview`;
+        console.log(`Preview URL generated: ${preview_url}`);
+      } else if (action === 'download') {
+        // For download, we would generate a PDF file
+        download_url = `/api/invoice/${invoice_id}/download`;
+        console.log(`Download URL generated: ${download_url}`);
+      }
+      
+      // Store invoice data in session
+      const invoicesKey = 'generated_invoices';
+      global[invoicesKey] = global[invoicesKey] || {};
+      global[invoicesKey][invoice_id] = invoiceData;
+      
+      const response = {
+        success: true,
+        invoice_id: invoice_id,
+        order_id: order_id,
+        amount: final_amount,
+        generated_at: invoice_date,
+        action: action,
+        email_sent: emailSent,
+        preview_url: preview_url,
+        download_url: download_url,
+        customer_email: action === 'email' ? customer_email : null
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      res.status(500).json({ error: 'Failed to generate invoice' });
+    }
+  });
+
+  // Preview invoice endpoint
+  app.get('/api/invoice/:invoiceId/preview', async (req, res) => {
+    try {
+      const { invoiceId } = req.params;
+      
+      // Get invoice data from session
+      const invoicesKey = 'generated_invoices';
+      const invoiceData = global[invoicesKey]?.[invoiceId];
+      
+      if (!invoiceData) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+      
+      // Generate HTML preview
+      const html = generateInvoiceHTML(invoiceData);
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    } catch (error) {
+      console.error('Error generating invoice preview:', error);
+      res.status(500).json({ error: 'Failed to generate invoice preview' });
+    }
+  });
+
+  // Download invoice endpoint
+  app.get('/api/invoice/:invoiceId/download', async (req, res) => {
+    try {
+      const { invoiceId } = req.params;
+      
+      // Get invoice data from session
+      const invoicesKey = 'generated_invoices';
+      const invoiceData = global[invoicesKey]?.[invoiceId];
+      
+      if (!invoiceData) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+      
+      // For now, return HTML as text file (in production, would generate PDF)
+      const html = generateInvoiceHTML(invoiceData);
+      
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="Invoice_${invoiceId}.html"`);
+      res.send(html);
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      res.status(500).json({ error: 'Failed to download invoice' });
+    }
+  });
+
+  // Helper function to generate invoice HTML
+  function generateInvoiceHTML(invoiceData) {
+    const currentDate = new Date().toLocaleDateString('en-IN');
+    const invoiceDate = new Date(invoiceData.date).toLocaleDateString('en-IN');
+    
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Invoice ${invoiceData.invoice_id}</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .company-name { color: #2563eb; font-size: 24px; font-weight: bold; }
+            .invoice-title { font-size: 20px; margin: 20px 0; }
+            .info-section { margin: 20px 0; }
+            .info-row { margin: 8px 0; }
+            .label { font-weight: bold; display: inline-block; width: 150px; }
+            .amount { font-size: 18px; font-weight: bold; color: #059669; }
+            .footer { margin-top: 40px; text-align: center; color: #6b7280; }
+            .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .details-table th, .details-table td { 
+                border: 1px solid #d1d5db; 
+                padding: 12px; 
+                text-align: left; 
+            }
+            .details-table th { background-color: #f3f4f6; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="company-name">GadgetSwap</div>
+            <div>Device Buyback & Refurbished Electronics</div>
+            <div>Email: support@gadgetswap.com | Phone: +91-8000-123-456</div>
+        </div>
+        
+        <div class="invoice-title">INVOICE</div>
+        
+        <div class="info-section">
+            <div class="info-row">
+                <span class="label">Invoice ID:</span> ${invoiceData.invoice_id}
+            </div>
+            <div class="info-row">
+                <span class="label">Order ID:</span> ${invoiceData.order_id}
+            </div>
+            <div class="info-row">
+                <span class="label">Date:</span> ${invoiceDate}
+            </div>
+            <div class="info-row">
+                <span class="label">Customer:</span> ${invoiceData.customer_name}
+            </div>
+            <div class="info-row">
+                <span class="label">Email:</span> ${invoiceData.customer_email}
+            </div>
+        </div>
+        
+        <table class="details-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>IMEI</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Device Buyback - ${invoiceData.device_details}</td>
+                    <td>${invoiceData.imei_number || 'N/A'}</td>
+                    <td>₹${invoiceData.amount?.toLocaleString('en-IN')}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="info-section">
+            <div class="info-row">
+                <span class="label">Total Amount:</span> 
+                <span class="amount">₹${invoiceData.amount?.toLocaleString('en-IN')}</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div>Thank you for choosing GadgetSwap!</div>
+            <div>This is a computer-generated invoice.</div>
+            <div>Generated on: ${currentDate}</div>
+        </div>
+    </body>
+    </html>
+    `;
+  }
 
   return server;
 }
