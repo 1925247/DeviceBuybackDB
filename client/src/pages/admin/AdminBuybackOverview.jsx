@@ -83,14 +83,26 @@ const AdminBuybackOverview = () => {
     return lead.order_id || `GS2025${String(lead.id).padStart(5, '0')}`;
   };
 
+  const getAgentName = (lead) => {
+    if (lead.agent_first_name && lead.agent_last_name) {
+      return `${lead.agent_first_name} ${lead.agent_last_name}`;
+    }
+    return lead.agent_id ? 'Agent Assigned' : 'Not Assigned';
+  };
+
   const filteredAndSortedLeads = leads
     .filter(lead => {
+      const customerName = lead.customer_name || lead.name || '';
+      const customerEmail = lead.customer_email || lead.email || '';
+      const customerPhone = lead.customer_phone || lead.phone || '';
+      const deviceInfo = `${lead.manufacturer || ''} ${lead.model || ''}`.trim();
+      
       const matchesSearch = searchTerm === '' || 
-        lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.phone?.includes(searchTerm) ||
+        customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customerPhone.includes(searchTerm) ||
         generateOrderId(lead).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.device_info?.toLowerCase().includes(searchTerm.toLowerCase());
+        deviceInfo.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
       
@@ -107,7 +119,7 @@ const AdminBuybackOverview = () => {
         case 'price_low':
           return (a.final_price || 0) - (b.final_price || 0);
         case 'name':
-          return (a.name || '').localeCompare(b.name || '');
+          return (a.customer_name || a.name || '').localeCompare(b.customer_name || b.name || '');
         default:
           return 0;
       }
@@ -116,20 +128,21 @@ const AdminBuybackOverview = () => {
   const exportToCSV = () => {
     const headers = [
       'Order ID', 'Customer Name', 'Email', 'Phone', 'Device Info', 
-      'Status', 'Final Price', 'Created Date', 'Updated Date', 'Address'
+      'Status', 'Final Price', 'Agent Name', 'Created Date', 'Updated Date', 'Address'
     ];
     
     const csvData = filteredAndSortedLeads.map(lead => [
       generateOrderId(lead),
-      lead.name || '',
-      lead.email || '',
-      lead.phone || '',
-      lead.device_info || '',
+      lead.customer_name || '',
+      lead.customer_email || '',
+      lead.customer_phone || '',
+      `${lead.manufacturer || ''} ${lead.model || ''}`.trim(),
       lead.status || '',
       lead.final_price || 0,
-      formatDate(lead.created_at || lead.createdAt),
-      formatDate(lead.updated_at || lead.updatedAt),
-      lead.address || ''
+      getAgentName(lead),
+      formatDate(lead.created_at),
+      formatDate(lead.updated_at),
+      lead.pickup_address || ''
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -334,27 +347,35 @@ const AdminBuybackOverview = () => {
                         <User className="h-4 w-4 text-gray-400 mt-0.5" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {lead.name || 'N/A'}
+                            {lead.customer_name || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {lead.email || 'N/A'}
+                            {lead.customer_email || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Phone className="h-3 w-3" />
-                            {lead.phone || 'N/A'}
+                            {lead.customer_phone || 'N/A'}
                           </div>
+                          {lead.agent_first_name && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              Agent: {getAgentName(lead)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
                     
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {lead.device_info || lead.deviceInfo || 'N/A'}
+                        {`${lead.manufacturer || ''} ${lead.model || ''}`.trim() || 'N/A'}
                       </div>
-                      {lead.device_condition && (
+                      <div className="text-sm text-gray-500">
+                        Type: {lead.device_type || 'N/A'}
+                      </div>
+                      {lead.condition && (
                         <div className="text-sm text-gray-500">
-                          Condition: {lead.device_condition}
+                          Condition: {lead.condition}
                         </div>
                       )}
                     </td>
@@ -430,11 +451,11 @@ const AdminBuybackOverview = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
                   <div className="space-y-2">
-                    <p><strong>Name:</strong> {selectedLead.name || 'N/A'}</p>
-                    <p><strong>Email:</strong> {selectedLead.email || 'N/A'}</p>
-                    <p><strong>Phone:</strong> {selectedLead.phone || 'N/A'}</p>
-                    <p><strong>Address:</strong> {selectedLead.address || 'N/A'}</p>
-                    <p><strong>Pin Code:</strong> {selectedLead.pin_code || selectedLead.pinCode || 'N/A'}</p>
+                    <p><strong>Name:</strong> {selectedLead.customer_name || 'N/A'}</p>
+                    <p><strong>Email:</strong> {selectedLead.customer_email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> {selectedLead.customer_phone || 'N/A'}</p>
+                    <p><strong>Address:</strong> {selectedLead.pickup_address || 'N/A'}</p>
+                    <p><strong>Pin Code:</strong> {selectedLead.pin_code || 'N/A'}</p>
                   </div>
                 </div>
 
@@ -442,11 +463,11 @@ const AdminBuybackOverview = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-3">Device Information</h3>
                   <div className="space-y-2">
-                    <p><strong>Device:</strong> {selectedLead.device_info || selectedLead.deviceInfo || 'N/A'}</p>
-                    <p><strong>Brand:</strong> {selectedLead.brand || 'N/A'}</p>
+                    <p><strong>Device:</strong> {`${selectedLead.manufacturer || ''} ${selectedLead.model || ''}`.trim() || 'N/A'}</p>
+                    <p><strong>Type:</strong> {selectedLead.device_type || 'N/A'}</p>
+                    <p><strong>Brand:</strong> {selectedLead.manufacturer || 'N/A'}</p>
                     <p><strong>Model:</strong> {selectedLead.model || 'N/A'}</p>
-                    <p><strong>Condition:</strong> {selectedLead.device_condition || selectedLead.deviceCondition || 'N/A'}</p>
-                    <p><strong>IMEI:</strong> {selectedLead.imei || 'N/A'}</p>
+                    <p><strong>Condition:</strong> {selectedLead.condition || 'N/A'}</p>
                   </div>
                 </div>
 
@@ -454,11 +475,10 @@ const AdminBuybackOverview = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-3">Pricing Information</h3>
                   <div className="space-y-2">
-                    <p><strong>Quoted Price:</strong> {formatPrice(selectedLead.quoted_price || selectedLead.quotedPrice)}</p>
-                    <p><strong>Final Price:</strong> {formatPrice(selectedLead.final_price || selectedLead.finalPrice)}</p>
-                    <p><strong>Base Price:</strong> {formatPrice(selectedLead.base_price || selectedLead.basePrice)}</p>
-                    {selectedLead.deduction_amount && (
-                      <p><strong>Deductions:</strong> {formatPrice(selectedLead.deduction_amount)}</p>
+                    <p><strong>Offered Price:</strong> {formatPrice(selectedLead.offered_price)}</p>
+                    <p><strong>Final Price:</strong> {formatPrice(selectedLead.final_price)}</p>
+                    {selectedLead.gst_amount && (
+                      <p><strong>GST Amount:</strong> {formatPrice(selectedLead.gst_amount)}</p>
                     )}
                   </div>
                 </div>
@@ -474,7 +494,10 @@ const AdminBuybackOverview = () => {
                     </p>
                     <p><strong>Created:</strong> {formatDate(selectedLead.created_at || selectedLead.createdAt)}</p>
                     <p><strong>Updated:</strong> {formatDate(selectedLead.updated_at || selectedLead.updatedAt)}</p>
-                    <p><strong>Agent:</strong> {selectedLead.agent_name || selectedLead.agentName || 'Not Assigned'}</p>
+                    <p><strong>Agent:</strong> {getAgentName(selectedLead)}</p>
+                    {selectedLead.agent_email && (
+                      <p><strong>Agent Email:</strong> {selectedLead.agent_email}</p>
+                    )}
                   </div>
                 </div>
               </div>

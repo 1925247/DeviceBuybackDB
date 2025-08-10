@@ -409,21 +409,26 @@ export class DatabaseStorage {
   // Buyback Requests operations
   async getBuybackRequests() {
     try {
-      // Use raw SQL query for reliable data retrieval
+      // Use raw SQL query with agent information
       const query = `
         SELECT 
-          id, user_id, device_type, manufacturer, model, condition, 
-          offered_price, status, customer_name, customer_email, customer_phone,
-          pickup_address, pickup_date, pickup_time, device_model_id, notes,
-          order_id, condition_answers, pin_code, final_price, lead_source,
-          lead_medium, lead_campaign, utm_source, utm_medium, utm_campaign,
-          utm_term, utm_content, referrer_url, landing_page, created_at, updated_at
-        FROM buyback_requests 
-        ORDER BY created_at DESC
+          br.id, br.user_id, br.device_type, br.manufacturer, br.model, br.condition, 
+          br.offered_price, br.status, br.customer_name, br.customer_email, br.customer_phone,
+          br.pickup_address, br.pickup_date, br.pickup_time, br.device_model_id, br.notes,
+          br.order_id, br.condition_answers, br.pin_code, br.final_price, br.lead_source,
+          br.lead_medium, br.lead_campaign, br.utm_source, br.utm_medium, br.utm_campaign,
+          br.utm_term, br.utm_content, br.referrer_url, br.landing_page, br.created_at, br.updated_at,
+          br.agent_id,
+          u.first_name as agent_first_name,
+          u.last_name as agent_last_name,
+          u.email as agent_email
+        FROM buyback_requests br
+        LEFT JOIN users u ON u.id = br.agent_id 
+        ORDER BY br.created_at DESC
       `;
       
       const result = await pool.query(query);
-      console.log(`Successfully retrieved ${result.rows.length} buyback requests`);
+      console.log(`Successfully retrieved ${result.rows.length} buyback requests with agent data`);
       return result.rows;
     } catch (error) {
       console.error('Error fetching buyback requests:', error);
@@ -475,7 +480,8 @@ export class DatabaseStorage {
         utm_term: insertRequest.utmTerm || insertRequest.utm_term || null,
         utm_content: insertRequest.utmContent || insertRequest.utm_content || null,
         referrer_url: insertRequest.referrerUrl || insertRequest.referrer_url || null,
-        landing_page: insertRequest.landingPage || insertRequest.landing_page || null
+        landing_page: insertRequest.landingPage || insertRequest.landing_page || null,
+        agent_id: insertRequest.agentId || insertRequest.agent_id || null
       };
       
       console.log('Mapped database request:', dbRequest);
