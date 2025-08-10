@@ -30,12 +30,12 @@ const testDatabaseConnection = async (retries = 3) => {
 
 // Start server
 (async () => {
-  // Register routes first
-  registerRoutes(app);
-
   const server = app.listen(5000, "0.0.0.0", () => {
     log(`serving on port 5000`);
   });
+
+  // Register API routes BEFORE Vite middleware
+  registerRoutes(app);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
