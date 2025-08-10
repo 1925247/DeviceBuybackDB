@@ -978,6 +978,9 @@ export async function registerRoutes(app) {
       let agentLeads = [];
       
       if (agentId === 'AGENT001') {
+        // Check global completion status for leads
+        const completionData = global.completionData || {};
+        
         agentLeads = [
           {
             lead_id: 1001,
@@ -989,7 +992,7 @@ export async function registerRoutes(app) {
             customer_price: 42000,
             pickup_date: new Date().toISOString(),
             pickup_address: 'Connaught Place, New Delhi - 110001',
-            status: 'assigned',
+            status: completionData['lead_1001_completion']?.status === 'completed' ? 'completed' : 'assigned',
             assigned_agent_id: agentId,
             created_at: new Date().toISOString()
           },
@@ -1003,7 +1006,7 @@ export async function registerRoutes(app) {
             customer_price: 33000,
             pickup_date: new Date().toISOString(),
             pickup_address: 'Karol Bagh, New Delhi - 110005',
-            status: 'assigned',
+            status: completionData['lead_1002_completion']?.status === 'completed' ? 'completed' : 'assigned',
             assigned_agent_id: agentId,
             created_at: new Date().toISOString()
           },
@@ -1017,7 +1020,7 @@ export async function registerRoutes(app) {
             customer_price: 23500,
             pickup_date: new Date().toISOString(),
             pickup_address: 'Sector 18, Noida - 201301',
-            status: 'in_progress',
+            status: completionData['lead_1003_completion']?.status === 'completed' ? 'completed' : 'in_progress',
             assigned_agent_id: agentId,
             created_at: new Date().toISOString()
           }
@@ -1056,7 +1059,19 @@ export async function registerRoutes(app) {
       }
 
       console.log('Agent leads prepared:', agentLeads.length);
-      res.json(agentLeads);
+      
+      // Add status counts for dashboard
+      const statusCounts = {
+        total: agentLeads.length,
+        pending: agentLeads.filter(lead => lead.status === 'assigned').length,
+        in_progress: agentLeads.filter(lead => lead.status === 'in_progress').length,
+        completed: agentLeads.filter(lead => lead.status === 'completed').length
+      };
+      
+      res.json({
+        leads: agentLeads,
+        counts: statusCounts
+      });
     } catch (error) {
       console.error('Error fetching agent leads:', error);
       res.status(500).json({ error: 'Failed to fetch leads' });

@@ -5,6 +5,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const SecureAgentDashboard = () => {
   const [leads, setLeads] = useState([]);
+  const [leadCounts, setLeadCounts] = useState({ total: 0, pending: 0, in_progress: 0, completed: 0 });
   const [agentInfo, setAgentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,7 +58,21 @@ const SecureAgentDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setLeads(data || []);
+        
+        // Handle new API response format
+        if (data.leads && data.counts) {
+          setLeads(data.leads || []);
+          setLeadCounts(data.counts);
+        } else {
+          // Fallback for old format
+          setLeads(data || []);
+          setLeadCounts({
+            total: data?.length || 0,
+            pending: data?.filter(l => l.status === 'assigned').length || 0,
+            in_progress: data?.filter(l => l.status === 'in_progress').length || 0,
+            completed: data?.filter(l => l.status === 'completed').length || 0
+          });
+        }
         setError(''); // Clear any previous errors
       } else {
         const errorData = await response.json();
@@ -160,7 +175,7 @@ const SecureAgentDashboard = () => {
               <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               <div className="ml-2 sm:ml-4">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Total Leads</p>
-                <p className="text-lg sm:text-2xl font-semibold text-gray-900">{leads.length}</p>
+                <p className="text-lg sm:text-2xl font-semibold text-gray-900">{leadCounts.total}</p>
               </div>
             </div>
           </div>
@@ -171,7 +186,7 @@ const SecureAgentDashboard = () => {
               <div className="ml-2 sm:ml-4">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Pending</p>
                 <p className="text-lg sm:text-2xl font-semibold text-gray-900">
-                  {leads.filter(l => l.status === 'assigned').length}
+                  {leadCounts.pending}
                 </p>
               </div>
             </div>
@@ -183,7 +198,7 @@ const SecureAgentDashboard = () => {
               <div className="ml-2 sm:ml-4">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">In Progress</p>
                 <p className="text-lg sm:text-2xl font-semibold text-gray-900">
-                  {leads.filter(l => l.status === 'in_progress').length}
+                  {leadCounts.in_progress}
                 </p>
               </div>
             </div>
@@ -195,7 +210,7 @@ const SecureAgentDashboard = () => {
               <div className="ml-2 sm:ml-4">
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Completed</p>
                 <p className="text-lg sm:text-2xl font-semibold text-gray-900">
-                  {leads.filter(l => l.status === 'completed').length}
+                  {leadCounts.completed}
                 </p>
               </div>
             </div>
