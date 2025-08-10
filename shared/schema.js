@@ -498,6 +498,17 @@ export const brandGroupMappings = pgTable("brand_group_mappings", {
   uniqueBrandGroup: unique().on(table.groupId, table.brandId)
 }));
 
+// Variant Question Mappings - new integrated workflow (variant-level mapping)
+export const variantQuestionMappings = pgTable("variant_question_mappings", {
+  id: serial("id").primaryKey(),
+  variantId: integer("variant_id").notNull().references(() => deviceModelVariants.id),
+  groupId: integer("group_id").notNull().references(() => questionGroups.id),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueVariantGroup: unique().on(table.variantId, table.groupId)
+}));
+
 // Buyback Requests table for tracking device buyback orders
 export const buybackRequests = pgTable("buyback_requests", {
   id: serial("id").primaryKey(),

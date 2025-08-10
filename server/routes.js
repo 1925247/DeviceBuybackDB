@@ -41,6 +41,14 @@ import errorReportsRoutes from "./api/errorReports.js";
 import userFeedbackRoutes from "./api/userFeedback.js";
 import { getVariantValuation, calculateVariantPrice } from "./api/variantValuation.js";
 import { getModelSpecificQuestions, createSampleModelMappings } from "./api/modelSpecificQuestions.js";
+import { 
+  createModel, 
+  addVariant, 
+  getVariantMappings, 
+  mapQuestionsToVariant, 
+  getModelVariants,
+  getModelsWithVariants 
+} from "./api/integratedModelApi.js";
 
 
 export async function registerRoutes(app) {
@@ -112,6 +120,13 @@ export async function registerRoutes(app) {
       const report = await cleanupModule.generateMigrationReport();
       res.json(report);
     });
+
+    // Integrated Model Management APIs (new workflow)
+    app.post(apiRouter("/admin/models"), createModel);
+    app.post(apiRouter("/admin/models/:modelId/variants"), addVariant);
+    app.get(apiRouter("/admin/variants/:variantId/mappings"), getVariantMappings);
+    app.post(apiRouter("/admin/variants/:variantId/map-questions"), mapQuestionsToVariant);
+    app.get(apiRouter("/models/:modelId/variants"), getModelVariants);
   } catch (error) {
     console.error('Failed to load new valuation API:', error);
   }

@@ -18,6 +18,14 @@
 - Control which questions appear to customers
 - Set deduction rates for each answer choice
 
+#### 2. **NEW: Integrated Model Manager** ⭐
+**URL:** http://localhost:5000/admin/integrated-models
+- **Complete workflow:** Model → Variants → Question Mapping → Pricing
+- Add models with inline variant management
+- Map question groups directly to specific variants
+- Real-time variant pricing and mapping status
+- Single-page workflow for efficient model setup
+
 #### 2. **Model Management**
 **URL:** http://localhost:5000/admin/models-advanced
 - Manage device models and variants

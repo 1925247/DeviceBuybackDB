@@ -1,0 +1,87 @@
+Here’s your request rewritten into a **clear, developer-friendly prompt** that will help your team understand the **exact correct workflow** you want:
+
+---
+
+## **Admin Panel – Model & Variant Management with Question Mapping**
+
+We need to **fix the route and workflow** for adding models, variants, and mapping question–answer groups in the admin panel.
+
+---
+
+### **Current Problem**
+
+* After adding a model, when adding its variants, the mapping and pricing process is confusing and not integrated properly.
+* The question–answer mapping is currently designed in a way that’s not connected to the variant price table, making it harder to set prices and deductions.
+
+---
+
+### **Required Workflow (Correct Flow)**
+
+#### **Step 1 – Add Model**
+
+* Admin adds a new model (e.g., *iPhone 13*) from the admin panel.
+
+#### **Step 2 – Variant Table Display (Below the Model Entry)**
+
+* Immediately below the model entry form, display a **slidable section** with a **two-column table**:
+
+  1. **Variant Name** (e.g., 128GB, 256GB)
+  2. **Base Price** (editable field for each variant)
+
+#### **Step 3 – Direct Variant Addition**
+
+* Admin can add multiple variants **inline** in the table without leaving the model page.
+* Each new variant row will have:
+
+  * Variant name input
+  * Base price input
+  * **Map Questions** button
+
+#### **Step 4 – Map Question–Answer Groups**
+
+* Clicking **Map Questions** for a variant opens a modal or side panel:
+
+  * Show all available **Groups** (Body, Screen, Functional Issues, Warranty, Accessories).
+  * Admin can select which groups to attach to the variant.
+  * Within each group, admin can select which **questions** and **answers** apply.
+  * Each **answer** will have a **deduction rate** field (fixed amount or %).
+
+#### **Step 5 – Save Mapping**
+
+* Once saved, the selected groups/questions/answers with their deduction rates are stored for that **specific variant**.
+* This ensures:
+
+  * iPhone 13 128GB can have different mappings/deductions from iPhone 13 256GB.
+  * Same questions/answers can still be reused across multiple variants if needed.
+
+#### **Step 6 – Route Fix**
+
+* Routes should follow this structure:
+
+  * **POST /admin/models** → Add model
+  * **POST /admin/models/{model\_id}/variants** → Add variants
+  * **POST /admin/variants/{variant\_id}/map-questions** → Map questions/answers to a variant
+  * **GET /models/{model\_id}/variants** → Fetch variants with prices & mappings
+
+#### **Step 7 – Frontend Impact**
+
+* When a customer selects a model & variant:
+
+  * Fetch **mapped questions/answers** from backend.
+  * Show only those groups/questions that were configured for that variant.
+  * Apply deduction rates exactly as per admin mapping.
+
+---
+
+**Goal:**
+
+* A clean, step-by-step admin process where:
+
+  * Models → Variants → Price & Mapping happen **in one continuous workflow**.
+  * Routes are simple and consistent.
+  * No unmapped/default questions appear unless configured.
+
+---
+
+If you want, I can now **diagram this process** so your dev team can implement it without missing any step.
+Would you like me to make that diagram?
