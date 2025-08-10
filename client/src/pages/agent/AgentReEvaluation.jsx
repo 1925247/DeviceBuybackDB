@@ -221,14 +221,39 @@ const AgentReEvaluation = () => {
 
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Device Information</h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center">
                   <Package className="h-4 w-4 text-gray-400 mr-3" />
                   <span className="text-sm text-gray-900">{leadDetails.manufacturer} {leadDetails.model}</span>
                 </div>
+                
                 <div className="flex items-center">
                   <DollarSign className="h-4 w-4 text-gray-400 mr-3" />
                   <span className="text-sm text-gray-900">Base Price: ₹{(parseFloat(leadDetails.initial_quote) || 0).toLocaleString('en-IN')}</span>
+                </div>
+                
+                <div className="flex items-center">
+                  <DollarSign className="h-4 w-4 text-green-600 mr-3" />
+                  <span className="text-sm font-semibold text-green-800">Customer Quote: ₹{(parseFloat(leadDetails.customer_price) || 0).toLocaleString('en-IN')}</span>
+                </div>
+
+                {/* Customer's Q&A Section */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">Customer's Assessment</h3>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {leadDetails.customer_answers && leadDetails.customer_answers.length > 0 ? (
+                      leadDetails.customer_answers.map((qa, index) => (
+                        <div key={index} className="text-xs bg-gray-50 p-2 rounded">
+                          <p className="font-medium text-gray-700 truncate">{qa.question}</p>
+                          <p className="text-gray-600">
+                            {qa.answer} <span className="text-red-600">(-{qa.deduction}%)</span>
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-500">No assessment data available</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
