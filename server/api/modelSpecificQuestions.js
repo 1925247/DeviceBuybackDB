@@ -62,30 +62,7 @@ export async function getModelSpecificQuestions(req, res) {
         AND q.active = true
         AND qg.active = true
         
-        UNION
-        
-        -- Get questions individually mapped to this model
-        SELECT DISTINCT
-          q.id,
-          q.question_text,
-          q.question_type,
-          q.sort_order,
-          q.tooltip,
-          q.help_text,
-          q.required,
-          qg.id as group_id,
-          qg.name as group_name,
-          qg.statement as group_statement,
-          qg.category,
-          qg.color,
-          'question_mapping' as mapping_type
-        FROM questions q
-        JOIN question_groups qg ON q.group_id = qg.id
-        JOIN question_model_mappings qmm ON q.id = qmm.question_id
-        WHERE qmm.model_id = $1 
-        AND qmm.active = true
-        AND q.active = true
-        AND qg.active = true
+        -- Individual question mapping temporarily disabled due to table structure
       )
       SELECT 
         mmq.*,

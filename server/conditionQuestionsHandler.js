@@ -54,23 +54,7 @@ export async function getConditionQuestions(req, res) {
             
             UNION
             
-            -- Get questions individually mapped to this model
-            SELECT DISTINCT
-              q.id,
-              q.question_text,
-              q.question_type,
-              q.sort_order,
-              q.tooltip,
-              q.help_text,
-              q.required,
-              qg.category
-            FROM questions q
-            JOIN question_groups qg ON q.group_id = qg.id
-            JOIN question_model_mappings qmm ON q.id = qmm.question_id
-            WHERE qmm.model_id = $1 
-            AND qmm.active = true
-            AND q.active = true
-            AND qg.active = true
+            -- Skip individual question mappings for now since table structure needs fixing
           )
           SELECT 
             mmq.*,
