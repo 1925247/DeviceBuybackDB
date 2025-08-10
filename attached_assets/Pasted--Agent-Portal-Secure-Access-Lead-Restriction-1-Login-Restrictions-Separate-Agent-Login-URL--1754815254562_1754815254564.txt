@@ -1,0 +1,154 @@
+📌 Agent Portal (Secure Access & Lead Restriction)
+1. Login Restrictions
+Separate Agent Login URL:
+
+arduino
+Copy
+Edit
+https://yourdomain.com/agent-login
+Allowed Users:
+
+Only user IDs created under “Agent Management” in the backend can log in.
+
+No other user IDs (admin, super admin, customer) are allowed.
+
+Validation:
+
+When login attempt happens:
+
+System checks in Agent Management table if username exists.
+
+If not found → Show “Access Denied – Not Authorized as Agent”.
+
+Password check must be hashed for security.
+
+Login Fields:
+
+Agent ID / Username
+
+Password
+
+2. Role & Access Control
+After successful login:
+
+Session stores Agent ID.
+
+Every API request verifies:
+
+The requesting Agent ID matches the assigned_agent_id of the lead.
+
+If mismatch → Return 403 Forbidden.
+
+Agents cannot:
+
+See other agents’ leads.
+
+Access admin backend.
+
+Change assigned leads.
+
+3. Agent Dashboard (Leads View)
+Shows only leads assigned to the logged-in agent.
+
+Columns:
+
+Lead ID
+
+Customer Name
+
+Device Details
+
+Base Price
+
+Customer Online Price
+
+Pickup Date/Time
+
+Status
+
+Action → Re-Evaluate
+
+4. Lead Assignment Rules
+In Backend Admin → Agent Management:
+
+Create/edit agents with:
+
+Username (unique)
+
+Password
+
+Contact info
+
+Assign leads manually to agents.
+
+Once a lead is assigned:
+
+Only that agent can view it in their dashboard.
+
+No “unassigned” leads will appear in any agent’s list.
+
+5. Re-Evaluation Process
+Exactly as described in your earlier workflow:
+
+Customer’s answers shown first.
+
+Agent can update based on inspection.
+
+Real-time deduction from backend Base Price.
+
+Price comparison shown to customer.
+
+Accept → Complete order
+Reject → Cancel order
+
+6. Backend Database Changes
+Tables Needed:
+
+agents
+
+agent_id (PK)
+
+username (unique)
+
+password_hash
+
+full_name
+
+phone
+
+created_at
+
+status (active/inactive)
+
+leads
+
+lead_id (PK)
+
+customer_id
+
+device_id
+
+variant_id
+
+base_price
+
+customer_price
+
+assigned_agent_id (FK → agents.agent_id)
+
+status
+
+pickup_date
+
+agent_logs
+
+log_id (PK)
+
+agent_id
+
+lead_id
+
+action
+
+timestamp
+

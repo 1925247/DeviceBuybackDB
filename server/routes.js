@@ -893,5 +893,171 @@ export async function registerRoutes(app) {
     }
   });
 
+  // Agent Authentication Endpoints
+  app.post('/api/agent/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+      }
+
+      // Check if user exists in Agent Management
+      const agents = [
+        {
+          agent_id: 'AGENT001',
+          username: 'rahul.agent',
+          password_hash: 'hashed_password_1', // In real app, use bcrypt
+          full_name: 'Rahul Kumar',
+          phone: '9876543210',
+          status: 'active'
+        },
+        {
+          agent_id: 'AGENT002',
+          username: 'priya.agent',
+          password_hash: 'hashed_password_2',
+          full_name: 'Priya Sharma',
+          phone: '9876543211',
+          status: 'active'
+        }
+      ];
+
+      const agent = agents.find(a => a.username === username && a.status === 'active');
+
+      if (!agent) {
+        return res.status(401).json({ 
+          error: 'Access Denied – Not Authorized as Agent' 
+        });
+      }
+
+      // In real app, verify password with bcrypt
+      if (password !== 'agent123') {
+        return res.status(401).json({ 
+          error: 'Invalid credentials' 
+        });
+      }
+
+      // Generate simple token (in real app, use JWT)
+      const token = `agent_${agent.agent_id}_${Date.now()}`;
+
+      res.json({
+        success: true,
+        token,
+        agent: {
+          agent_id: agent.agent_id,
+          full_name: agent.full_name,
+          phone: agent.phone
+        }
+      });
+    } catch (error) {
+      console.error('Agent login error:', error);
+      res.status(500).json({ error: 'Login failed' });
+    }
+  });
+
+  // Get leads assigned to specific agent
+  app.get('/api/agent/leads/:agentId', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'No valid token provided' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      
+      // Verify token contains the agent ID (simple validation)
+      if (!token.includes(agentId)) {
+        return res.status(403).json({ error: 'Access denied - token mismatch' });
+      }
+
+      // Get all buyback requests and filter by assigned agent
+      const allRequests = await storage.getAllBuybackRequests();
+      
+      // Mock assigned leads (in real app, filter by assigned_agent_id)
+      const agentLeads = agentId === 'AGENT001' 
+        ? allRequests.slice(0, 3).map(req => ({
+            lead_id: req.id,
+            customer_name: req.customer_name,
+            customer_phone: req.customer_phone,
+            manufacturer: req.manufacturer,
+            model: req.model,
+            base_price: req.offered_price,
+            customer_price: req.offered_price,
+            pickup_date: req.created_at,
+            pickup_address: req.pickup_address,
+            status: 'assigned',
+            assigned_agent_id: agentId,
+            created_at: req.created_at
+          }))
+        : agentId === 'AGENT002'
+        ? allRequests.slice(3, 5).map(req => ({
+            lead_id: req.id,
+            customer_name: req.customer_name,
+            customer_phone: req.customer_phone,
+            manufacturer: req.manufacturer,
+            model: req.model,
+            base_price: req.offered_price,
+            customer_price: req.offered_price,
+            pickup_date: req.created_at,
+            pickup_address: req.pickup_address,
+            status: 'assigned',
+            assigned_agent_id: agentId,
+            created_at: req.created_at
+          }))
+        : [];
+
+      res.json(agentLeads);
+    } catch (error) {
+      console.error('Error fetching agent leads:', error);
+      res.status(500).json({ error: 'Failed to fetch leads' });
+    }
+  });
+
+  // Re-evaluation endpoint for agents
+  app.get('/api/agent/lead/:leadId', async (req, res) => {
+    try {
+      const { leadId } = req.params;
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'No valid token provided' });
+      }
+
+      // Get lead details (for re-evaluation)
+      const allRequests = await storage.getAllBuybackRequests();
+      const lead = allRequests.find(r => r.id === parseInt(leadId));
+      
+      if (!lead) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      // Mock lead details with customer answers
+      const leadDetails = {
+        lead_id: lead.id,
+        customer_name: lead.customer_name,
+        customer_phone: lead.customer_phone,
+        manufacturer: lead.manufacturer,
+        model: lead.model,
+        base_price: lead.offered_price,
+        customer_price: lead.offered_price,
+        pickup_address: lead.pickup_address,
+        customer_answers: [
+          { question: 'Screen condition?', answer: 'Minor scratches', deduction: 5 },
+          { question: 'Battery performance?', answer: 'Good (80-90%)', deduction: 0 },
+          { question: 'Physical condition?', answer: 'Excellent', deduction: 0 },
+          { question: 'Functional issues?', answer: 'None', deduction: 0 }
+        ],
+        status: 'assigned'
+      };
+
+      res.json(leadDetails);
+    } catch (error) {
+      console.error('Error fetching lead details:', error);
+      res.status(500).json({ error: 'Failed to fetch lead details' });
+    }
+  });
+
   return server;
 }

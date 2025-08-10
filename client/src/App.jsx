@@ -80,6 +80,9 @@ const OrderReEvaluation = lazy(() => import("./pages/agent/OrderReEvaluation"));
 const AdminAgentManagement = lazy(() => import("./pages/admin/AdminAgentManagement"));
 const AdminAgentPerformance = lazy(() => import("./pages/admin/AdminAgentPerformance"));
 const AdminAssignOrders = lazy(() => import("./pages/admin/AdminAssignOrders"));
+const AgentLogin = lazy(() => import("./pages/agent/AgentLogin"));
+const SecureAgentDashboard = lazy(() => import("./pages/agent/SecureAgentDashboard"));
+const AgentReEvaluation = lazy(() => import("./pages/agent/AgentReEvaluation"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
@@ -718,14 +721,24 @@ const App = () => {
               <Route path="/admin/logout" element={<AdminLogout />} />
 
               {/* Agent Routes */}
+              <Route path="/agent-login" element={
+                <Suspense fallback={<LoadingSpinner />}>
+                  <AgentLogin />
+                </Suspense>
+              } />
               <Route path="/agent/dashboard" element={
                 <Suspense fallback={<LoadingSpinner />}>
-                  <PickupAgentDashboard />
+                  <SecureAgentDashboard />
                 </Suspense>
               } />
               <Route path="/agent/order-details/:orderId" element={
                 <Suspense fallback={<LoadingSpinner />}>
                   <OrderReEvaluation />
+                </Suspense>
+              } />
+              <Route path="/agent/re-evaluate/:leadId" element={
+                <Suspense fallback={<LoadingSpinner />}>
+                  <AgentReEvaluation />
                 </Suspense>
               } />
 
