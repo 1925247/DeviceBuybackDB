@@ -125,7 +125,7 @@ This is a comprehensive Indian localized device buyback and refurbished electron
 
 ## Recent Changes
 
-- August 10, 2025: **COMPLETE POST-REVALUATION COMPLETION PROCESS IMPLEMENTED**
+- August 10, 2025: **COMPLETE POST-REVALUATION COMPLETION PROCESS WITH ORDER TRACKING IMPLEMENTED**
   - Built comprehensive LeadCompletion component with 6-step workflow
   - Added complete photo preview functionality for all upload steps
   - Created database tables: lead_photos, lead_kyc, lead_payments, lead_completion_status
@@ -134,6 +134,10 @@ This is a comprehensive Indian localized device buyback and refurbished electron
   - Mobile-responsive design with remove/preview options for all photos
   - Real-time upload progress tracking with photo count display
   - Supports device photos (6 required), KYC documents, and payment proof uploads
+  - **ORDER ID TRACKING**: Dual ID system with Lead ID (internal) and Order ID (customer-facing)
+  - Order ID format: GS2025XXXXX (e.g., GS202521001) for customer reference
+  - Photo file size optimized to 2MB to prevent payload errors
+  - Enhanced IMEI verification with device photo upload requirement
 
 - August 10, 2025: **COMPLETE AGENT MANAGEMENT SYSTEM IMPLEMENTED**
   - Created comprehensive Agent Management section in admin sidebar
