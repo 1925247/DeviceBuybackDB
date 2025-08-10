@@ -35,12 +35,20 @@ const AdminDashboardOverview = () => {
         buybacksRes.json()
       ]);
 
+      // Debug logging
+      console.log('API Response - Models:', models);
+      console.log('API Response - Brands:', brands);
+      console.log('API Response - Device Types:', deviceTypes);
+      console.log('API Response - Buybacks:', buybacks);
+
       // Calculate stats
       const activeModels = models.filter(m => m.active);
       const activeBrands = brands.filter(b => b.active);
       const activeCategories = deviceTypes.filter(dt => dt.active);
 
-
+      console.log('Filtered Active Models:', activeModels);
+      console.log('Filtered Active Brands:', activeBrands);
+      console.log('Filtered Active Categories:', activeCategories);
 
       setStats({
         totalModels: activeModels.length,
@@ -51,7 +59,8 @@ const AdminDashboardOverview = () => {
 
       // Category breakdown
       const categoryStats = activeCategories.map(category => {
-        const categoryModels = activeModels.filter(m => m.device_type_id === category.id);
+        const categoryModels = activeModels.filter(m => m.device_type_id === category.id || m.deviceTypeId === category.id);
+        console.log(`Category ${category.name} (ID: ${category.id}) has ${categoryModels.length} models`);
         return {
           name: category.name,
           slug: category.slug,
@@ -63,7 +72,8 @@ const AdminDashboardOverview = () => {
 
       // Brand breakdown
       const brandStats = activeBrands.map(brand => {
-        const brandModels = activeModels.filter(m => m.brand_id === brand.id);
+        const brandModels = activeModels.filter(m => m.brand_id === brand.id || m.brandId === brand.id);
+        console.log(`Brand ${brand.name} (ID: ${brand.id}) has ${brandModels.length} models`);
         return {
           name: brand.name,
           models: brandModels.length,
