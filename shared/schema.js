@@ -514,7 +514,7 @@ export const buybackRequests = pgTable("buyback_requests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
   deviceType: text("device_type").notNull(),
-  deviceBrand: text("device_brand").notNull(),
+  manufacturer: text("manufacturer").notNull(),
   deviceModel: text("device_model").notNull(),
   deviceVariant: text("device_variant"),
   conditionAssessment: jsonb("condition_assessment").notNull(),
