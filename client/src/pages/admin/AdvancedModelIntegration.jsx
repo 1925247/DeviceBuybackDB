@@ -295,7 +295,7 @@ const AdvancedModelIntegration = () => {
   // Filter models based on search and brand
   const filteredModels = models.filter(model => {
     const matchesSearch = model.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBrand = !filterBrand || model.brandId?.toString() === filterBrand || model.brand_id?.toString() === filterBrand;
+    const matchesBrand = !filterBrand || filterBrand === 'all' || model.brandId?.toString() === filterBrand || model.brand_id?.toString() === filterBrand;
     return matchesSearch && matchesBrand;
   });
 
@@ -665,7 +665,7 @@ const AdvancedModelIntegration = () => {
               <SelectValue placeholder="Filter by brand" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Brands</SelectItem>
+              <SelectItem value="all">All Brands</SelectItem>
               {brands.map(brand => (
                 <SelectItem key={brand.id} value={brand.id.toString()}>
                   {brand.name}
@@ -848,7 +848,7 @@ const AdvancedModelIntegration = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchTerm('');
-                    setFilterBrand('');
+                    setFilterBrand('all');
                   }}
                 >
                   Clear Filters
