@@ -7,7 +7,17 @@
 
 **Login Credentials:**
 - Username: `admin`
-- Password: `admin` or `admin123`
+- Password: `admin`
+
+### **Professional Admin Sidebar Navigation:**
+The admin panel now features a **professional sidebar** with organized sections:
+
+**📊 Dashboard** - Overview and analytics
+**📱 Device Management** - Complete model and variant control
+**❓ Question & Assessment** - Question groups and mapping
+**🛒 Business Operations** - Orders and customer management  
+**📈 Analytics & Reports** - Performance and insights
+**⚙️ System Settings** - Configuration and settings
 
 ### **Key Admin Features:**
 

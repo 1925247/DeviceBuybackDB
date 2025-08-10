@@ -24,8 +24,10 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     inventory: true,
-    qa: true,
-    orders: true
+    qa: false,
+    orders: false,
+    analytics: false,
+    system: false
   });
 
   const toggleSection = (section) => {
@@ -49,70 +51,59 @@ const AdminLayout = () => {
       current: location.pathname === '/admin'
     },
     {
-      name: 'Inventory Management',
+      name: 'Device Management',
       icon: Package,
       section: 'inventory',
       children: [
         { name: 'Device Types', href: '/admin/device-types', current: location.pathname === '/admin/device-types' },
         { name: 'Brands', href: '/admin/brands', current: location.pathname === '/admin/brands' },
         { name: 'Models', href: '/admin/models', current: location.pathname === '/admin/models' },
-        { name: 'Models Advanced', href: '/admin/models-advanced', current: location.pathname === '/admin/models-advanced' },
+        { name: 'Advanced Models', href: '/admin/models-advanced', current: location.pathname === '/admin/models-advanced' },
+        { name: '🔥 Integrated Models', href: '/admin/integrated-models', current: location.pathname === '/admin/integrated-models', badge: 'NEW' },
         { name: 'Variant Pricing', href: '/admin/variant-pricing', current: location.pathname === '/admin/variant-pricing' }
       ]
     },
     {
-      name: 'Q&A Management',
+      name: 'Question & Assessment',
       icon: HelpCircle,
       section: 'qa',
       children: [
         { name: 'Condition Questions', href: '/admin/condition-questions', current: location.pathname === '/admin/condition-questions' },
-        { name: 'Device Model Questions', href: '/admin/device-model-questions', current: location.pathname === '/admin/device-model-questions' }
+        { name: 'Question Groups', href: '/admin/question-groups', current: location.pathname === '/admin/question-groups' },
+        { name: 'Advanced Groups', href: '/admin/advanced-question-groups', current: location.pathname === '/admin/advanced-question-groups' },
+        { name: 'Question Builder', href: '/admin/question-builder', current: location.pathname === '/admin/question-builder' },
+        { name: 'Model Questions', href: '/admin/device-model-questions', current: location.pathname === '/admin/device-model-questions' }
       ]
     },
     {
-      name: 'Order Management',
+      name: 'Business Operations',
       icon: ShoppingCart,
       section: 'orders',
       children: [
         { name: 'Buyback Requests', href: '/admin/buyback', current: location.pathname === '/admin/buyback' },
-        { name: 'All Orders', href: '/admin/orders', current: location.pathname === '/admin/orders' }
+        { name: 'All Orders', href: '/admin/orders', current: location.pathname === '/admin/orders' },
+        { name: 'Users', href: '/admin/users', current: location.pathname === '/admin/users' }
       ]
     },
     {
-      name: 'Users',
-      href: '/admin/users',
-      icon: Users,
-      current: location.pathname === '/admin/users'
-    },
-    {
-      name: 'Lead Analytics',
-      href: '/admin/analytics',
+      name: 'Analytics & Reports',
       icon: BarChart3,
-      current: location.pathname === '/admin/analytics'
+      section: 'analytics',
+      children: [
+        { name: 'Analytics', href: '/admin/analytics', current: location.pathname === '/admin/analytics' },
+        { name: 'Lead Analytics', href: '/admin/lead-analytics', current: location.pathname === '/admin/lead-analytics' },
+        { name: 'Pricing Manager', href: '/admin/pricing-manager', current: location.pathname === '/admin/pricing-manager' }
+      ]
     },
     {
-      name: 'Pricing Manager',
-      href: '/admin/pricing-manager',
-      icon: Tag,
-      current: location.pathname === '/admin/pricing-manager'
-    },
-    {
-      name: 'Question Groups',
-      href: '/admin/question-groups',
-      icon: HelpCircle,
-      current: location.pathname === '/admin/question-groups'
-    },
-    {
-      name: 'Configuration',
-      href: '/admin/configuration',
+      name: 'System Settings',
       icon: Settings,
-      current: location.pathname === '/admin/configuration'
-    },
-    {
-      name: 'Working Hours',
-      href: '/admin/working-hours',
-      icon: Clock,
-      current: location.pathname === '/admin/working-hours'
+      section: 'system',
+      children: [
+        { name: 'Settings', href: '/admin/settings', current: location.pathname === '/admin/settings' },
+        { name: 'Working Hours', href: '/admin/working-hours', current: location.pathname === '/admin/working-hours' },
+        { name: 'Configuration', href: '/admin/configuration', current: location.pathname === '/admin/configuration' }
+      ]
     }
   ];
 
@@ -150,13 +141,18 @@ const AdminLayout = () => {
                       <Link
                         key={child.name}
                         to={child.href}
-                        className={`block px-3 py-2 text-sm rounded-md transition-colors ${
+                        className={`flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors ${
                           child.current
                             ? 'bg-blue-100 text-blue-700'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
-                        {child.name}
+                        <span>{child.name}</span>
+                        {child.badge && (
+                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            {child.badge}
+                          </span>
+                        )}
                       </Link>
                     ))}
                   </div>
