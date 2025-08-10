@@ -367,46 +367,136 @@ export const conditionAnswers = pgTable("condition_answers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Question Groups for organizing related questions
+// Enhanced Question Groups for organizing related questions with full flexibility
 export const questionGroups = pgTable("question_groups", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   statement: text("statement").notNull(),
-  deviceTypeId: integer("device_type_id").references(() => deviceTypes.id),
+  description: text("description"),
+  category: text("category").default("general").notNull(), // body, screen, functional, warranty, accessories, etc.
+  deviceTypes: jsonb("device_types"), // Array of device types this group applies to
   icon: text("icon"),
+  color: text("color").default("#3B82F6"), // For UI theming
+  sortOrder: integer("sort_order").default(0),
   active: boolean("active").default(true),
+  isReusable: boolean("is_reusable").default(true), // Can be mapped to multiple models
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Questions - for device assessment, value calculation, eligibility rules
+// Enhanced Questions with flexible mapping capabilities
 export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
   questionText: text("question_text").notNull(),
   questionType: questionTypeEnum("question_type").default("single_choice").notNull(),
   groupId: integer("group_id").references(() => questionGroups.id),
-  order: integer("order").default(0),
+  sortOrder: integer("sort_order").default(0),
   active: boolean("active").default(true),
   tooltip: text("tooltip"),
+  helpText: text("help_text"),
   required: boolean("required").default(true),
+  isReusable: boolean("is_reusable").default(true), // Can be reused across multiple models
+  deviceModelIds: jsonb("device_model_ids"), // Specific models this question applies to
+  brandIds: jsonb("brand_ids"), // Specific brands this question applies to
+  excludeModelIds: jsonb("exclude_model_ids"), // Models to exclude even if group is mapped
+  metadata: jsonb("metadata"), // Additional configuration data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Answer choices for questions
+// Enhanced Answer choices with model-specific deduction rates
 export const answerChoices = pgTable("answer_choices", {
   id: serial("id").primaryKey(),
   questionId: integer("question_id").notNull().references(() => questions.id),
   answerText: text("answer_text").notNull(),
+  description: text("description"), // Detailed explanation of the answer choice
   icon: text("icon"),
+  iconColor: text("icon_color").default("#6B7280"),
+  severity: text("severity").default("none"), // none, minor, major, critical
+  // Default deduction rates (can be overridden per model)
   weightage: real("weightage").default(0), // Percentage impact on final price (e.g., -30%)
   repairCost: real("repair_cost").default(0), // Fixed deduction amount
   isDefault: boolean("is_default").default(false),
-  order: integer("order").default(0),
+  sortOrder: integer("sort_order").default(0),
   followUpAction: jsonb("follow_up_action"), // For conditional logic
+  // Model-specific overrides
+  modelSpecificRates: jsonb("model_specific_rates"), // { "model_id": { "weightage": -25, "repairCost": 500 } }
+  brandSpecificRates: jsonb("brand_specific_rates"), // Brand-level overrides
+  isReusable: boolean("is_reusable").default(true),
+  metadata: jsonb("metadata"), // Additional configuration
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Group-to-Model Mappings - maps entire question groups to device models
+export const groupModelMappings = pgTable("group_model_mappings", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => questionGroups.id),
+  modelId: integer("model_id").notNull().references(() => deviceModels.id),
+  sortOrder: integer("sort_order").default(0), // Order in which groups appear for this model
+  active: boolean("active").default(true),
+  // Model-specific overrides for the group
+  groupName: text("group_name"), // Override group name for this model
+  groupStatement: text("group_statement"), // Override group statement for this model
+  customSettings: jsonb("custom_settings"), // Model-specific configuration
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueGroupModel: unique().on(table.groupId, table.modelId)
+}));
+
+// Question-to-Model Mappings - maps specific questions to models (overrides group mappings)
+export const questionModelMappings = pgTable("question_model_mappings", {
+  id: serial("id").primaryKey(),
+  questionId: integer("question_id").notNull().references(() => questions.id),
+  modelId: integer("model_id").notNull().references(() => deviceModels.id),
+  sortOrder: integer("sort_order").default(0),
+  active: boolean("active").default(true),
+  required: boolean("required"), // Override question's default required setting
+  // Model-specific overrides
+  questionText: text("question_text"), // Override question text for this model
+  helpText: text("help_text"), // Override help text for this model
+  customSettings: jsonb("custom_settings"), // Model-specific configuration
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueQuestionModel: unique().on(table.questionId, table.modelId)
+}));
+
+// Answer-to-Model Mappings - model-specific deduction rates for answer choices
+export const answerModelMappings = pgTable("answer_model_mappings", {
+  id: serial("id").primaryKey(),
+  answerId: integer("answer_id").notNull().references(() => answerChoices.id),
+  modelId: integer("model_id").notNull().references(() => deviceModels.id),
+  // Model-specific deduction rates (override answer's default rates)
+  weightage: real("weightage"), // Percentage impact override
+  repairCost: real("repair_cost"), // Fixed cost override
+  isActive: boolean("is_active").default(true),
+  // Model-specific customization
+  answerText: text("answer_text"), // Override answer text for this model
+  description: text("description"), // Override description for this model
+  severity: text("severity"), // Override severity level
+  customSettings: jsonb("custom_settings"), // Additional model-specific settings
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueAnswerModel: unique().on(table.answerId, table.modelId)
+}));
+
+// Brand-to-Group Mappings - maps question groups to brands (brand-level defaults)
+export const brandGroupMappings = pgTable("brand_group_mappings", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => questionGroups.id),
+  brandId: integer("brand_id").notNull().references(() => brands.id),
+  sortOrder: integer("sort_order").default(0),
+  active: boolean("active").default(true),
+  // Brand-specific overrides
+  customSettings: jsonb("custom_settings"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueBrandGroup: unique().on(table.groupId, table.brandId)
+}));
 
 // Buyback Requests table for tracking device buyback orders
 export const buybackRequests = pgTable("buyback_requests", {

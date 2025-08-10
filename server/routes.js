@@ -70,6 +70,20 @@ export async function registerRoutes(app) {
   
   // Feature Toggles API  
   app.use('/api/feature-toggles', featureToggleRouter);
+  
+  // Flexible Question Groups API - Import functions dynamically
+  try {
+    const flexibleQuestionsModule = await import("./api/flexibleQuestionGroupsApi.js");
+    app.get('/api/flexible-question-groups/stats', flexibleQuestionsModule.getQuestionGroupsWithStats);
+    app.post('/api/flexible-question-groups', flexibleQuestionsModule.createQuestionGroup);
+    app.post('/api/flexible-question-groups/:groupId/map-models', flexibleQuestionsModule.mapGroupToModels);
+    app.post('/api/flexible-question-groups/questions/:questionId/map-models', flexibleQuestionsModule.mapQuestionToModels);
+    app.post('/api/flexible-question-groups/answers/:answerId/model-rates', flexibleQuestionsModule.setAnswerModelRates);
+    app.get('/api/flexible-question-groups/models/:modelId/questions', flexibleQuestionsModule.getQuestionsForModel);
+    app.post('/api/flexible-question-groups/models/:modelId/calculate-price', flexibleQuestionsModule.calculateModelSpecificPrice);
+  } catch (error) {
+    console.error('Failed to load flexible question groups API:', error);
+  }
 
   // Create HTTP server before registering routes
   const server = createServer(app);

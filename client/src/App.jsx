@@ -58,6 +58,7 @@ const AdminConditionQuestions = lazy(() => import("./pages/admin/AdminConditionQ
 const DeviceModelQuestions = lazy(() => import("./pages/admin/DeviceModelQuestions"));
 const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups"));
 const AdminQuestionBuilder = lazy(() => import("./pages/admin/AdminQuestionBuilder"));
+const AdvancedQuestionGroupManager = lazy(() => import("./pages/admin/AdvancedQuestionGroupManager"));
 
 const AdminQuestionOverview = lazy(() => import("./pages/admin/AdminQuestionOverview"));
 const BuybackSuccess = lazy(() => import("./pages/BuybackSuccess"));
@@ -557,6 +558,15 @@ const App = () => {
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <AdminQuestionBuilder />
+                      </Suspense>
+                    }
+                  />
+                  
+                  <Route
+                    path="advanced-question-groups"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdvancedQuestionGroupManager />
                       </Suspense>
                     }
                   />
