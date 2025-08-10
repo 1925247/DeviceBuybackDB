@@ -24,7 +24,13 @@ import {
   Save,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Search,
+  Filter,
+  MoreVertical,
+  Star
 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 
@@ -36,6 +42,11 @@ const AdvancedModelIntegration = () => {
   const [activeTab, setActiveTab] = useState('models');
   const [selectedModel, setSelectedModel] = useState(null);
   const [isCreatingModel, setIsCreatingModel] = useState(false);
+  const [editingModel, setEditingModel] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
+  
   const [modelFormData, setModelFormData] = useState({
     name: '',
     brandId: '',
@@ -92,15 +103,7 @@ const AdvancedModelIntegration = () => {
         title: 'Success',
         description: 'Model created successfully'
       });
-      setIsCreatingModel(false);
-      setModelFormData({
-        name: '',
-        brandId: '',
-        deviceTypeId: '',
-        description: '',
-        image: null,
-        featured: false
-      });
+      resetForm();
       queryClient.invalidateQueries(['/api/device-models']);
       setSelectedModel(data);
     },
@@ -108,6 +111,57 @@ const AdvancedModelIntegration = () => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to create model',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const updateModelMutation = useMutation({
+    mutationFn: ({ id, formData }) => {
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null && formData[key] !== '') {
+          data.append(key, formData[key]);
+        }
+      });
+      return apiRequest(`/api/device-models/${id}`, {
+        method: 'PUT',
+        body: data
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Model updated successfully'
+      });
+      resetForm();
+      queryClient.invalidateQueries(['/api/device-models']);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update model',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const deleteModelMutation = useMutation({
+    mutationFn: (id) => apiRequest(`/api/device-models/${id}`, { method: 'DELETE' }),
+    onSuccess: (_, deletedId) => {
+      toast({
+        title: 'Success',
+        description: 'Model deleted successfully'
+      });
+      queryClient.invalidateQueries(['/api/device-models']);
+      if (selectedModel?.id === deletedId) {
+        setSelectedModel(null);
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete model',
         variant: 'destructive'
       });
     }
@@ -143,18 +197,76 @@ const AdvancedModelIntegration = () => {
     }
   });
 
+  const deleteVariantMutation = useMutation({
+    mutationFn: (variantId) => apiRequest(`/api/device-model-variants/${variantId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Variant deleted successfully'
+      });
+      queryClient.invalidateQueries(['/api/device-models']);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete variant',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Utility functions
+  const resetForm = () => {
+    setIsCreatingModel(false);
+    setEditingModel(null);
+    setModelFormData({
+      name: '',
+      brandId: '',
+      deviceTypeId: '',
+      description: '',
+      image: null,
+      featured: false
+    });
+    setPreviewImage(null);
+  };
+
+  const loadModelForEdit = (model) => {
+    setEditingModel(model);
+    setModelFormData({
+      name: model.name,
+      brandId: model.brandId?.toString() || model.brand_id?.toString() || '',
+      deviceTypeId: model.deviceTypeId?.toString() || model.device_type_id?.toString() || '',
+      description: model.description || '',
+      image: null,
+      featured: model.featured || false
+    });
+    setPreviewImage(model.image);
+    setIsCreatingModel(true);
+  };
+
   // Event handlers
   const handleModelSubmit = (e) => {
     e.preventDefault();
-    if (!modelFormData.image) {
+    if (!editingModel && !modelFormData.image) {
       toast({
         title: 'Error',
-        description: 'Model image is required',
+        description: 'Model image is required for new models',
         variant: 'destructive'
       });
       return;
     }
-    createModelMutation.mutate(modelFormData);
+    
+    if (editingModel) {
+      updateModelMutation.mutate({ id: editingModel.id, formData: modelFormData });
+    } else {
+      createModelMutation.mutate(modelFormData);
+    }
+  };
+
+  const handleDeleteModel = (model) => {
+    if (confirm(`Are you sure you want to delete "${model.name}"? This action cannot be undone.`)) {
+      deleteModelMutation.mutate(model.id);
+    }
   };
 
   const handleVariantSubmit = (e) => {
@@ -174,8 +286,18 @@ const AdvancedModelIntegration = () => {
     const file = e.target.files[0];
     if (file) {
       setModelFormData(prev => ({ ...prev, image: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => setPreviewImage(e.target.result);
+      reader.readAsDataURL(file);
     }
   };
+
+  // Filter models based on search and brand
+  const filteredModels = models.filter(model => {
+    const matchesSearch = model.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBrand = !filterBrand || model.brandId?.toString() === filterBrand || model.brand_id?.toString() === filterBrand;
+    return matchesSearch && matchesBrand;
+  });
 
   // Component renders
   const ModelForm = () => (
@@ -183,11 +305,36 @@ const AdvancedModelIntegration = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Smartphone className="w-5 h-5" />
-          Create New Model
+          {editingModel ? 'Edit Model' : 'Create New Model'}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleModelSubmit} className="space-y-4">
+        <form onSubmit={handleModelSubmit} className="space-y-6">
+          {/* Image Preview Section */}
+          {(previewImage || modelFormData.image) && (
+            <div className="flex justify-center">
+              <div className="relative">
+                <img 
+                  src={previewImage} 
+                  alt="Model preview" 
+                  className="w-32 h-32 object-cover rounded-lg border-2 border-dashed border-gray-300"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="absolute -top-2 -right-2 rounded-full h-8 w-8 p-0"
+                  onClick={() => {
+                    setPreviewImage(null);
+                    setModelFormData(prev => ({ ...prev, image: null }));
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="modelName">Model Name *</Label>
@@ -241,14 +388,14 @@ const AdvancedModelIntegration = () => {
             </div>
 
             <div>
-              <Label htmlFor="modelImage">Model Image *</Label>
+              <Label htmlFor="modelImage">Model Image {!editingModel && '*'}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="modelImage"
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  required
+                  required={!editingModel}
                   className="hidden"
                 />
                 <Button
@@ -258,7 +405,7 @@ const AdvancedModelIntegration = () => {
                   className="flex items-center gap-2"
                 >
                   <Upload className="w-4 h-4" />
-                  {modelFormData.image ? 'Change Image' : 'Upload Image'}
+                  {modelFormData.image ? 'Change Image' : (editingModel ? 'Update Image' : 'Upload Image')}
                 </Button>
                 {modelFormData.image && (
                   <span className="text-sm text-green-600 flex items-center gap-1">
@@ -287,24 +434,31 @@ const AdvancedModelIntegration = () => {
                 type="checkbox"
                 checked={modelFormData.featured}
                 onChange={(e) => setModelFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span>Featured Model</span>
+              <span className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-500" />
+                Featured Model
+              </span>
             </label>
           </div>
 
           <div className="flex gap-2">
             <Button 
               type="submit" 
-              disabled={createModelMutation.isPending}
+              disabled={createModelMutation.isPending || updateModelMutation.isPending}
               className="flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
-              {createModelMutation.isPending ? 'Creating...' : 'Create Model'}
+              {(createModelMutation.isPending || updateModelMutation.isPending) 
+                ? (editingModel ? 'Updating...' : 'Creating...') 
+                : (editingModel ? 'Update Model' : 'Create Model')
+              }
             </Button>
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setIsCreatingModel(false)}
+              onClick={resetForm}
             >
               Cancel
             </Button>
@@ -393,23 +547,99 @@ const AdvancedModelIntegration = () => {
 
         {/* Existing Variants Display */}
         {model?.variants && model.variants.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="font-medium">Existing Variants:</h4>
-            {model.variants.map((variant, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded">
-                <div className="flex items-center gap-4">
-                  <span className="font-medium">{variant.name}</span>
-                  <Badge variant="outline">{variant.storage}</Badge>
-                  <Badge variant="outline">{variant.color}</Badge>
-                  <Badge variant="outline">{variant.condition}</Badge>
-                  <span className="text-green-600 font-medium">₹{variant.basePrice}</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-lg">Existing Variants ({model.variants.length})</h4>
+            </div>
+            <div className="grid gap-3">
+              {model.variants.map((variant, index) => (
+                <div key={variant.id || index} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-base">{variant.name}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            <Package className="w-3 h-3 mr-1" />
+                            {variant.storage}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {variant.color}
+                          </Badge>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${
+                              variant.condition === 'new' ? 'bg-green-50 text-green-700 border-green-200' :
+                              variant.condition === 'like-new' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              variant.condition === 'good' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              'bg-orange-50 text-orange-700 border-orange-200'
+                            }`}
+                          >
+                            {variant.condition}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-4 h-4 text-green-600" />
+                        <span className="text-green-600 font-semibold text-lg">₹{variant.basePrice?.toLocaleString() || 0}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="flex items-center gap-2">
+                        <HelpCircle className="w-4 h-4" />
+                        Map Questions
+                      </Button>
+                      
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-xs">
+                          <DialogHeader>
+                            <DialogTitle>Variant Actions</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col gap-2">
+                            <Button variant="outline" className="justify-start">
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Variant
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              className="justify-start"
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete this variant "${variant.name}"?`)) {
+                                  deleteVariantMutation.mutate(variant.id);
+                                }
+                                document.querySelector('[data-state="open"]')?.click();
+                              }}
+                              disabled={deleteVariantMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              {deleteVariantMutation.isPending ? 'Deleting...' : 'Delete Variant'}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                  
+                  {variant.description && (
+                    <p className="text-sm text-gray-600 mt-2">{variant.description}</p>
+                  )}
                 </div>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4" />
-                  Map Questions
-                </Button>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+        )}
+
+        {model?.variants?.length === 0 && (
+          <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+            <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <h4 className="font-medium text-gray-600 mb-1">No Variants Added</h4>
+            <p className="text-sm text-gray-500">Add your first variant above to start pricing management</p>
           </div>
         )}
       </CardContent>
@@ -417,55 +647,219 @@ const AdvancedModelIntegration = () => {
   );
 
   const ModelsGrid = () => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">All Models</h3>
+    <div className="space-y-6">
+      {/* Header with Search and Filter Controls */}
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search models..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filterBrand} onValueChange={setFilterBrand}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter by brand" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Brands</SelectItem>
+              {brands.map(brand => (
+                <SelectItem key={brand.id} value={brand.id.toString()}>
+                  {brand.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button 
           onClick={() => setIsCreatingModel(true)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
           Add New Model
         </Button>
       </div>
 
+      {/* Models Grid */}
       {modelsLoading ? (
-        <div className="text-center py-8">Loading models...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-80 bg-gray-100 animate-pulse rounded-lg"></div>
+          ))}
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {models.map((model) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredModels.map((model) => (
             <Card 
               key={model.id} 
-              className={`cursor-pointer transition-all ${
-                selectedModel?.id === model.id ? 'ring-2 ring-blue-500' : ''
+              className={`group transition-all hover:shadow-lg border-2 ${
+                selectedModel?.id === model.id 
+                  ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200' 
+                  : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => setSelectedModel(model)}
             >
-              <CardContent className="p-4">
-                <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                  {model.image ? (
-                    <img 
-                      src={model.image} 
-                      alt={model.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <Smartphone className="w-8 h-8 text-gray-400" />
+              <CardContent className="p-0">
+                {/* Model Image */}
+                <div className="relative aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                  <img 
+                    src={model.image || '/placeholder.png'} 
+                    alt={model.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    onError={(e) => {
+                      e.target.src = '/placeholder.png';
+                    }}
+                  />
+                  {model.featured && (
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-yellow-500 text-white">
+                        <Star className="w-3 h-3 mr-1 fill-current" />
+                        Featured
+                      </Badge>
+                    </div>
                   )}
+                  
+                  {/* Action Menu */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 w-8 p-0 bg-white/80 backdrop-blur-sm hover:bg-white"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-xs">
+                        <DialogHeader>
+                          <DialogTitle>Model Actions</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => {
+                              setSelectedModel(model);
+                              document.querySelector('[data-state="open"]')?.click();
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => {
+                              loadModelForEdit(model);
+                              document.querySelector('[data-state="open"]')?.click();
+                            }}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Model
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="justify-start"
+                            onClick={() => {
+                              handleDeleteModel(model);
+                              document.querySelector('[data-state="open"]')?.click();
+                            }}
+                            disabled={deleteModelMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {deleteModelMutation.isPending ? 'Deleting...' : 'Delete'}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
-                <h4 className="font-medium">{model.name}</h4>
-                <p className="text-sm text-gray-500">{model.brandName} • {model.deviceTypeName}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <Badge variant={model.featured ? "default" : "outline"}>
-                    {model.featured ? 'Featured' : 'Standard'}
-                  </Badge>
-                  <span className="text-xs text-gray-500">
-                    {model.variantCount || 0} variants
-                  </span>
+
+                {/* Model Info */}
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h4 
+                      className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => setSelectedModel(model)}
+                    >
+                      {model.name}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {brands.find(b => b.id === model.brandId)?.name || brands.find(b => b.id === model.brand_id)?.name} • 
+                      {deviceTypes.find(d => d.id === model.deviceTypeId)?.name || deviceTypes.find(d => d.id === model.device_type_id)?.name}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Badge variant={model.active !== false ? "default" : "secondary"}>
+                      {model.active !== false ? "Active" : "Inactive"}
+                    </Badge>
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <Package className="w-3 h-3" />
+                      {model.variants?.length || 0} variants
+                    </span>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setSelectedModel(model)}
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      Manage
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadModelForEdit(model)}
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {filteredModels.length === 0 && !modelsLoading && (
+        <div className="text-center py-16">
+          <div className="max-w-md mx-auto">
+            <Smartphone className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+            <h3 className="text-xl font-medium text-gray-600 mb-3">
+              {searchTerm || filterBrand ? 'No Models Match Your Search' : 'No Models Found'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {searchTerm || filterBrand 
+                ? 'Try adjusting your search criteria or create a new model.'
+                : 'Start building your device catalog by creating your first model.'
+              }
+            </p>
+            <div className="flex gap-3 justify-center">
+              {(searchTerm || filterBrand) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterBrand('');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+              <Button onClick={() => setIsCreatingModel(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Model
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
