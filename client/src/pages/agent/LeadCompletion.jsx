@@ -31,6 +31,8 @@ const LeadCompletion = () => {
     customerName: '',
     idType: 'aadhaar',
     idNumber: '',
+    imeiNumber: '',
+    phonePhoto: null,
     idPhotoFront: null,
     idPhotoBack: null,
     customerSelfie: null
@@ -195,8 +197,14 @@ const LeadCompletion = () => {
   };
 
   const submitKYC = async () => {
-    if (!kycData.customerName || !kycData.idNumber || !kycData.customerSelfie) {
-      alert('Please fill all required KYC fields and upload customer selfie');
+    if (!kycData.customerName || !kycData.idNumber || !kycData.imeiNumber || !kycData.phonePhoto || !kycData.customerSelfie) {
+      alert('Please fill all required KYC fields including IMEI number, phone photo, and customer selfie');
+      return;
+    }
+
+    // Validate IMEI number format (15 digits)
+    if (!/^\d{15}$/.test(kycData.imeiNumber)) {
+      alert('Please enter a valid 15-digit IMEI number');
       return;
     }
 
@@ -524,6 +532,52 @@ const LeadCompletion = () => {
                       onChange={(e) => setKycData(prev => ({ ...prev, idNumber: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Device IMEI Number *</label>
+                    <input
+                      type="text"
+                      value={kycData.imeiNumber}
+                      onChange={(e) => setKycData(prev => ({ ...prev, imeiNumber: e.target.value }))}
+                      placeholder="Enter 15-digit IMEI number"
+                      maxLength="15"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Dial *#06# to find IMEI number</p>
+                  </div>
+
+                  {/* Phone Photo Upload */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Device Photo with IMEI Visible *</label>
+                    <p className="text-sm text-gray-600 mb-3">Take a photo showing the device's IMEI number (usually found in Settings → About Phone or on device sticker)</p>
+                    {kycData.phonePhoto && kycData.phonePhoto.preview ? (
+                      <div className="space-y-2">
+                        <img 
+                          src={kycData.phonePhoto.preview} 
+                          alt="Phone with IMEI"
+                          className="w-full h-48 object-cover rounded-md border"
+                        />
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-green-600">✓ Phone photo uploaded</span>
+                          <button
+                            onClick={() => setKycData(prev => ({ ...prev, phonePhoto: null }))}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        onChange={(e) => handleKycPhotoUpload('phonePhoto', e.target.files[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        required
+                      />
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -1239,6 +1239,8 @@ export async function registerRoutes(app) {
         customer_name: kycData.customerName,
         id_type: kycData.idType,
         id_number: kycData.idNumber,
+        imei_number: kycData.imeiNumber,
+        phone_photo_url: kycData.phonePhoto ? `/uploads/phone_${leadId}_${Date.now()}.jpg` : null,
         verification_status: 'pending',
         created_at: new Date().toISOString()
       };
