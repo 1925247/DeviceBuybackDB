@@ -137,38 +137,16 @@ const CheckoutFormPage = () => {
         offeredPrice: formData.finalPrice,
         status: 'pending',
         pickupAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pinCode}`,
-        pickupDate: formData.pickupDate,
-        pickupTime: formData.pickupTime,
+        pickupDate: 'To be scheduled',
+        pickupTime: 'To be confirmed',
         conditionAnswers: JSON.stringify(conditionAnswers),
-        notes: `Device assessment completed. Condition: ${formData.deviceCondition}. Pickup scheduled for ${formData.pickupDate} at ${formData.pickupTime}`,
+        notes: `Device assessment completed. Condition: ${formData.deviceCondition}. Pickup to be scheduled by team.`,
         createdAt: new Date().toISOString()
       };
 
       console.log('Submitting buyback request:', buybackData);
 
-      // Book the time slot
-      try {
-        const bookingResponse = await fetch('/api/book-time-slot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            date: formData.pickupDate,
-            timeSlot: formData.pickupTime
-          })
-        });
-        
-        if (!bookingResponse.ok) {
-          const bookingError = await bookingResponse.json();
-          throw new Error(bookingError.error || 'Failed to book time slot');
-        }
-      } catch (error) {
-        console.error('Error booking time slot:', error);
-        alert('The selected time slot is no longer available. Please choose a different time.');
-        setSubmitting(false);
-        return;
-      }
+      // Skip time slot booking - using simplified flow without time slot selection
 
       const response = await fetch('/api/buyback-requests', {
         method: 'POST',
