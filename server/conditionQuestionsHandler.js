@@ -63,7 +63,6 @@ export async function getConditionQuestions(req, res) {
             qg.category,
             qg.name as group_name,
             qg.question_level,
-            qg.sort_order as group_sort_order,
             (
               SELECT json_agg(
                 json_build_object(

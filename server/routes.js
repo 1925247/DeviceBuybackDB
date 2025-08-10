@@ -89,6 +89,32 @@ export async function registerRoutes(app) {
   // Model-Specific Questions API
   app.get('/api/model-specific-questions', getModelSpecificQuestions);
   app.post('/api/create-sample-mappings', createSampleModelMappings);
+  
+  // New Valuation API (Cashify-style)
+  try {
+    const newValuationModule = await import("./api/newValuationApi.js");
+    app.post('/api/v2/calculate-valuation', newValuationModule.calculateDeviceValuation);
+    app.get('/api/v2/model/:modelId/price-breakdown', newValuationModule.getModelPriceBreakdown);
+    app.post('/api/v2/validate-answers', newValuationModule.validateModelAnswers);
+    app.get('/api/v2/model/:modelId/assessment-flow', newValuationModule.getModelAssessmentFlow);
+    
+    // Old System Cleanup API
+    const cleanupModule = await import("./utils/oldSystemCleanup.js");
+    app.post('/api/v2/cleanup-old-system', async (req, res) => {
+      const cleanup = await cleanupModule.cleanupOldPricingData();
+      res.json(cleanup);
+    });
+    app.get('/api/v2/verify-new-system', async (req, res) => {
+      const verification = await cleanupModule.verifyNewCalculationSystem();
+      res.json(verification);
+    });
+    app.get('/api/v2/migration-report', async (req, res) => {
+      const report = await cleanupModule.generateMigrationReport();
+      res.json(report);
+    });
+  } catch (error) {
+    console.error('Failed to load new valuation API:', error);
+  }
 
   // Create HTTP server before registering routes
   const server = createServer(app);

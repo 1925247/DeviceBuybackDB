@@ -1,0 +1,83 @@
+We need to redesign our smartphone buyback calculation system to follow the same flow as Cashify, using a group → question → answer → deduction rate structure.
+
+Steps to Implement:
+
+Delete Old Calculation Logic:
+
+Remove all current price calculation code and formulas from the project.
+
+Clear all previously stored deduction mappings for models and variants.
+
+Ensure no legacy logic interferes with the new calculation system.
+
+New Calculation Workflow:
+
+Step 1 – Base Price Fetching:
+
+Each model/variant will have a base price stored in the database.
+
+Step 2 – Group Setup:
+
+Groups represent condition categories (e.g., Body, Screen, Functional Issues, Warranty, Accessories).
+
+Admin can create, edit, delete groups from the backend.
+
+Step 3 – Questions & Answers:
+
+Inside each group, multiple questions can be created.
+
+Each question can have multiple answers (e.g., No Damage, Minor Scratch, Major Crack).
+
+Each answer has a deduction rate (fixed value or percentage) set by the admin.
+
+Step 4 – Model Mapping:
+
+Groups can be mapped to one or more models.
+
+Specific questions/answers can also be mapped to one or more models.
+
+Same question/answer can be reused across multiple models without duplication.
+
+Step 5 – Frontend Display:
+
+When a customer selects a model, the system loads only the mapped groups/questions/answers for that model from the backend.
+
+All mapped questions must display exactly as configured in admin (no defaults unless assigned).
+
+Step 6 – Deduction Calculation:
+
+As the customer answers questions, the system applies the respective deduction rates for their selected answers.
+
+Final Price = Base Price – (Sum of All Applicable Deductions).
+
+If no deductions apply (perfect condition), the final price = base price.
+
+Step 7 – Final Review & Confirmation:
+
+At the checkout step, show the customer a summary:
+
+Base Price
+
+Deductions (with reason from each group)
+
+Final Offer Price
+
+Admin Controls:
+
+Ability to add/edit/delete groups, questions, answers, and deduction rates.
+
+Ability to map groups/questions/answers to multiple models.
+
+Ability to toggle Standard or Advanced question sets per model.
+
+Key Rules:
+
+No unmapped question should be shown to the customer.
+
+Deductions must always match exactly with the backend configuration.
+
+Must be SEO-friendly and scalable for future categories (e.g., laptops, tablets).
+
+Goal:
+A clean, accurate, Cashify-style deduction system where pricing is entirely based on model-specific, group-based questions and their mapped deductions—removing all old logic to avoid errors.
+
