@@ -123,12 +123,13 @@ router.get('/', async (req, res) => {
         res.json(models);
         
       } else {
-        // Get basic model info for public API
+        // Get basic model info for public API with variant pricing
         const queryText = `
           SELECT 
             dm.id, dm.name, dm.slug, dm.image, dm.active, dm.featured,
             dm.brand_id as "brandId", b.name as "brandName",
-            dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName"
+            dm.device_type_id as "deviceTypeId", dt.name as "deviceTypeName",
+            dm.base_price
           FROM device_models dm
           LEFT JOIN brands b ON dm.brand_id = b.id
           LEFT JOIN device_types dt ON dm.device_type_id = dt.id
@@ -136,8 +137,25 @@ router.get('/', async (req, res) => {
           ORDER BY dm.name
         `;
         
-        const result = await pool.query(queryText);
-        res.json(Array.isArray(result.rows) ? result.rows : []);
+        const modelsResult = await pool.query(queryText);
+        const models = Array.isArray(modelsResult.rows) ? modelsResult.rows : [];
+        
+        // Get variants for each model for frontend pricing display
+        for (const model of models) {
+          const variantsQuery = `
+            SELECT 
+              id, variant_name as name, base_price as basePrice, 
+              current_price as currentPrice, storage, color, active
+            FROM device_model_variants 
+            WHERE model_id = $1 AND active = true
+            ORDER BY base_price ASC
+          `;
+          
+          const variantsResult = await pool.query(variantsQuery, [model.id]);
+          model.variants = Array.isArray(variantsResult.rows) ? variantsResult.rows : [];
+        }
+        
+        res.json(models);
       }
     }
   } catch (error) {

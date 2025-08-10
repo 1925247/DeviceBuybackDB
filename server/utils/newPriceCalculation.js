@@ -50,21 +50,43 @@ export async function calculateFinalPrice(params) {
 }
 
 /**
- * Get base price for model/variant
+ * Get base price for model/variant - uses exact admin-set pricing
  */
 async function getBasePrice(modelId, variantSlug) {
   try {
-    // Try to get variant-specific price first
+    // Try to get variant-specific price first using exact admin-set pricing
     if (variantSlug) {
       const variantQuery = `
-        SELECT dmv.base_price
+        SELECT dmv.base_price, dmv.current_price
         FROM device_model_variants dmv
-        WHERE dmv.model_id = $1 AND dmv.slug = $2 AND dmv.active = true
+        WHERE dmv.model_id = $1 AND (dmv.slug = $2 OR dmv.variant_name = $2) AND dmv.active = true
       `;
       const variantResult = await pool.query(variantQuery, [modelId, variantSlug]);
       
-      if (variantResult.rows.length > 0 && variantResult.rows[0].base_price) {
-        return parseFloat(variantResult.rows[0].base_price);
+      if (variantResult.rows.length > 0) {
+        const adminPrice = variantResult.rows[0].base_price || variantResult.rows[0].current_price;
+        if (adminPrice && adminPrice > 0) {
+          console.log(`Using exact admin-set variant price: ₹${adminPrice}`);
+          return parseFloat(adminPrice);
+        }
+      }
+    }
+    
+    // Try to get any variant price for this model if no specific variant
+    const anyVariantQuery = `
+      SELECT dmv.base_price, dmv.current_price
+      FROM device_model_variants dmv
+      WHERE dmv.model_id = $1 AND dmv.active = true
+      ORDER BY dmv.base_price DESC
+      LIMIT 1
+    `;
+    const anyVariantResult = await pool.query(anyVariantQuery, [modelId]);
+    
+    if (anyVariantResult.rows.length > 0) {
+      const adminPrice = anyVariantResult.rows[0].base_price || anyVariantResult.rows[0].current_price;
+      if (adminPrice && adminPrice > 0) {
+        console.log(`Using admin-set price from variant: ₹${adminPrice}`);
+        return parseFloat(adminPrice);
       }
     }
     
@@ -77,12 +99,13 @@ async function getBasePrice(modelId, variantSlug) {
     const modelResult = await pool.query(modelQuery, [modelId]);
     
     if (modelResult.rows.length > 0 && modelResult.rows[0].base_price) {
+      console.log(`Using model base price: ₹${modelResult.rows[0].base_price}`);
       return parseFloat(modelResult.rows[0].base_price);
     }
     
-    // Final fallback to default price
-    console.log('No base price found, using default');
-    return 25000; // Default base price in INR
+    // ERROR: No admin-set pricing found
+    console.error(`NO ADMIN PRICING FOUND for model ${modelId}, variant ${variantSlug}`);
+    throw new Error('No admin-set pricing found. Please set variant prices in admin panel.');
     
   } catch (error) {
     console.error('Error fetching base price:', error);

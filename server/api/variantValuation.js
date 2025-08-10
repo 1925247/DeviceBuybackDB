@@ -61,16 +61,19 @@ export async function getVariantValuation(req, res) {
       
       const variantData = variantResult.rows[0];
       
-      // Calculate base price for buyback (60% of current price or base price)
-      const basePrice = variantData.current_price || variantData.base_price || 20000; // Default to ₹20,000 if no price
+      // Use exact pricing from admin panel - no hardcoded calculations
+      const adminSetPrice = variantData.base_price || variantData.current_price || 0;
       
       res.json({
         model: modelData,
         variant: {
           ...variantData,
-          basePrice: Math.round(basePrice * 0.6), // 60% for buyback
-          currentPrice: variantData.current_price || Math.round(basePrice),
-          marketValue: variantData.market_value || Math.round(basePrice * 1.1)
+          // Use the exact price set in admin panel for customer display
+          basePrice: adminSetPrice,
+          currentPrice: variantData.current_price || adminSetPrice,
+          marketValue: variantData.market_value || adminSetPrice,
+          // Store admin-set price for frontend display
+          adminSetPrice: adminSetPrice
         }
       });
       

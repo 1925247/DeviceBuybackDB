@@ -195,7 +195,11 @@ const DeviceListing = () => {
                             
                             <div className="flex items-center justify-between">
                               <span className="text-lg font-bold text-green-600">
-                                Starting from ₹{model.base_price ? Math.round(model.base_price * 83).toLocaleString('en-IN') : 'TBD'}
+                                {model.variants && model.variants.length > 0 ? (
+                                  `Starting from ₹${Math.min(...model.variants.map(v => v.basePrice || v.base_price || 0)).toLocaleString('en-IN')}`
+                                ) : (
+                                  `Starting from ₹${model.base_price ? model.base_price.toLocaleString('en-IN') : 'TBD'}`
+                                )}
                               </span>
                               <ChevronRight className="h-5 w-5 text-gray-400" />
                             </div>

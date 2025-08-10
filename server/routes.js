@@ -127,31 +127,58 @@ export async function registerRoutes(app) {
     app.put('/api/admin/variants/:variantId', async (req, res) => {
       try {
         const { variantId } = req.params;
-        const { variant_name, base_price, current_price, storage, color, active } = req.body;
+        const updateData = {};
         
-        const [updatedVariant] = await db.update(deviceModelVariants)
-          .set({
-            variant_name: variant_name || req.body.name,
-            base_price: parseFloat(base_price || req.body.basePrice),
-            current_price: parseFloat(current_price || req.body.currentPrice || base_price || req.body.basePrice),
-            storage: storage || req.body.storage,
-            color: color || req.body.color,
-            active: active !== undefined ? active : req.body.active,
-            updated_at: new Date()
-          })
-          .where(eq(deviceModelVariants.id, parseInt(variantId)))
-          .returning();
-          
-        res.json(updatedVariant);
+        // Only update fields that are provided
+        if (req.body.variant_name || req.body.name) {
+          updateData.variant_name = req.body.variant_name || req.body.name;
+        }
+        if (req.body.base_price || req.body.basePrice) {
+          updateData.base_price = parseFloat(req.body.base_price || req.body.basePrice);
+        }
+        if (req.body.current_price || req.body.currentPrice) {
+          updateData.current_price = parseFloat(req.body.current_price || req.body.currentPrice);
+        }
+        if (req.body.storage) {
+          updateData.storage = req.body.storage;
+        }
+        if (req.body.color) {
+          updateData.color = req.body.color;
+        }
+        if (req.body.active !== undefined) {
+          updateData.active = req.body.active;
+        }
+        updateData.updated_at = new Date();
+        
+        // Use raw SQL to avoid Drizzle schema issues
+        const queryText = `
+          UPDATE device_model_variants 
+          SET ${Object.keys(updateData).map((key, idx) => `${key} = $${idx + 2}`).join(', ')}
+          WHERE id = $1
+          RETURNING *
+        `;
+        
+        const values = [parseInt(variantId), ...Object.values(updateData)];
+        const result = await pool.query(queryText, values);
+        
+        if (result.rows.length > 0) {
+          res.json(result.rows[0]);
+        } else {
+          res.status(404).json({ error: 'Variant not found' });
+        }
       } catch (error) {
         console.error('Error updating variant:', error);
-        res.status(500).json({ error: 'Failed to update variant' });
+        res.status(500).json({ error: 'Failed to update variant', details: error.message });
       }
     });
     app.delete('/api/admin/variants/:variantId', async (req, res) => {
       try {
         const { variantId } = req.params;
-        await db.delete(deviceModelVariants).where(eq(deviceModelVariants.id, parseInt(variantId)));
+        
+        // Use raw SQL to avoid Drizzle schema issues
+        const queryText = 'DELETE FROM device_model_variants WHERE id = $1';
+        await pool.query(queryText, [parseInt(variantId)]);
+        
         res.json({ success: true });
       } catch (error) {
         console.error('Error deleting variant:', error);
