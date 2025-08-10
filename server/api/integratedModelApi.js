@@ -46,7 +46,7 @@ export const createModel = async (req, res) => {
     const modelVariants = await db
       .select()
       .from(deviceModelVariants)
-      .where(eq(deviceModelVariants.modelId, newModel.id));
+      .where(eq(deviceModelVariants.model_id, newModel.id));
 
     const modelWithVariants = {
       ...completeModel[0],
@@ -73,12 +73,12 @@ export const addVariant = async (req, res) => {
     }
 
     const [newVariant] = await db.insert(deviceModelVariants).values({
-      modelId: parseInt(modelId),
-      name,
-      basePrice: parseFloat(basePrice),
+      model_id: parseInt(modelId),
+      variant_name: name,
+      base_price: parseFloat(basePrice),
+      current_price: parseFloat(basePrice), // Set current price equal to base price initially
       storage: storage || null,
       color: color || null,
-      condition: condition || 'excellent',
       active: true
     }).returning();
 
