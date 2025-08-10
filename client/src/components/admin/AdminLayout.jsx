@@ -60,6 +60,7 @@ const AdminLayout = () => {
         { name: 'Models', href: '/admin/models', current: location.pathname === '/admin/models' },
         { name: 'Advanced Models', href: '/admin/models-advanced', current: location.pathname === '/admin/models-advanced' },
         { name: '🔥 Integrated Models', href: '/admin/integrated-models', current: location.pathname === '/admin/integrated-models', badge: 'NEW' },
+        { name: '⚡ Advanced Integration', href: '/admin/advanced-integration', current: location.pathname === '/admin/advanced-integration', badge: 'PREMIUM' },
         { name: 'Variant Pricing', href: '/admin/variant-pricing', current: location.pathname === '/admin/variant-pricing' }
       ]
     },
@@ -149,7 +150,11 @@ const AdminLayout = () => {
                       >
                         <span>{child.name}</span>
                         {child.badge && (
-                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                          <span className={`text-white text-xs px-2 py-1 rounded-full font-bold ${
+                            child.badge === 'NEW' ? 'bg-red-500' : 
+                            child.badge === 'PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 
+                            'bg-blue-500'
+                          }`}>
                             {child.badge}
                           </span>
                         )}

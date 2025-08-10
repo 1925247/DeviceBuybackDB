@@ -42,7 +42,18 @@ export const createModel = async (req, res) => {
       .where(eq(deviceModels.id, newModel.id))
       .limit(1);
 
-    res.json(completeModel[0]);
+    // Fetch existing variants for this model
+    const modelVariants = await db
+      .select()
+      .from(deviceModelVariants)
+      .where(eq(deviceModelVariants.modelId, newModel.id));
+
+    const modelWithVariants = {
+      ...completeModel[0],
+      variants: modelVariants
+    };
+
+    res.status(201).json(modelWithVariants);
   } catch (error) {
     console.error('Error creating model:', error);
     res.status(500).json({ error: 'Failed to create model' });
@@ -172,7 +183,7 @@ export const getModelsWithVariants = async (req, res) => {
     const { includeDetails } = req.query;
 
     if (includeDetails === 'true') {
-      // Fetch models with variant counts
+      // Fetch models with variant counts and full variant details
       const modelsWithDetails = await db
         .select({
           id: deviceModels.id,
@@ -199,6 +210,19 @@ export const getModelsWithVariants = async (req, res) => {
           brands.name, deviceTypes.name
         )
         .orderBy(deviceModels.name);
+
+      // Fetch variants for each model
+      const allVariants = await db
+        .select()
+        .from(deviceModelVariants)
+        .where(eq(deviceModelVariants.active, true));
+
+      // Group variants by model ID
+      const variantsByModel = allVariants.reduce((acc, variant) => {
+        if (!acc[variant.modelId]) acc[variant.modelId] = [];
+        acc[variant.modelId].push(variant);
+        return acc;
+      }, {});
 
       // For each model, fetch its variants with mapping info
       const modelsWithVariants = await Promise.all(

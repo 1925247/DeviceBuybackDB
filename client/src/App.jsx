@@ -60,6 +60,7 @@ const AdminQuestionGroups = lazy(() => import("./pages/admin/AdminQuestionGroups
 const AdminQuestionBuilder = lazy(() => import("./pages/admin/AdminQuestionBuilder"));
 const AdvancedQuestionGroupManager = lazy(() => import("./pages/admin/AdvancedQuestionGroupManager"));
 const IntegratedModelManager = lazy(() => import("./pages/admin/IntegratedModelManager"));
+const AdvancedModelIntegration = lazy(() => import("./pages/admin/AdvancedModelIntegration"));
 
 const AdminQuestionOverview = lazy(() => import("./pages/admin/AdminQuestionOverview"));
 const BuybackSuccess = lazy(() => import("./pages/BuybackSuccess"));
@@ -577,6 +578,15 @@ const App = () => {
                     element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <IntegratedModelManager />
+                      </Suspense>
+                    }
+                  />
+                  
+                  <Route
+                    path="advanced-integration"
+                    element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AdvancedModelIntegration />
                       </Suspense>
                     }
                   />

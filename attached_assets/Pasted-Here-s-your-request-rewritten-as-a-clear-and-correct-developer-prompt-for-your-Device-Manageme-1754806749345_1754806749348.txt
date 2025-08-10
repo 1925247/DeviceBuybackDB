@@ -1,0 +1,95 @@
+Here’s your request rewritten as a **clear and correct developer prompt** for your **Device Management** system:
+
+---
+
+## **Admin Panel – Device Management System (Advanced Model Integration)**
+
+We need to **rebuild and integrate** the device management workflow so that model creation, image upload, and variant pricing are **all handled in one advanced flow**.
+
+---
+
+### **Current Problem**
+
+* Options for **Model**, **Advanced Model**, and **Variant Pricing** are separate and not fully connected.
+* Photo upload for models is not mandatory or integrated.
+* The workflow is spread across different sections, causing delays and confusion.
+
+---
+
+### **Required Workflow (Correct Flow)**
+
+#### **Step 1 – Device Management Structure**
+
+The **Device Management** menu will have these working sections:
+
+1. **Device Types** – Example: Smartphone, Tablet, Laptop.
+2. **Brands** – Example: Apple, Samsung, OnePlus.
+3. **Models** – Integrated with advanced features (explained below).
+
+---
+
+#### **Step 2 – Model Creation (Fully Integrated)**
+
+When creating a new **Model**:
+
+* **Mandatory Fields**:
+
+  * Brand selection (dropdown)
+  * Model name
+  * Model image upload (**required before saving**)
+  * Device type selection
+* After saving the model, the **Variant Pricing** section appears below in the same page (no separate menu).
+
+---
+
+#### **Step 3 – Variant Pricing Integration**
+
+* Admin can **add multiple variants inline** with fields:
+
+  * Variant name (e.g., 128GB, 256GB)
+  * Base price
+  * Map Questions button (to link groups, questions, answers, and deduction rates)
+* This happens **inside the model form itself** without switching pages.
+
+---
+
+#### **Step 4 – Remove Old Sections**
+
+* **Remove** separate menu options for:
+
+  * **Advanced Model**
+  * **Variant Pricing**
+* All functionality should now be handled within **Model creation/edit page**.
+
+---
+
+#### **Step 5 – Advanced Model Integration**
+
+* As soon as a model is added:
+
+  * Its **variants**, **prices**, and **question mappings** can be set immediately.
+  * No need to visit multiple sections to complete setup.
+* System automatically links:
+
+  * Device type → Brand → Model → Variants → Price → Question mapping.
+
+---
+
+#### **Step 6 – Routes Structure**
+
+* **POST /admin/device-types** → Add Device Type
+* **POST /admin/brands** → Add Brand
+* **POST /admin/models** → Add Model (with image upload)
+* **POST /admin/models/{model\_id}/variants** → Add Variants (with price & mapping)
+* **POST /admin/variants/{variant\_id}/map-questions** → Map questions to variant
+
+---
+
+**Goal:**
+
+* A **one-page, advanced model integration** where all key tasks (image upload, variant pricing, question mapping) are done in a single place.
+* Simplify device management so **Model** is the main hub, and other sections are just supportive.
+
+---
+
+If you want, I can now **design the UI + flow diagram** so your developers know exactly how the “one-page model integration” will look. That will remove all confusion.
