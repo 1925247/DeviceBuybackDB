@@ -449,7 +449,7 @@ export class DatabaseStorage {
         user_id: insertRequest.user_id || 1,
         device_type: insertRequest.deviceType || insertRequest.device_type || 'smartphones',
         manufacturer: insertRequest.manufacturer || insertRequest.brand || 'unknown',
-        model: insertRequest.model || 'unknown',
+        model: insertRequest.deviceModel || insertRequest.device_model || insertRequest.model || 'unknown',
         condition: insertRequest.condition || 'pending-assessment',
         offered_price: parseFloat(insertRequest.offeredPrice || insertRequest.offered_price || 0),
         status: insertRequest.status || 'pending',

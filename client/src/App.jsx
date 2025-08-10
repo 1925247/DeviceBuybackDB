@@ -86,6 +86,7 @@ const AgentReEvaluation = lazy(() => import("./pages/agent/AgentReEvaluation"));
 const LeadCompletion = lazy(() => import("./pages/agent/LeadCompletion"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagementV2"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
+const AdminBuybackOverview = lazy(() => import("./pages/admin/AdminBuybackOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
 const DeviceModelsPage = lazy(() => import("./pages/sell/DeviceModelsPage"));
 const ExactValuePage = lazy(() => import("./pages/sell/ExactValuePage"));
@@ -645,6 +646,12 @@ const App = () => {
 
                   {/* Buyback Management */}
                   <Route path="buyback" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminBuybackOverview />
+                    </Suspense>
+                  } />
+                  
+                  <Route path="buyback-requests" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminBuybacksNew />
                     </Suspense>
