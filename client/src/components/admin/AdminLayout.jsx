@@ -15,7 +15,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
-  Clock
+  Clock,
+  UserCheck
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -26,6 +27,7 @@ const AdminLayout = () => {
     inventory: true,
     qa: false,
     orders: false,
+    agents: false,
     analytics: false,
     system: false
   });
@@ -81,6 +83,16 @@ const AdminLayout = () => {
         { name: 'Buyback Requests', href: '/admin/buyback', current: location.pathname === '/admin/buyback' },
         { name: 'All Orders', href: '/admin/orders', current: location.pathname === '/admin/orders' },
         { name: 'Users', href: '/admin/users', current: location.pathname === '/admin/users' }
+      ]
+    },
+    {
+      name: 'Agent Management',
+      icon: UserCheck,
+      section: 'agents',
+      children: [
+        { name: 'All Agents', href: '/admin/agent-management', current: location.pathname === '/admin/agent-management' },
+        { name: 'Agent Performance', href: '/admin/agent-performance', current: location.pathname === '/admin/agent-performance' },
+        { name: 'Assign Orders', href: '/admin/assign-orders', current: location.pathname === '/admin/assign-orders' }
       ]
     },
     {

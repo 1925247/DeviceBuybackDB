@@ -77,6 +77,7 @@ const AdminModelCreation = lazy(() => import("./pages/admin/AdminModelCreation")
 // Agent Pages - Lazy loaded
 const PickupAgentDashboard = lazy(() => import("./pages/agent/PickupAgentDashboard"));
 const OrderReEvaluation = lazy(() => import("./pages/agent/OrderReEvaluation"));
+const AdminAgentManagement = lazy(() => import("./pages/admin/AdminAgentManagement"));
 const AdvancedModelManagement = lazy(() => import("./pages/admin/AdvancedModelManagement"));
 const AdminDashboardOverview = lazy(() => import("./pages/admin/AdminDashboardOverview"));
 const AdminVariantPricing = lazy(() => import("./pages/admin/AdminVariantPricing"));
@@ -682,6 +683,13 @@ const App = () => {
                   <Route path="settings" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <AdminSettings />
+                    </Suspense>
+                  } />
+
+                  {/* Agent Management */}
+                  <Route path="agent-management" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AdminAgentManagement />
                     </Suspense>
                   } />
 

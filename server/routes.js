@@ -783,5 +783,115 @@ export async function registerRoutes(app) {
   app.post('/api/book-time-slot', bookTimeSlot);
   app.get('/api/booking-stats', getBookingStats);
 
+  // Agent Management Endpoints
+  app.get('/api/agents', async (req, res) => {
+    try {
+      // For now, return sample data. Later this can be connected to a database
+      const agents = [
+        {
+          id: 1,
+          name: 'Rahul Kumar',
+          email: 'rahul.agent@gadgetswap.com',
+          phone: '9876543210',
+          address: 'Connaught Place, New Delhi',
+          pincode: '110001',
+          status: 'active',
+          role: 'pickup_agent',
+          assigned_orders: 8,
+          completed_orders: 15,
+          created_at: '2025-01-15T10:00:00Z'
+        },
+        {
+          id: 2,
+          name: 'Priya Sharma',
+          email: 'priya.agent@gadgetswap.com',
+          phone: '9876543211',
+          address: 'Bandra West, Mumbai',
+          pincode: '400050',
+          status: 'active',
+          role: 'pickup_agent',
+          assigned_orders: 5,
+          completed_orders: 22,
+          created_at: '2025-01-10T09:00:00Z'
+        },
+        {
+          id: 3,
+          name: 'Amit Singh',
+          email: 'amit.agent@gadgetswap.com',
+          phone: '9876543212',
+          address: 'Koramangala, Bangalore',
+          pincode: '560095',
+          status: 'inactive',
+          role: 'pickup_agent',
+          assigned_orders: 0,
+          completed_orders: 8,
+          created_at: '2025-01-05T08:00:00Z'
+        }
+      ];
+      res.json(agents);
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+      res.status(500).json({ error: 'Failed to fetch agents' });
+    }
+  });
+
+  app.post('/api/agents', async (req, res) => {
+    try {
+      const agentData = req.body;
+      // For now, return success with generated ID
+      const newAgent = {
+        id: Date.now(),
+        ...agentData,
+        assigned_orders: 0,
+        completed_orders: 0,
+        created_at: new Date().toISOString()
+      };
+      res.status(201).json(newAgent);
+    } catch (error) {
+      console.error('Error creating agent:', error);
+      res.status(500).json({ error: 'Failed to create agent' });
+    }
+  });
+
+  app.put('/api/agents/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agentData = req.body;
+      // For now, return success
+      res.json({ id: parseInt(id), ...agentData, updated_at: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error updating agent:', error);
+      res.status(500).json({ error: 'Failed to update agent' });
+    }
+  });
+
+  app.delete('/api/agents/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      // For now, return success
+      res.json({ message: 'Agent deleted successfully', id: parseInt(id) });
+    } catch (error) {
+      console.error('Error deleting agent:', error);
+      res.status(500).json({ error: 'Failed to delete agent' });
+    }
+  });
+
+  app.get('/api/buyback-requests/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const requests = await storage.getAllBuybackRequests();
+      const request = requests.find(r => r.id === parseInt(id));
+      
+      if (!request) {
+        return res.status(404).json({ error: 'Buyback request not found' });
+      }
+      
+      res.json(request);
+    } catch (error) {
+      console.error('Error fetching buyback request:', error);
+      res.status(500).json({ error: 'Failed to fetch buyback request' });
+    }
+  });
+
   return server;
 }
