@@ -17,11 +17,12 @@ try {
 }
 
 (async () => {
+  // Register API routes BEFORE starting server and Vite
+  await registerRoutes(app);
+
   const server = app.listen(5000, "0.0.0.0", () => {
     log(`serving on port 5000`);
   });
-
-  registerRoutes(app);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
