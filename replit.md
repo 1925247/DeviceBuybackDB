@@ -125,6 +125,17 @@ This is a comprehensive Indian localized device buyback and refurbished electron
 
 ## Recent Changes
 
+- August 10, 2025: **COMPLETE CASHIFY-STYLE CALCULATION SYSTEM**
+  - Removed all old calculation logic and legacy pricing code
+  - Implemented new group → question → answer → deduction rate flow
+  - Created 5 question groups for iPhone 13 (standard + advanced levels)
+  - Built comprehensive v2 API endpoints for new calculation system
+  - Added model-specific base pricing (iPhone 13: ₹45,000)
+  - Enforced backend → frontend mapping rule (only mapped questions appear)
+  - Fixed server route priority to prevent Vite middleware conflicts
+  - Created admin table with default credentials (admin/admin)
+  - System now calculates: Final Price = Base Price - Group Deductions
+
 - August 10, 2025: **CRITICAL BUG FIXES & SEO IMPLEMENTATION**
   - Fixed missing price calculation utilities (server/utils/priceCalculation.js)
   - Implemented comprehensive SEO system with meta tags, Open Graph, structured data

@@ -33,7 +33,8 @@ const AdminLogin = () => {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Simple admin credentials check (in real app, this would be server-side)
-      if (formData.username === 'admin' && formData.password === 'admin123') {
+      if ((formData.username === 'admin' && formData.password === 'admin123') || 
+          (formData.username === 'admin' && formData.password === 'admin')) {
         const adminData = {
           id: 1,
           username: 'admin',
