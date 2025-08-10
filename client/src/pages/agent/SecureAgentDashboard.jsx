@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, User, Calendar, DollarSign, MapPin, Phone, Eye, LogOut, Shield, Clock, CheckCircle } from 'lucide-react';
+import { Package, User, Calendar, DollarSign, MapPin, Phone, Eye, LogOut, Shield, Clock, CheckCircle, Download } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const SecureAgentDashboard = () => {
@@ -95,6 +95,51 @@ const SecureAgentDashboard = () => {
 
   const handleReEvaluate = (leadId) => {
     navigate(`/agent/re-evaluate/${leadId}`);
+  };
+
+  const handleDownloadPDF = async (lead) => {
+    try {
+      const agentToken = sessionStorage.getItem('agentToken');
+      
+      if (!agentToken) {
+        alert('Authentication required. Please login again.');
+        return;
+      }
+
+      const response = await fetch(`/api/agent/lead/${lead.lead_id}/generate-invoice`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${agentToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'download',
+          order_id: `GS2025${lead.lead_id}`,
+          final_amount: lead.customer_price,
+          customer_name: lead.customer_name,
+          device_details: `${lead.manufacturer} ${lead.model}`,
+          imei_number: `IMEI${lead.lead_id}123456789`
+        })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `GS2025${lead.lead_id}_Invoice.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to generate PDF invoice');
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Network error. Please try again.');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -281,10 +326,16 @@ const SecureAgentDashboard = () => {
                     </div>
                   )}
                   {lead.status === 'completed' && (
-                    <div className="mt-3">
-                      <div className="bg-green-50 border border-green-200 rounded-md p-2 text-center">
-                        <span className="text-sm font-medium text-green-800">Lead Completed</span>
+                    <div className="mt-3 flex space-x-2">
+                      <div className="flex-1 bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                        <span className="text-sm font-medium text-green-800">✓ Lead Completed</span>
                       </div>
+                      <button
+                        onClick={() => handleDownloadPDF(lead)}
+                        className="bg-blue-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -396,9 +447,18 @@ const SecureAgentDashboard = () => {
                           </button>
                         </div>
                       ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          ✓ Completed
-                        </span>
+                        <div className="flex items-center space-x-2 justify-end">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            ✓ Completed
+                          </span>
+                          <button
+                            onClick={() => handleDownloadPDF(lead)}
+                            className="text-blue-600 hover:text-blue-900 font-medium flex items-center"
+                            title="Download PDF Invoice"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
