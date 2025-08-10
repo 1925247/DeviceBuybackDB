@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, User, Phone, Mail, Package, IndianRupee, CheckCircle } from 'lucide-react';
+import { MapPin, User, Phone, Mail, Package, IndianRupee, CheckCircle, Calendar, Clock } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import TimeSlotSelector from '../components/TimeSlotSelector';
 
 const CheckoutFormPage = () => {
   const { deviceType, brand, model, variant } = useParams();
@@ -20,7 +21,9 @@ const CheckoutFormPage = () => {
     state: '',
     address: '',
     deviceCondition: '',
-    finalPrice: 0
+    finalPrice: 0,
+    pickupDate: '',
+    pickupTime: ''
   });
 
   useEffect(() => {
@@ -137,16 +140,45 @@ const CheckoutFormPage = () => {
         offeredPrice: formData.finalPrice,
         status: 'pending',
         pickupAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pinCode}`,
-        pickupDate: 'To be scheduled',
-        pickupTime: 'To be confirmed',
+        pickupDate: formData.pickupDate,
+        pickupTime: formData.pickupTime,
         conditionAnswers: JSON.stringify(conditionAnswers),
-        notes: `Device assessment completed. Condition: ${formData.deviceCondition}. Pickup to be scheduled by team.`,
+        notes: `Device assessment completed. Condition: ${formData.deviceCondition}. Pickup scheduled for ${formData.pickupDate} at ${formData.pickupTime}`,
         createdAt: new Date().toISOString()
       };
 
       console.log('Submitting buyback request:', buybackData);
 
-      // Skip time slot booking - using simplified flow without time slot selection
+      // Validate pickup date and time
+      if (!formData.pickupDate || !formData.pickupTime) {
+        alert('Please select pickup date and time');
+        setSubmitting(false);
+        return;
+      }
+
+      // Book the time slot
+      try {
+        const bookingResponse = await fetch('/api/book-time-slot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            date: formData.pickupDate,
+            timeSlot: formData.pickupTime
+          })
+        });
+        
+        if (!bookingResponse.ok) {
+          const bookingError = await bookingResponse.json();
+          throw new Error(bookingError.error || 'Failed to book time slot');
+        }
+      } catch (error) {
+        console.error('Error booking time slot:', error);
+        alert('The selected time slot is no longer available. Please choose a different time.');
+        setSubmitting(false);
+        return;
+      }
 
       const response = await fetch('/api/buyback-requests', {
         method: 'POST',
@@ -333,9 +365,46 @@ const CheckoutFormPage = () => {
                 />
               </div>
               
+              {/* Pickup Scheduling Section */}
+              <div className="mt-8 border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Schedule Pickup</h3>
+                
+                {/* Date Picker */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="inline h-4 w-4 mr-1" />
+                    Pickup Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="pickupDate"
+                    value={formData.pickupDate}
+                    onChange={handleInputChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                {/* Time Slot Selector */}
+                {formData.pickupDate && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Clock className="inline h-4 w-4 mr-1" />
+                      Pickup Time *
+                    </label>
+                    <TimeSlotSelector
+                      selectedDate={formData.pickupDate}
+                      selectedTime={formData.pickupTime}
+                      onTimeSelect={(time) => setFormData(prev => ({ ...prev, pickupTime: time }))}
+                    />
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
-                disabled={submitting || !formData.customerName || !formData.customerEmail || !formData.pinCode || !formData.address}
+                disabled={submitting || !formData.customerName || !formData.customerEmail || !formData.pinCode || !formData.address || !formData.pickupDate || !formData.pickupTime}
                 className="w-full mt-6 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {submitting ? (
