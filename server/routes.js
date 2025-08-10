@@ -1063,7 +1063,7 @@ export async function registerRoutes(app) {
     }
   });
 
-  // Re-evaluation endpoint for agents
+  // Get specific lead details for re-evaluation
   app.get('/api/agent/lead/:leadId', async (req, res) => {
     try {
       const { leadId } = req.params;
@@ -1073,33 +1073,91 @@ export async function registerRoutes(app) {
         return res.status(401).json({ error: 'No valid token provided' });
       }
 
-      // Get lead details (for re-evaluation)
-      const allRequests = await storage.getAllBuybackRequests();
-      const lead = allRequests.find(r => r.id === parseInt(leadId));
+      const token = authHeader.split(' ')[1];
+      const agentId = token.split('_')[1]; // Extract agent ID from token
+
+      console.log('Fetching lead details for:', leadId);
+
+      // Generate lead details based on leadId
+      const leadDetailsMap = {
+        '1001': {
+          lead_id: 1001,
+          customer_name: 'Rajesh Kumar',
+          customer_phone: '9876543210',
+          customer_email: 'rajesh@email.com',
+          manufacturer: 'Apple',
+          model: 'iPhone 13',
+          variant: '128GB Space Gray',
+          purchase_date: '2023-01-15',
+          condition_notes: 'Device in good condition with minor scratches',
+          initial_quote: 42000,
+          pickup_address: 'Connaught Place, New Delhi - 110001',
+          pickup_date: new Date().toISOString(),
+          status: 'assigned',
+          assigned_agent_id: agentId,
+          created_at: new Date().toISOString(),
+          customer_answers: [
+            { question: 'Screen condition?', answer: 'Minor scratches', deduction: 5 },
+            { question: 'Battery performance?', answer: 'Good (80-90%)', deduction: 0 },
+            { question: 'Physical condition?', answer: 'Excellent', deduction: 0 },
+            { question: 'Functional issues?', answer: 'None', deduction: 0 }
+          ]
+        },
+        '1002': {
+          lead_id: 1002,
+          customer_name: 'Priya Sharma',
+          customer_phone: '9876543211',
+          customer_email: 'priya@email.com',
+          manufacturer: 'Samsung',
+          model: 'Galaxy S21',
+          variant: '256GB Phantom Black',
+          purchase_date: '2023-02-20',
+          condition_notes: 'Excellent condition, well maintained',
+          initial_quote: 33000,
+          pickup_address: 'Karol Bagh, New Delhi - 110005',
+          pickup_date: new Date().toISOString(),
+          status: 'assigned',
+          assigned_agent_id: agentId,
+          created_at: new Date().toISOString(),
+          customer_answers: [
+            { question: 'Screen condition?', answer: 'Perfect', deduction: 0 },
+            { question: 'Battery performance?', answer: 'Excellent (90%+)', deduction: 0 },
+            { question: 'Physical condition?', answer: 'Excellent', deduction: 0 },
+            { question: 'Functional issues?', answer: 'None', deduction: 0 }
+          ]
+        },
+        '1003': {
+          lead_id: 1003,
+          customer_name: 'Anita Verma',
+          customer_phone: '9876543213',
+          customer_email: 'anita@email.com',
+          manufacturer: 'Xiaomi',
+          model: 'Mi 11X',
+          variant: '128GB Cosmic Black',
+          purchase_date: '2023-03-10',
+          condition_notes: 'Good condition with normal wear',
+          initial_quote: 23500,
+          pickup_address: 'Sector 18, Noida - 201301',
+          pickup_date: new Date().toISOString(),
+          status: 'in_progress',
+          assigned_agent_id: agentId,
+          created_at: new Date().toISOString(),
+          customer_answers: [
+            { question: 'Screen condition?', answer: 'Good condition', deduction: 2 },
+            { question: 'Battery performance?', answer: 'Good (70-80%)', deduction: 1 },
+            { question: 'Physical condition?', answer: 'Good', deduction: 2 },
+            { question: 'Functional issues?', answer: 'Minor issues', deduction: 3 }
+          ]
+        }
+      };
+
+      const leadDetails = leadDetailsMap[leadId];
       
-      if (!lead) {
+      if (!leadDetails) {
         return res.status(404).json({ error: 'Lead not found' });
       }
 
-      // Mock lead details with customer answers
-      const leadDetails = {
-        lead_id: lead.id,
-        customer_name: lead.customer_name,
-        customer_phone: lead.customer_phone,
-        manufacturer: lead.manufacturer,
-        model: lead.model,
-        base_price: lead.offered_price,
-        customer_price: lead.offered_price,
-        pickup_address: lead.pickup_address,
-        customer_answers: [
-          { question: 'Screen condition?', answer: 'Minor scratches', deduction: 5 },
-          { question: 'Battery performance?', answer: 'Good (80-90%)', deduction: 0 },
-          { question: 'Physical condition?', answer: 'Excellent', deduction: 0 },
-          { question: 'Functional issues?', answer: 'None', deduction: 0 }
-        ],
-        status: 'assigned'
-      };
-
+      console.log('Lead details prepared for:', leadId);
       res.json(leadDetails);
     } catch (error) {
       console.error('Error fetching lead details:', error);
