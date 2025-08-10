@@ -196,7 +196,14 @@ const DeviceListing = () => {
                             <div className="flex items-center justify-between">
                               <span className="text-lg font-bold text-green-600">
                                 {model.variants && model.variants.length > 0 ? (
-                                  `Starting from ₹${Math.min(...model.variants.map(v => v.basePrice || v.base_price || 0)).toLocaleString('en-IN')}`
+                                  (() => {
+                                    const validPrices = model.variants
+                                      .map(v => v.basePrice || v.base_price || v.baseprice || v.currentPrice || v.current_price || v.currentprice)
+                                      .filter(price => price && price > 0);
+                                    return validPrices.length > 0 
+                                      ? `Starting from ₹${Math.min(...validPrices).toLocaleString('en-IN')}`
+                                      : `Starting from ₹${model.base_price ? model.base_price.toLocaleString('en-IN') : 'TBD'}`;
+                                  })()
                                 ) : (
                                   `Starting from ₹${model.base_price ? model.base_price.toLocaleString('en-IN') : 'TBD'}`
                                 )}
